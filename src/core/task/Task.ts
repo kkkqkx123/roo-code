@@ -48,7 +48,6 @@ import {
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
 	TOOL_PROTOCOL,
-	ConsecutiveMistakeError,
 } from "@roo-code/types"
 import { resolveToolProtocol, detectToolProtocolFromHistory } from "../../utils/resolveToolProtocol"
 
@@ -1585,16 +1584,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	// Start / Resume / Abort / Dispose
 
 	private async startTask(task?: string, images?: string[]): Promise<void> {
-		if (this.enableBridge) {
-			try {
-				await BridgeOrchestrator.subscribeToTask(this)
-			} catch (error) {
-				console.error(
-					`[Task#startTask] BridgeOrchestrator.subscribeToTask() failed: ${error instanceof Error ? error.message : String(error)}`,
-				)
-			}
-		}
-
 		// `conversationHistory` (for API) and `clineMessages` (for webview)
 		// need to be in sync.
 		// If the extension process were killed, then on restart the
@@ -1633,16 +1622,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	private async resumeTaskFromHistory() {
-		if (this.enableBridge) {
-			try {
-				await BridgeOrchestrator.subscribeToTask(this)
-			} catch (error) {
-				console.error(
-					`[Task#resumeTaskFromHistory] BridgeOrchestrator.subscribeToTask() failed: ${error instanceof Error ? error.message : String(error)}`,
-				)
-			}
-		}
-
 		const modifiedClineMessages = await this.getSavedClineMessages()
 
 		// Remove any resume messages that may have been added before.
@@ -2017,16 +1996,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			this.removeAllListeners()
 		} catch (error) {
 			console.error("Error removing event listeners:", error)
-		}
-
-		if (this.enableBridge) {
-			BridgeOrchestrator.getInstance()
-				?.unsubscribeFromTask(this.taskId)
-				.catch((error) =>
-					console.error(
-						`[Task#dispose] BridgeOrchestrator#unsubscribeFromTask() failed: ${error instanceof Error ? error.message : String(error)}`,
-					),
-				)
 		}
 
 		// Release any terminals associated with this task.

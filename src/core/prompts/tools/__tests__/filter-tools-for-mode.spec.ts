@@ -349,38 +349,6 @@ describe("filterNativeToolsForMode", () => {
 		expect(toolNames).not.toContain("update_todo_list")
 	})
 
-	it("should exclude generate_image when experiment is not enabled", () => {
-		const codeMode: ModeConfig = {
-			slug: "code",
-			name: "Code",
-			roleDefinition: "Test",
-			groups: ["read", "edit", "browser", "command", "mcp"] as const,
-		}
-
-		const mockImageTool: OpenAI.Chat.ChatCompletionTool = {
-			type: "function",
-			function: {
-				name: "generate_image",
-				description: "Generate image",
-				parameters: {},
-			},
-		}
-
-		const toolsWithImage = [...mockNativeTools, mockImageTool]
-
-		const filtered = filterNativeToolsForMode(
-			toolsWithImage,
-			"code",
-			[codeMode],
-			{ imageGeneration: false },
-			undefined,
-			{},
-			undefined,
-		)
-		const toolNames = filtered.map((t) => ("function" in t ? t.function.name : ""))
-		expect(toolNames).not.toContain("generate_image")
-	})
-
 	it("should exclude run_slash_command when experiment is not enabled", () => {
 		const codeMode: ModeConfig = {
 			slug: "code",

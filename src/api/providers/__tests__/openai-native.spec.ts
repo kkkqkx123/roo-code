@@ -2,8 +2,6 @@
 
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import { ApiProviderError } from "@roo-code/types"
-
 import { OpenAiNativeHandler } from "../openai-native"
 import { ApiHandlerOptions } from "../../../shared/api"
 

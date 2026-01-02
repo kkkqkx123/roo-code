@@ -360,7 +360,6 @@ export interface ClineSayTool {
 		| "switchMode"
 		| "newTask"
 		| "finishTask"
-		| "generateImage"
 		| "imageGenerated"
 		| "runSlashCommand"
 		| "updateTodoList"

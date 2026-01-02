@@ -15,7 +15,6 @@ import type { ApiHandlerOptions } from "../../shared/api"
 import { XmlMatcher } from "../../utils/xml-matcher"
 
 import { convertToOpenAiMessages } from "../transform/openai-format"
-import { convertToR1Format } from "../transform/r1-format"
 import { convertToSimpleMessages } from "../transform/simple-format"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
@@ -108,7 +107,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			let convertedMessages
 
 			if (deepseekReasoner) {
-				convertedMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
+				convertedMessages = convertToOpenAiMessages([{ role: "user", content: systemPrompt }, ...messages])
 			} else if (ark || enabledLegacyFormat) {
 				convertedMessages = [systemMessage, ...convertToSimpleMessages(messages)]
 			} else {
@@ -239,7 +238,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: modelId,
 				messages: deepseekReasoner
-					? convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
+					? convertToOpenAiMessages([{ role: "user", content: systemPrompt }, ...messages])
 					: enabledLegacyFormat
 						? [systemMessage, ...convertToSimpleMessages(messages)]
 						: [systemMessage, ...convertToOpenAiMessages(messages)],

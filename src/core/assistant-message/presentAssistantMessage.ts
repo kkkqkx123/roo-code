@@ -3,7 +3,6 @@ import { serializeError } from "serialize-error"
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
-import { ConsecutiveMistakeError } from "@roo-code/types"
 
 import { t } from "../../i18n"
 
@@ -36,7 +35,6 @@ import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/Atte
 import { newTaskTool } from "../tools/NewTaskTool"
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
-import { generateImageTool } from "../tools/GenerateImageTool.backup"
 import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
 import { validateToolUse } from "../tools/validateToolUse"
 import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
@@ -433,8 +431,6 @@ export async function presentAssistantMessage(cline: Task) {
 					}
 					case "run_slash_command":
 						return `[${block.name} for '${block.params.command}'${block.params.args ? ` with args: ${block.params.args}` : ""}]`
-					case "generate_image":
-						return `[${block.name} for '${block.params.path}']`
 					default:
 						return `[${block.name}]`
 				}
@@ -1035,16 +1031,6 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 				case "run_slash_command":
 					await runSlashCommandTool.handle(cline, block as ToolUse<"run_slash_command">, {
-						askApproval,
-						handleError,
-						pushToolResult,
-						removeClosingTag,
-						toolProtocol,
-					})
-					break
-				case "generate_image":
-					await checkpointSaveAndMark(cline)
-					await generateImageTool.handle(cline, block as ToolUse<"generate_image">, {
 						askApproval,
 						handleError,
 						pushToolResult,

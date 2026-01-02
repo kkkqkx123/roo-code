@@ -16,20 +16,6 @@ import type { RouterName, ModelRecord } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
 import { GetModelsOptions } from "../../../shared/api"
-import {
-	getOpenRouterModels,
-	getRequestyModels,
-	getUnboundModels,
-	getLiteLLMModels,
-	getOllamaModels,
-	getLMStudioModels,
-	getDeepInfraModels,
-	getIOIntelligenceModels,
-	getVercelAiGatewayModels,
-	getHuggingFaceModels,
-	getRooModels,
-	getChutesModels,
-} from "./providers"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
@@ -64,59 +50,9 @@ async function readModels(router: RouterName): Promise<ModelRecord | undefined> 
 async function fetchModelsFromProvider(options: GetModelsOptions): Promise<ModelRecord> {
 	const { provider } = options
 
-	let models: ModelRecord
-
-	switch (provider) {
-		case "openrouter":
-			models = await getOpenRouterModels()
-			break
-		case "requesty":
-			// Requesty models endpoint requires an API key for per-user custom policies.
-			models = await getRequestyModels(options.baseUrl, options.apiKey)
-			break
-		case "unbound":
-			// Unbound models endpoint requires an API key to fetch application specific models.
-			models = await getUnboundModels(options.apiKey)
-			break
-		case "litellm":
-			// Type safety ensures apiKey and baseUrl are always provided for LiteLLM.
-			models = await getLiteLLMModels(options.apiKey, options.baseUrl)
-			break
-		case "ollama":
-			models = await getOllamaModels(options.baseUrl, options.apiKey)
-			break
-		case "lmstudio":
-			models = await getLMStudioModels(options.baseUrl)
-			break
-		case "deepinfra":
-			models = await getDeepInfraModels(options.apiKey, options.baseUrl)
-			break
-		case "io-intelligence":
-			models = await getIOIntelligenceModels(options.apiKey)
-			break
-		case "vercel-ai-gateway":
-			models = await getVercelAiGatewayModels()
-			break
-		case "huggingface":
-			models = await getHuggingFaceModels()
-			break
-		case "roo": {
-			// Roo Code Cloud provider requires baseUrl and optional apiKey
-			const rooBaseUrl = options.baseUrl ?? process.env.ROO_CODE_PROVIDER_URL ?? "https://api.roocode.com/proxy"
-			models = await getRooModels(rooBaseUrl, options.apiKey)
-			break
-		}
-		case "chutes":
-			models = await getChutesModels(options.apiKey)
-			break
-		default: {
-			// Ensures router is exhaustively checked if RouterName is a strict union.
-			const exhaustiveCheck: never = provider
-			throw new Error(`Unknown provider: ${exhaustiveCheck}`)
-		}
-	}
-
-	return models
+	// Return empty model record for all providers
+	// Provider-specific model fetching is not implemented
+	return {}
 }
 
 /**

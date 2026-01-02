@@ -78,6 +78,24 @@ export type McpToolCallResponse = {
 					blob?: string
 				}
 		  }
+		| {
+				type: "resource_link"
+				uri: string
+				name: string
+				description?: string
+				mimeType?: string
+				annotations?: {
+					audience?: ("user" | "assistant")[]
+					priority?: number
+					lastModified?: string
+				}
+				_meta?: Record<string, any>
+				icons?: Array<{
+					url: string
+					width?: number
+					height?: number
+				}>
+		  }
 	>
 	isError?: boolean
 }

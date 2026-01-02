@@ -27,7 +27,6 @@ import { getNewTaskDescription } from "./new-task"
 import { getCodebaseSearchDescription } from "./codebase-search"
 import { getUpdateTodoListDescription } from "./update-todo-list"
 import { getRunSlashCommandDescription } from "./run-slash-command"
-import { getGenerateImageDescription } from "./generate-image"
 
 // Map of tool names to their description functions
 const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined> = {
@@ -56,7 +55,6 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 		args.diffStrategy ? args.diffStrategy.getToolDescription({ cwd: args.cwd, toolOptions: args.toolOptions }) : "",
 	update_todo_list: (args) => getUpdateTodoListDescription(args),
 	run_slash_command: () => getRunSlashCommandDescription(),
-	generate_image: (args) => getGenerateImageDescription(args),
 }
 
 export function getToolDescriptionsForMode(
@@ -130,11 +128,6 @@ export function getToolDescriptionsForMode(
 		tools.delete("update_todo_list")
 	}
 
-	// Conditionally exclude generate_image if experiment is not enabled
-	if (!experiments?.imageGeneration) {
-		tools.delete("generate_image")
-	}
-
 	// Conditionally exclude run_slash_command if experiment is not enabled
 	if (!experiments?.runSlashCommand) {
 		tools.delete("run_slash_command")
@@ -175,7 +168,6 @@ export {
 	getSwitchModeDescription,
 	getCodebaseSearchDescription,
 	getRunSlashCommandDescription,
-	getGenerateImageDescription,
 }
 
 // Export native tool definitions (JSON schema format for OpenAI-compatible APIs)

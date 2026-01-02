@@ -10,7 +10,6 @@ import { getCacheDirectoryPath } from "../../../utils/storage"
 import { RouterName, ModelRecord } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
-import { getOpenRouterModelEndpoints } from "./openrouter"
 import { getModels } from "./modelCache"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
@@ -54,7 +53,8 @@ export const getModelEndpoints = async ({
 		return modelProviders
 	}
 
-	modelProviders = await getOpenRouterModelEndpoints(modelId)
+	// OpenRouter model endpoints fetching is not implemented
+	modelProviders = {}
 
 	// Copy model-level capabilities from the parent model to each endpoint
 	// These are capabilities that don't vary by provider (tools, reasoning, etc.)
@@ -90,7 +90,7 @@ export const getModelEndpoints = async ({
 	}
 
 	try {
-		modelProviders = await readModelEndpoints(router)
+		modelProviders = await readModelEndpoints(key)
 		// console.log(`[getModelProviders] read ${key} endpoints from file cache`)
 	} catch (error) {
 		console.error(`[getModelProviders] error reading ${key} endpoints from file cache`, error)

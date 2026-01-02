@@ -80,7 +80,6 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			return
 		}
 
-		visibleProvider.postMessageToWebview({ type: "action", action: "cloudButtonClicked" })
 	},
 	plusButtonClicked: async () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)

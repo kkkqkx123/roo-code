@@ -8,7 +8,6 @@ import browserAction from "./browser_action"
 import codebaseSearch from "./codebase_search"
 import executeCommand from "./execute_command"
 import fetchInstructions from "./fetch_instructions"
-import generateImage from "./generate_image"
 import listFiles from "./list_files"
 import newTask from "./new_task"
 import { createReadFileTool } from "./read_file"
@@ -41,7 +40,6 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 		codebaseSearch,
 		executeCommand,
 		fetchInstructions,
-		generateImage,
 		listFiles,
 		newTask,
 		createReadFileTool(partialReadsEnabled),

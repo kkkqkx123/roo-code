@@ -30,9 +30,3 @@ export interface BrowserActionParams {
 	text?: string
 	path?: string
 }
-
-export interface GenerateImageParams {
-	prompt: string
-	path: string
-	image?: string
-}

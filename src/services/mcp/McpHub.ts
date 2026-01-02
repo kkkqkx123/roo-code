@@ -1746,6 +1746,17 @@ export class McpHub {
 				return { type: "audio", data: item.data, mimeType: item.mimeType }
 			} else if (item.type === "resource") {
 				return { type: "resource", resource: item.resource }
+			} else if (item.type === "resource_link") {
+				return { 
+					type: "resource_link", 
+					uri: item.uri, 
+					name: item.name, 
+					description: item.description, 
+					mimeType: item.mimeType, 
+					annotations: item.annotations, 
+					_meta: item._meta, 
+					icons: item.icons?.map(icon => ({ url: icon.src, width: undefined, height: undefined })) 
+				}
 			}
 			return item
 		}) || [],

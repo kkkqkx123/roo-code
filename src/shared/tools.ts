@@ -7,7 +7,6 @@ import type {
 	ToolName,
 	FileEntry,
 	BrowserActionParams,
-	GenerateImageParams,
 } from "@roo-code/types"
 
 export type ToolResponse = string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>
@@ -103,7 +102,6 @@ export type NativeToolArgs = {
 	browser_action: BrowserActionParams
 	codebase_search: { query: string; path?: string }
 	fetch_instructions: { task: string }
-	generate_image: GenerateImageParams
 	run_slash_command: { command: string; args?: string }
 	search_files: { path: string; regex: string; file_pattern?: string | null }
 	switch_mode: { mode_slug: string; reason: string }
@@ -231,11 +229,6 @@ export interface RunSlashCommandToolUse extends ToolUse<"run_slash_command"> {
 	params: Partial<Pick<Record<ToolParamName, string>, "command" | "args">>
 }
 
-export interface GenerateImageToolUse extends ToolUse<"generate_image"> {
-	name: "generate_image"
-	params: Partial<Pick<Record<ToolParamName, string>, "prompt" | "path" | "image">>
-}
-
 // Define tool group configuration
 export type ToolGroupConfig = {
 	tools: readonly string[]
@@ -265,7 +258,6 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	codebase_search: "codebase search",
 	update_todo_list: "update todo list",
 	run_slash_command: "run slash command",
-	generate_image: "generate images",
 } as const
 
 // Define available tool groups.
@@ -274,7 +266,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 		tools: ["read_file", "fetch_instructions", "search_files", "list_files", "codebase_search"],
 	},
 	edit: {
-		tools: ["apply_diff", "write_to_file", "generate_image"],
+		tools: ["apply_diff", "write_to_file"],
 		customTools: ["search_and_replace", "search_replace", "edit_file", "apply_patch"],
 	},
 	browser: {

@@ -11,7 +11,6 @@ import {
 	type VerbosityLevel,
 	type ReasoningEffortExtended,
 	type ServiceTier,
-	ApiProviderError,
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"

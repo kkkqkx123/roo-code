@@ -9,7 +9,6 @@ import {
 	anthropicDefaultModelId,
 	anthropicModels,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
-	ApiProviderError,
 	TOOL_PROTOCOL,
 } from "@roo-code/types"
 

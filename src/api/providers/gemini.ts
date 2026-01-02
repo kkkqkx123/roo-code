@@ -14,7 +14,6 @@ import {
 	type GeminiModelId,
 	geminiDefaultModelId,
 	geminiModels,
-	ApiProviderError,
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"

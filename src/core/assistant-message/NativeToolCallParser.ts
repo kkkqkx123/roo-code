@@ -438,16 +438,6 @@ export class NativeToolCallParser {
 				}
 				break
 
-			case "generate_image":
-				if (partialArgs.prompt !== undefined || partialArgs.path !== undefined) {
-					nativeArgs = {
-						prompt: partialArgs.prompt,
-						path: partialArgs.path,
-						image: partialArgs.image,
-					}
-				}
-				break
-
 			case "run_slash_command":
 				if (partialArgs.command !== undefined) {
 					nativeArgs = {
@@ -700,16 +690,6 @@ export class NativeToolCallParser {
 					if (args.task !== undefined) {
 						nativeArgs = {
 							task: args.task,
-						} as NativeArgsFor<TName>
-					}
-					break
-
-				case "generate_image":
-					if (args.prompt !== undefined && args.path !== undefined) {
-						nativeArgs = {
-							prompt: args.prompt,
-							path: args.path,
-							image: args.image,
 						} as NativeArgsFor<TName>
 					}
 					break
