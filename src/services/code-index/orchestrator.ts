@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import * as path from "path"
 import { CodeIndexConfigManager } from "./config-manager"
-import { CodeIndexStateManager, IndexingState } from "./interfaces"
+import { CodeIndexStateManager, IndexingState } from "./state-manager"
 import { IFileWatcher, IVectorStore, BatchProcessingSummary } from "./interfaces"
 import { DirectoryScanner } from "./processors"
 import { CacheManager } from "./cache-manager"

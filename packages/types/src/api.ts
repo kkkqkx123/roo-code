@@ -8,7 +8,7 @@ import type { IpcMessage, IpcServerEvents } from "./ipc.js"
 
 export type RooCodeAPIEvents = RooCodeEvents
 
-export interface RooCodeAPI extends EventEmitter<RooCodeAPIEvents> {
+export interface RooCodeAPI extends EventEmitter {
 	/**
 	 * Starts a new task with an optional initial message and images.
 	 * @param task Optional initial task message.
@@ -135,7 +135,7 @@ export interface RooCodeAPI extends EventEmitter<RooCodeAPIEvents> {
 	setActiveProfile(name: string): Promise<string | undefined>
 }
 
-export interface RooCodeIpcServer extends EventEmitter<IpcServerEvents> {
+export interface RooCodeIpcServer extends EventEmitter {
 	listen(): void
 	broadcast(message: IpcMessage): void
 	send(client: string | Socket, message: IpcMessage): void

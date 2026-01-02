@@ -168,18 +168,18 @@ describe("MarketplaceManager", () => {
 		})
 
 		it("should handle API errors gracefully", async () => {
-			// Mock the config loader to throw an error
-			vi.spyOn(manager["configLoader"], "loadAllItems").mockRejectedValue(new Error("API request failed"))
+				// Mock the config loader to throw an error
+				vi.spyOn(manager["configLoader"], "loadAllItems").mockRejectedValue(new Error("API request failed"))
 
-			const result = await manager.getMarketplaceItems()
+				const result = await manager.getMarketplaceItems()
 
-			expect(result.marketplaceItems).toHaveLength(0)
-			expect(result.organizationMcps).toHaveLength(0)
-			expect(result.errors).toEqual(["API request failed"])
+				expect(result.marketplaceItems).toHaveLength(0)
+				expect(result.organizationMcps).toHaveLength(0)
+				expect(result.errors).toEqual(["API request failed"])
+			})
 		})
 
-
-	describe("installMarketplaceItem", () => {
+		describe("installMarketplaceItem", () => {
 		it("should install a mode item", async () => {
 			const item: MarketplaceItem = {
 				id: "test-mode",

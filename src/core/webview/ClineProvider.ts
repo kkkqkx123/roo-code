@@ -2,6 +2,7 @@ import os from "os"
 import * as path from "path"
 import fs from "fs/promises"
 import EventEmitter from "events"
+import * as vscode from "vscode"
 
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
@@ -294,32 +295,11 @@ export class ClineProvider
 		this.clineStack.push(task)
 		task.emit(RooCodeEventName.TaskFocused)
 
-		// Perform special setup provider specific tasks.
-		await this.performPreparationTasks(task)
-
 		// Ensure getState() resolves correctly.
 		const state = await this.getState()
 
 		if (!state || typeof state.mode !== "string") {
 			throw new Error(t("common:errors.retrieve_current_mode"))
-		}
-	}
-
-	async performPreparationTasks(cline: Task) {
-		// LMStudio: We need to force model loading in order to read its context
-		// size; we do it now since we're starting a task with that model selected.
-		if (cline.apiConfiguration && cline.apiConfiguration.apiProvider === "lmstudio") {
-			try {
-				if (!hasLoadedFullDetails(cline.apiConfiguration.lmStudioModelId!)) {
-					await forceFullModelDetailsLoad(
-						cline.apiConfiguration.lmStudioBaseUrl ?? "http://localhost:1234",
-						cline.apiConfiguration.lmStudioModelId!,
-					)
-				}
-			} catch (error) {
-				this.log(`Failed to load full model details for LM Studio: ${error}`)
-				vscode.window.showErrorMessage(error.message)
-			}
 		}
 	}
 
@@ -805,7 +785,7 @@ export class ClineProvider
 			workspacePath: historyItem.workspace,
 			onCreated: this.taskCreationCallback,
 			startTask: options?.startTask ?? true,
-			enableBridge: BridgeOrchestrator.isEnabled(null, taskSyncEnabled),
+			enableBridge: false, // BridgeOrchestrator.isEnabled(null, taskSyncEnabled),
 			// Preserve the status from the history item to avoid overwriting it when the task saves messages
 			initialStatus: historyItem.status,
 		})
@@ -836,9 +816,6 @@ export class ClineProvider
 			// Replace the task in the stack
 			this.clineStack[stackIndex] = task
 			task.emit(RooCodeEventName.TaskFocused)
-
-			// Perform preparation tasks and set up event listeners
-			await this.performPreparationTasks(task)
 
 			this.log(
 				`[createTaskWithHistoryItem] rehydrated task ${task.taskId}.${task.instanceId} in-place (flicker-free)`,
@@ -2380,7 +2357,6 @@ export class ClineProvider
 			parentTask,
 			taskNumber: this.clineStack.length + 1,
 			onCreated: this.taskCreationCallback,
-			enableBridge: BridgeOrchestrator.isEnabled(null, remoteControlEnabled),
 			initialTodos: options.initialTodos,
 			...options,
 		})
@@ -2522,6 +2498,34 @@ export class ClineProvider
 
 	public get cwd() {
 		return this.currentWorkspacePath || getWorkspacePath()
+	}
+
+	public get appProperties() {
+		return {
+			extensionVersion: Package.version,
+			vscodeVersion: vscode.version,
+			locale: vscode.env.language,
+			platform: os.platform(),
+			architecture: process.arch,
+		}
+	}
+
+	public get gitProperties() {
+		const cwd = this.cwd
+		if (!cwd) return undefined
+
+		try {
+			// Note: This is a synchronous getter, but getWorkspaceGitInfo is async
+			// We'll return basic git properties without the async call
+			return {
+				gitExecutablePath: "git", // Default git executable path
+				gitVersion: undefined, // Would need to execute git --version to get this
+				gitDir: cwd,
+				workingDirectory: cwd,
+			}
+		} catch {
+			return undefined
+		}
 	}
 
 	/**

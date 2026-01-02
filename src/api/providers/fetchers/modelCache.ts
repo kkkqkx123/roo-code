@@ -16,6 +16,20 @@ import type { RouterName, ModelRecord } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
 import { GetModelsOptions } from "../../../shared/api"
+import {
+	getOpenRouterModels,
+	getRequestyModels,
+	getUnboundModels,
+	getLiteLLMModels,
+	getOllamaModels,
+	getLMStudioModels,
+	getDeepInfraModels,
+	getIOIntelligenceModels,
+	getVercelAiGatewayModels,
+	getHuggingFaceModels,
+	getRooModels,
+	getChutesModels,
+} from "./providers"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
