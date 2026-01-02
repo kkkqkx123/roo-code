@@ -12,9 +12,7 @@ import {
 	MessageCircle,
 	MessagesSquare,
 } from "lucide-react"
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
-
-import type { TelemetrySetting } from "@roo-code/types"
+import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
 import { Package } from "@roo/package"
 
@@ -25,12 +23,9 @@ import { Button } from "@/components/ui"
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
 
-type AboutProps = HTMLAttributes<HTMLDivElement> & {
-	telemetrySetting: TelemetrySetting
-	setTelemetrySetting: (setting: TelemetrySetting) => void
-}
+type AboutProps = HTMLAttributes<HTMLDivElement>
 
-export const About = ({ telemetrySetting, setTelemetrySetting, className, ...props }: AboutProps) => {
+export const About = ({ className, ...props }: AboutProps) => {
 	const { t } = useAppTranslation()
 
 	return (
@@ -46,27 +41,6 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 					<div>{t("settings:sections.about")}</div>
 				</div>
 			</SectionHeader>
-
-			<Section>
-				<div>
-					<VSCodeCheckbox
-						checked={telemetrySetting !== "disabled"}
-						onChange={(e: any) => {
-							const checked = e.target.checked === true
-							setTelemetrySetting(checked ? "enabled" : "disabled")
-						}}>
-						{t("settings:footer.telemetry.label")}
-					</VSCodeCheckbox>
-					<p className="text-vscode-descriptionForeground text-sm mt-0">
-						<Trans
-							i18nKey="settings:footer.telemetry.description"
-							components={{
-								privacyLink: <VSCodeLink href="https://roocode.com/privacy" />,
-							}}
-						/>
-					</p>
-				</div>
-			</Section>
 
 			<Section className="space-y-0">
 				<h3>{t("settings:about.contactAndCommunity")}</h3>

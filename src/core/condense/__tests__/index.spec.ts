@@ -3,7 +3,6 @@
 import type { Mock } from "vitest"
 
 import { Anthropic } from "@anthropic-ai/sdk"
-import { TelemetryService } from "@roo-code/telemetry"
 
 import { ApiHandler } from "../../../api"
 import { ApiMessage } from "../../task-persistence/apiMessages"
@@ -19,14 +18,6 @@ import {
 
 vi.mock("../../../api/transform/image-cleaning", () => ({
 	maybeRemoveImageBlocks: vi.fn((messages: ApiMessage[], _apiHandler: ApiHandler) => [...messages]),
-}))
-
-vi.mock("@roo-code/telemetry", () => ({
-	TelemetryService: {
-		instance: {
-			captureContextCondensed: vi.fn(),
-		},
-	},
 }))
 
 const taskId = "test-task-id"
@@ -1013,9 +1004,6 @@ describe("summarizeConversation with custom settings", () => {
 		// Reset mocks
 		vi.clearAllMocks()
 
-		// Reset telemetry mock
-		;(TelemetryService.instance.captureContextCondensed as Mock).mockClear()
-
 		// Setup mock API handlers
 		mockMainApiHandler = {
 			createMessage: vi.fn().mockImplementation(() => {
@@ -1216,13 +1204,10 @@ describe("summarizeConversation with custom settings", () => {
 			"Custom prompt",
 		)
 
-		// Verify telemetry was called with custom prompt flag
-		expect(TelemetryService.instance.captureContextCondensed).toHaveBeenCalledWith(
-			taskId,
-			false,
-			true, // usedCustomPrompt
-			false, // usedCustomApiHandler
-		)
+		// Verify the custom prompt was used
+		const createMessageCalls = (mockMainApiHandler.createMessage as Mock).mock.calls
+		expect(createMessageCalls.length).toBe(1)
+		expect(createMessageCalls[0][0]).toBe("Custom prompt")
 	})
 
 	/**
@@ -1240,13 +1225,8 @@ describe("summarizeConversation with custom settings", () => {
 			mockCondensingApiHandler,
 		)
 
-		// Verify telemetry was called with custom API handler flag
-		expect(TelemetryService.instance.captureContextCondensed).toHaveBeenCalledWith(
-			taskId,
-			false,
-			false, // usedCustomPrompt
-			true, // usedCustomApiHandler
-		)
+		// Verify the condensing handler was used
+		expect((mockCondensingApiHandler.createMessage as Mock).mock.calls.length).toBe(1)
 	})
 
 	/**
@@ -1264,12 +1244,9 @@ describe("summarizeConversation with custom settings", () => {
 			mockCondensingApiHandler,
 		)
 
-		// Verify telemetry was called with both flags
-		expect(TelemetryService.instance.captureContextCondensed).toHaveBeenCalledWith(
-			taskId,
-			true, // isAutomaticTrigger
-			true, // usedCustomPrompt
-			true, // usedCustomApiHandler
-		)
+		// Verify both custom prompt and API handler were used
+		const createMessageCalls = (mockCondensingApiHandler.createMessage as Mock).mock.calls
+		expect(createMessageCalls.length).toBe(1)
+		expect(createMessageCalls[0][0]).toBe("Custom prompt")
 	})
 })

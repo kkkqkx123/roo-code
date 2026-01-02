@@ -1,21 +1,12 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import DismissibleUpsell from "../DismissibleUpsell"
-import { TelemetryEventName } from "@roo-code/types"
 
 // Mock the vscode API
 const mockPostMessage = vi.fn()
 vi.mock("@src/utils/vscode", () => ({
 	vscode: {
 		postMessage: (message: any) => mockPostMessage(message),
-	},
-}))
-
-// Mock telemetryClient
-const mockCapture = vi.fn()
-vi.mock("@src/utils/TelemetryClient", () => ({
-	telemetryClient: {
-		capture: (eventName: string, properties?: Record<string, any>) => mockCapture(eventName, properties),
 	},
 }))
 
@@ -35,7 +26,6 @@ vi.mock("@src/i18n/TranslationContext", () => ({
 describe("DismissibleUpsell", () => {
 	beforeEach(() => {
 		mockPostMessage.mockClear()
-		mockCapture.mockClear()
 		vi.clearAllTimers()
 	})
 
@@ -82,7 +72,7 @@ describe("DismissibleUpsell", () => {
 		})
 	})
 
-	it("hides the upsell when dismiss button is clicked and tracks telemetry", async () => {
+	it("hides the upsell when dismiss button is clicked", async () => {
 		const onDismiss = vi.fn()
 		const { container } = render(
 			<DismissibleUpsell upsellId="test-upsell" onDismiss={onDismiss}>
@@ -101,11 +91,6 @@ describe("DismissibleUpsell", () => {
 		// Find and click the dismiss button
 		const dismissButton = screen.getByRole("button", { name: /dismiss/i })
 		fireEvent.click(dismissButton)
-
-		// Check that telemetry was tracked
-		expect(mockCapture).toHaveBeenCalledWith(TelemetryEventName.UPSELL_DISMISSED, {
-			upsellId: "test-upsell",
-		})
 
 		// Check that the dismiss message was sent BEFORE hiding
 		expect(mockPostMessage).toHaveBeenCalledWith({

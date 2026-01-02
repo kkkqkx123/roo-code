@@ -289,7 +289,6 @@ const mockPostMessage = (state: Partial<ExtensionState>) => {
 				allowedCommands: [],
 				alwaysAllowExecute: false,
 				cloudIsAuthenticated: false,
-				telemetrySetting: "enabled",
 				...state,
 			},
 		},

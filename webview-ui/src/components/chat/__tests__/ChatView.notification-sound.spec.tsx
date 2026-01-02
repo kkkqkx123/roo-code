@@ -255,7 +255,6 @@ const mockPostMessage = (state: Partial<ExtensionState>) => {
 				taskHistory: [],
 				shouldShowAnnouncement: false,
 				cloudIsAuthenticated: false,
-				telemetrySetting: "enabled",
 				messageQueue: [],
 				...state,
 			},

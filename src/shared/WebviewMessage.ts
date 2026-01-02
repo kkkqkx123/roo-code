@@ -116,7 +116,6 @@ export interface WebviewMessage {
 		| "humanRelayResponse"
 		| "humanRelayCancel"
 		| "codebaseIndexEnabled"
-		| "telemetrySetting"
 		| "testBrowserConnection"
 		| "browserConnectionResult"
 		| "searchFiles"

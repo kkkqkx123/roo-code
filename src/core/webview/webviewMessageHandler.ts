@@ -2069,12 +2069,6 @@ export const webviewMessageHandler = async (
 			}
 			break
 
-		case "telemetrySetting": {
-			const telemetrySetting = message.text as TelemetrySetting
-			await updateGlobalState("telemetrySetting", telemetrySetting)
-			await provider.postStateToWebview()
-			break
-		}
 		case "cloudButtonClicked": {
 			// Navigate to the cloud tab.
 			provider.postMessageToWebview({ type: "action", action: "cloudButtonClicked" })

@@ -1,15 +1,5 @@
 // npx vitest run api/providers/__tests__/openai-native.spec.ts
 
-const mockCaptureException = vitest.fn()
-
-vitest.mock("@roo-code/telemetry", () => ({
-	TelemetryService: {
-		instance: {
-			captureException: (...args: unknown[]) => mockCaptureException(...args),
-		},
-	},
-}))
-
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import { ApiProviderError } from "@roo-code/types"

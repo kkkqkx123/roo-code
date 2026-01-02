@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react"
-import { MarketplaceItem, TelemetryEventName } from "@roo-code/types"
+import { MarketplaceItem } from "@roo-code/types"
 import { vscode } from "@/utils/vscode"
 import { ViewState } from "../MarketplaceViewStateManager"
 import { useAppTranslation } from "@/i18n/TranslationContext"

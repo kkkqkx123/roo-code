@@ -3,13 +3,6 @@ import { render, screen } from "@testing-library/react"
 
 import ErrorBoundary from "../ErrorBoundary"
 
-// Mock telemetryClient
-vi.mock("@src/utils/TelemetryClient", () => ({
-	telemetryClient: {
-		capture: vi.fn(),
-	},
-}))
-
 // Mock translation
 vi.mock("react-i18next", () => ({
 	withTranslation: () => (Component: any) => {

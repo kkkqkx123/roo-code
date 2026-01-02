@@ -232,7 +232,6 @@ describe("extension.ts", () => {
 			return {
 				off: vi.fn(),
 				on: vi.fn(),
-				telemetryClient: null,
 				hasActiveSession: vi.fn().mockReturnValue(false),
 				authService: null,
 			} as any
@@ -267,7 +266,6 @@ describe("extension.ts", () => {
 			return {
 				off: vi.fn(),
 				on: vi.fn(),
-				telemetryClient: null,
 				hasActiveSession: vi.fn().mockReturnValue(false),
 				authService: null,
 			} as any
@@ -307,7 +305,6 @@ describe("extension.ts", () => {
 				return {
 					off: vi.fn(),
 					on: vi.fn(),
-					telemetryClient: null,
 					authService: mockAuthService,
 					hasActiveSession: vi.fn().mockReturnValue(false),
 				} as any
@@ -347,7 +344,6 @@ describe("extension.ts", () => {
 				return {
 					off: vi.fn(),
 					on: vi.fn(),
-					telemetryClient: null,
 					authService: null,
 					hasActiveSession: vi.fn().mockReturnValue(false),
 				} as any

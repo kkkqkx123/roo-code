@@ -1,15 +1,5 @@
 // npx vitest run src/api/providers/__tests__/gemini.spec.ts
 
-const mockCaptureException = vitest.fn()
-
-vitest.mock("@roo-code/telemetry", () => ({
-	TelemetryService: {
-		instance: {
-			captureException: (...args: unknown[]) => mockCaptureException(...args),
-		},
-	},
-}))
-
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import { type ModelInfo, geminiDefaultModelId, ApiProviderError } from "@roo-code/types"

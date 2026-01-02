@@ -10,7 +10,6 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
-import { TelemetryService } from "@roo-code/telemetry"
 
 import { ExtensionMessage, ExtensionState } from "../../../shared/ExtensionMessage"
 import { defaultModeSlug } from "../../../shared/modes"
@@ -378,10 +377,6 @@ describe("ClineProvider", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 
-		if (!TelemetryService.hasInstance()) {
-			TelemetryService.createInstance([])
-		}
-
 		const globalState: Record<string, string | undefined> = {
 			mode: "architect",
 			currentApiConfigName: "current-config",
@@ -566,7 +561,6 @@ describe("ClineProvider", () => {
 			maxOpenTabsContext: 20,
 			maxWorkspaceFiles: 200,
 			browserToolEnabled: true,
-			telemetrySetting: "unset",
 			showRooIgnoredFiles: false,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,
@@ -2390,78 +2384,6 @@ describe.skip("ContextProxy integration", () => {
 		expect(mockContextProxy.setValue).toBeDefined()
 		expect(mockContextProxy.setValues).toBeDefined()
 	})
-})
-
-describe("getTelemetryProperties", () => {
-	let defaultTaskOptions: TaskOptions
-	let provider: ClineProvider
-	let mockContext: vscode.ExtensionContext
-	let mockOutputChannel: vscode.OutputChannel
-	let mockCline: any
-
-	beforeEach(() => {
-		// Reset mocks
-		vi.clearAllMocks()
-
-		// Initialize TelemetryService if not already initialized
-		if (!TelemetryService.hasInstance()) {
-			TelemetryService.createInstance([])
-		}
-
-		// Setup basic mocks
-		mockContext = {
-			globalState: {
-				get: vi.fn().mockImplementation((key: string) => {
-					if (key === "mode") return "code"
-					if (key === "apiProvider") return "anthropic"
-					return undefined
-				}),
-				update: vi.fn(),
-				keys: vi.fn().mockReturnValue([]),
-			},
-			secrets: { get: vi.fn(), store: vi.fn(), delete: vi.fn() },
-			extensionUri: {} as vscode.Uri,
-			globalStorageUri: { fsPath: "/test/path" },
-			extension: { packageJSON: { version: "1.0.0" } },
-		} as unknown as vscode.ExtensionContext
-
-		mockOutputChannel = { appendLine: vi.fn() } as unknown as vscode.OutputChannel
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
-
-		defaultTaskOptions = {
-			provider,
-			apiConfiguration: {
-				apiProvider: "openrouter",
-			},
-		}
-
-		// Setup Task instance with mocked getModel method
-		mockCline = new Task(defaultTaskOptions)
-		mockCline.api = {
-			getModel: vi.fn().mockReturnValue({
-				id: "claude-sonnet-4-20250514",
-				info: { contextWindow: 200000 },
-			}),
-		}
-	})
-
-	test("includes basic properties in telemetry", async () => {
-		const properties = await provider.getTelemetryProperties()
-
-		expect(properties).toHaveProperty("vscodeVersion")
-		expect(properties).toHaveProperty("platform")
-		expect(properties).toHaveProperty("appVersion", "1.0.0")
-	})
-
-	test("includes model ID from current Cline instance if available", async () => {
-		// Add mock Cline to stack
-		await provider.addClineToStack(mockCline)
-
-		const properties = await provider.getTelemetryProperties()
-
-		expect(properties).toHaveProperty("modelId", "claude-sonnet-4-20250514")
-	})
-})
 
 describe("ClineProvider - Router Models", () => {
 	let provider: ClineProvider
@@ -2522,10 +2444,6 @@ describe("ClineProvider - Router Models", () => {
 			}),
 			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
 		} as unknown as vscode.WebviewView
-
-		if (!TelemetryService.hasInstance()) {
-			TelemetryService.createInstance([])
-		}
 
 		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
 	})
@@ -2817,10 +2735,6 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
-
-		if (!TelemetryService.hasInstance()) {
-			TelemetryService.createInstance([])
-		}
 
 		const globalState: Record<string, string | undefined> = {
 			mode: "code",
