@@ -6,8 +6,7 @@ import NodeCache from "node-cache"
 import { z } from "zod"
 
 import type { ProviderName } from "@roo-code/types"
-import { modelInfoSchema, TelemetryEventName } from "@roo-code/types"
-import { TelemetryService } from "@roo-code/telemetry"
+import { modelInfoSchema } from "@roo-code/types"
 
 import { safeWriteJson } from "../../../utils/safeWriteJson"
 
@@ -16,19 +15,7 @@ import { getCacheDirectoryPath } from "../../../utils/storage"
 import type { RouterName, ModelRecord } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
-import { getOpenRouterModels } from "./openrouter"
-import { getVercelAiGatewayModels } from "./vercel-ai-gateway"
-import { getRequestyModels } from "./requesty"
-import { getUnboundModels } from "./unbound"
-import { getLiteLLMModels } from "./litellm"
 import { GetModelsOptions } from "../../../shared/api"
-import { getOllamaModels } from "./ollama"
-import { getLMStudioModels } from "./lmstudio"
-import { getIOIntelligenceModels } from "./io-intelligence"
-import { getDeepInfraModels } from "./deepinfra"
-import { getHuggingFaceModels } from "./huggingface"
-import { getRooModels } from "./roo"
-import { getChutesModels } from "./chutes"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
@@ -150,12 +137,6 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 			await writeModels(provider, models).catch((err) =>
 				console.error(`[MODEL_CACHE] Error writing ${provider} models to file cache:`, err),
 			)
-		} else {
-			TelemetryService.instance.captureEvent(TelemetryEventName.MODEL_CACHE_EMPTY_RESPONSE, {
-				provider,
-				context: "getModels",
-				hasExistingCache: false,
-			})
 		}
 
 		return models
@@ -199,12 +180,6 @@ export const refreshModels = async (options: GetModelsOptions): Promise<ModelRec
 			const existingCount = existingCache ? Object.keys(existingCache).length : 0
 
 			if (modelCount === 0) {
-				TelemetryService.instance.captureEvent(TelemetryEventName.MODEL_CACHE_EMPTY_RESPONSE, {
-					provider,
-					context: "refreshModels",
-					hasExistingCache: existingCount > 0,
-					existingCacheSize: existingCount,
-				})
 				if (existingCount > 0) {
 					return existingCache!
 				} else {
