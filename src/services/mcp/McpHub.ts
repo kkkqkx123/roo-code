@@ -1720,19 +1720,37 @@ export class McpHub {
 			timeout = 60 * 1000
 		}
 
-		return await connection.client.request(
-			{
-				method: "tools/call",
-				params: {
-					name: toolName,
-					arguments: toolArguments,
-				},
+		const result = await connection.client.request(
+		{
+			method: "tools/call",
+			params: {
+				name: toolName,
+				arguments: toolArguments,
 			},
-			CallToolResultSchema,
-			{
-				timeout,
-			},
-		)
+		},
+		CallToolResultSchema,
+		{
+			timeout,
+		},
+	)
+	
+	// Convert the result to match McpToolCallResponse type
+	return {
+		_meta: result._meta,
+		content: result.content?.map(item => {
+			if (item.type === "text") {
+				return { type: "text", text: item.text }
+			} else if (item.type === "image") {
+				return { type: "image", data: item.data, mimeType: item.mimeType }
+			} else if (item.type === "audio") {
+				return { type: "audio", data: item.data, mimeType: item.mimeType }
+			} else if (item.type === "resource") {
+				return { type: "resource", resource: item.resource }
+			}
+			return item
+		}) || [],
+		isError: result.isError
+	}
 	}
 
 	/**

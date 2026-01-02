@@ -1,12 +1,7 @@
 import * as vscode from "vscode"
 import { OpenAiEmbedder } from "./embedders/openai"
-import { CodeIndexOllamaEmbedder } from "./embedders/ollama"
 import { OpenAICompatibleEmbedder } from "./embedders/openai-compatible"
 import { GeminiEmbedder } from "./embedders/gemini"
-import { MistralEmbedder } from "./embedders/mistral"
-import { VercelAiGatewayEmbedder } from "./embedders/vercel-ai-gateway"
-import { BedrockEmbedder } from "./embedders/bedrock"
-import { OpenRouterEmbedder } from "./embedders/openrouter"
 import { EmbedderProvider, getDefaultModelId, getModelDimension } from "../../shared/embeddingModels"
 import { QdrantVectorStore } from "./vector-store/qdrant-client"
 import { codeParser, DirectoryScanner, FileWatcher } from "./processors"
@@ -47,14 +42,6 @@ export class CodeIndexServiceFactory {
 				...config.openAiOptions,
 				openAiEmbeddingModelId: config.modelId,
 			})
-		} else if (provider === "ollama") {
-			if (!config.ollamaOptions?.ollamaBaseUrl) {
-				throw new Error(t("embeddings:serviceFactory.ollamaConfigMissing"))
-			}
-			return new CodeIndexOllamaEmbedder({
-				...config.ollamaOptions,
-				ollamaModelId: config.modelId,
-			})
 		} else if (provider === "openai-compatible") {
 			if (!config.openAiCompatibleOptions?.baseUrl || !config.openAiCompatibleOptions?.apiKey) {
 				throw new Error(t("embeddings:serviceFactory.openAiCompatibleConfigMissing"))
@@ -69,37 +56,11 @@ export class CodeIndexServiceFactory {
 				throw new Error(t("embeddings:serviceFactory.geminiConfigMissing"))
 			}
 			return new GeminiEmbedder(config.geminiOptions.apiKey, config.modelId)
-		} else if (provider === "mistral") {
-			if (!config.mistralOptions?.apiKey) {
-				throw new Error(t("embeddings:serviceFactory.mistralConfigMissing"))
-			}
-			return new MistralEmbedder(config.mistralOptions.apiKey, config.modelId)
-		} else if (provider === "vercel-ai-gateway") {
-			if (!config.vercelAiGatewayOptions?.apiKey) {
-				throw new Error(t("embeddings:serviceFactory.vercelAiGatewayConfigMissing"))
-			}
-			return new VercelAiGatewayEmbedder(config.vercelAiGatewayOptions.apiKey, config.modelId)
-		} else if (provider === "bedrock") {
-			// Only region is required for Bedrock (profile is optional)
-			if (!config.bedrockOptions?.region) {
-				throw new Error(t("embeddings:serviceFactory.bedrockConfigMissing"))
-			}
-			return new BedrockEmbedder(config.bedrockOptions.region, config.bedrockOptions.profile, config.modelId)
-		} else if (provider === "openrouter") {
-			if (!config.openRouterOptions?.apiKey) {
-				throw new Error(t("embeddings:serviceFactory.openRouterConfigMissing"))
-			}
-			return new OpenRouterEmbedder(
-				config.openRouterOptions.apiKey,
-				config.modelId,
-				undefined, // maxItemTokens
-				config.openRouterOptions.specificProvider,
+		}else{
+			throw new Error(
+				t("embeddings:serviceFactory.invalidEmbedderType", { embedderProvider: config.embedderProvider }),
 			)
-		}
-
-		throw new Error(
-			t("embeddings:serviceFactory.invalidEmbedderType", { embedderProvider: config.embedderProvider }),
-		)
+		}	
 	}
 
 	/**
