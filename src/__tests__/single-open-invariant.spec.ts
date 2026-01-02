@@ -50,7 +50,6 @@ describe("Single-open-task invariant", () => {
 				enableCheckpoints: true,
 				checkpointTimeout: 60,
 				fuzzyMatchThreshold: 1.0,
-				cloudUserInfo: null,
 				remoteControlEnabled: false,
 			}),
 			removeClineFromStack,
@@ -99,7 +98,6 @@ describe("Single-open-task invariant", () => {
 				checkpointTimeout: 60,
 				fuzzyMatchThreshold: 1.0,
 				experiments: {},
-				cloudUserInfo: null,
 				taskSyncEnabled: false,
 			}),
 			// Methods used by createTaskWithHistoryItem for pending edit cleanup

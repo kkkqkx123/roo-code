@@ -1,7 +1,5 @@
 import { memo, useEffect, useRef, useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useCloudUpsell } from "@src/hooks/useCloudUpsell"
-import { CloudUpsellDialog } from "@src/components/cloud/CloudUpsellDialog"
 import DismissibleUpsell from "@src/components/common/DismissibleUpsell"
 import {
 	ChevronUp,
@@ -64,10 +62,6 @@ const TaskHeader = ({
 	const { apiConfiguration, currentTaskItem, clineMessages, isBrowserSessionActive } = useExtensionState()
 	const { id: modelId, info: model } = useSelectedModel(apiConfiguration)
 	const [isTaskExpanded, setIsTaskExpanded] = useState(false)
-	const [showLongRunningTaskMessage, setShowLongRunningTaskMessage] = useState(false)
-	const { isOpen, openUpsell, closeUpsell, handleConnect } = useCloudUpsell({
-		autoOpenOnAuth: false,
-	})
 
 	// Check if the task is complete by looking at the last relevant message (skipping resume messages)
 	const isTaskComplete =
@@ -82,16 +76,6 @@ const TaskHeader = ({
 						: false
 				})()
 			: false
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (currentTaskItem && !isTaskComplete) {
-				setShowLongRunningTaskMessage(true)
-			}
-		}, 120_000) // Show upsell after 2 minutes
-
-		return () => clearTimeout(timer)
-	}, [currentTaskItem, isTaskComplete])
 
 	const textContainerRef = useRef<HTMLDivElement>(null)
 	const textRef = useRef<HTMLDivElement>(null)
@@ -122,15 +106,6 @@ const TaskHeader = ({
 
 	return (
 		<div className="group pt-2 pb-0 px-3">
-			{showLongRunningTaskMessage && !isTaskComplete && (
-				<DismissibleUpsell
-					upsellId="longRunningTask"
-					onClick={() => openUpsell()}
-					dismissOnClick={false}
-					variant="banner">
-					{t("cloud:upsell.longRunningTask")}
-				</DismissibleUpsell>
-			)}
 			<div
 				className={cn(
 					"px-3 pt-2.5 pb-2 flex flex-col gap-1.5 relative z-1 cursor-pointer",
@@ -409,10 +384,9 @@ const TaskHeader = ({
 				)}
 				{/* Todo list - always shown at bottom when todos exist */}
 				{hasTodos && <TodoListDisplay todos={todos ?? (task as any)?.tool?.todos ?? []} />}
-			</div>
-			<CloudUpsellDialog open={isOpen} onOpenChange={closeUpsell} onConnect={handleConnect} />
 		</div>
 	)
+}
 }
 
 export default memo(TaskHeader)
