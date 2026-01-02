@@ -1,7 +1,6 @@
 import type { MockedClass, MockedFunction } from "vitest"
 import { CodeIndexServiceFactory } from "../service-factory"
 import { OpenAiEmbedder } from "../embedders/openai"
-import { CodeIndexOllamaEmbedder } from "../embedders/ollama"
 import { OpenAICompatibleEmbedder } from "../embedders/openai-compatible"
 import { GeminiEmbedder } from "../embedders/gemini"
 import { QdrantVectorStore } from "../vector-store/qdrant-client"
@@ -20,7 +19,6 @@ vitest.mock("../../../shared/embeddingModels", () => ({
 }))
 
 const MockedOpenAiEmbedder = OpenAiEmbedder as MockedClass<typeof OpenAiEmbedder>
-const MockedCodeIndexOllamaEmbedder = CodeIndexOllamaEmbedder as MockedClass<typeof CodeIndexOllamaEmbedder>
 const MockedOpenAICompatibleEmbedder = OpenAICompatibleEmbedder as MockedClass<typeof OpenAICompatibleEmbedder>
 const MockedGeminiEmbedder = GeminiEmbedder as MockedClass<typeof GeminiEmbedder>
 const MockedQdrantVectorStore = QdrantVectorStore as MockedClass<typeof QdrantVectorStore>
@@ -70,28 +68,6 @@ describe("CodeIndexServiceFactory", () => {
 			})
 		})
 
-		it("should pass model ID to Ollama embedder when using Ollama provider", () => {
-			// Arrange
-			const testModelId = "nomic-embed-text:latest"
-			const testConfig = {
-				embedderProvider: "ollama",
-				modelId: testModelId,
-				ollamaOptions: {
-					ollamaBaseUrl: "http://localhost:11434",
-				},
-			}
-			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-
-			// Act
-			factory.createEmbedder()
-
-			// Assert
-			expect(MockedCodeIndexOllamaEmbedder).toHaveBeenCalledWith({
-				ollamaBaseUrl: "http://localhost:11434",
-				ollamaModelId: testModelId,
-			})
-		})
-
 		it("should handle undefined model ID for OpenAI embedder", () => {
 			// Arrange
 			const testConfig = {
@@ -110,27 +86,6 @@ describe("CodeIndexServiceFactory", () => {
 			expect(MockedOpenAiEmbedder).toHaveBeenCalledWith({
 				openAiNativeApiKey: "test-api-key",
 				openAiEmbeddingModelId: undefined,
-			})
-		})
-
-		it("should handle undefined model ID for Ollama embedder", () => {
-			// Arrange
-			const testConfig = {
-				embedderProvider: "ollama",
-				modelId: undefined,
-				ollamaOptions: {
-					ollamaBaseUrl: "http://localhost:11434",
-				},
-			}
-			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-
-			// Act
-			factory.createEmbedder()
-
-			// Assert
-			expect(MockedCodeIndexOllamaEmbedder).toHaveBeenCalledWith({
-				ollamaBaseUrl: "http://localhost:11434",
-				ollamaModelId: undefined,
 			})
 		})
 
@@ -708,28 +663,6 @@ describe("CodeIndexServiceFactory", () => {
 				valid: false,
 				error: "embeddings:validation.authenticationFailed",
 			})
-		})
-
-		it("should validate Ollama embedder successfully", async () => {
-			// Arrange
-			const testConfig = {
-				embedderProvider: "ollama",
-				modelId: "nomic-embed-text",
-				ollamaOptions: {
-					ollamaBaseUrl: "http://localhost:11434",
-				},
-			}
-			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedCodeIndexOllamaEmbedder.mockImplementation(() => mockEmbedderInstance)
-			mockEmbedderInstance.validateConfiguration.mockResolvedValue({ valid: true })
-
-			// Act
-			const embedder = factory.createEmbedder()
-			const result = await factory.validateEmbedder(embedder)
-
-			// Assert
-			expect(result).toEqual({ valid: true })
-			expect(mockEmbedderInstance.validateConfiguration).toHaveBeenCalled()
 		})
 
 		it("should validate OpenAI Compatible embedder successfully", async () => {

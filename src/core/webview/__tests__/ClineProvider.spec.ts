@@ -2383,7 +2383,8 @@ describe.skip("ContextProxy integration", () => {
 		expect(mockContextProxy.storeSecret).toBeDefined()
 		expect(mockContextProxy.setValue).toBeDefined()
 		expect(mockContextProxy.setValues).toBeDefined()
-	})
+	});
+})
 
 describe("ClineProvider - Router Models", () => {
 	let provider: ClineProvider

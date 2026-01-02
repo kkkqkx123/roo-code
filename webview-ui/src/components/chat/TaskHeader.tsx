@@ -387,6 +387,5 @@ const TaskHeader = ({
 		</div>
 	)
 }
-}
 
 export default memo(TaskHeader)

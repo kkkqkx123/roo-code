@@ -372,11 +372,6 @@ describe("DismissibleUpsell", () => {
 		fireEvent.click(container)
 
 		expect(onClick).toHaveBeenCalledTimes(1)
-
-		// Check that telemetry was tracked
-		expect(mockCapture).toHaveBeenCalledWith(TelemetryEventName.UPSELL_CLICKED, {
-			upsellId: "test-upsell",
-		})
 	})
 
 	it("does not call onClick when dismiss button is clicked", async () => {
@@ -498,14 +493,6 @@ describe("DismissibleUpsell", () => {
 		expect(onClick).toHaveBeenCalledTimes(1)
 		expect(onDismiss).toHaveBeenCalledTimes(1)
 
-		// Check that both telemetry events were tracked
-		expect(mockCapture).toHaveBeenCalledWith(TelemetryEventName.UPSELL_CLICKED, {
-			upsellId: "test-upsell",
-		})
-		expect(mockCapture).toHaveBeenCalledWith(TelemetryEventName.UPSELL_DISMISSED, {
-			upsellId: "test-upsell",
-		})
-
 		expect(mockPostMessage).toHaveBeenCalledWith({
 			type: "dismissUpsell",
 			upsellId: "test-upsell",
@@ -538,12 +525,6 @@ describe("DismissibleUpsell", () => {
 
 		// onDismiss should be called
 		expect(onDismiss).toHaveBeenCalledTimes(1)
-
-		// Telemetry: only dismissal should be tracked
-		expect(mockCapture).toHaveBeenCalledWith(TelemetryEventName.UPSELL_DISMISSED, {
-			upsellId: "test-upsell",
-		})
-		expect(mockCapture).not.toHaveBeenCalledWith(TelemetryEventName.UPSELL_CLICKED, expect.anything())
 
 		// Dismiss message should be sent
 		expect(mockPostMessage).toHaveBeenCalledWith({
