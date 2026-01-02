@@ -4,7 +4,7 @@ import { RooCodeEventName } from "./events.js"
 import type { RooCodeSettings } from "./global-settings.js"
 import type { ClineMessage, QueuedMessage, TokenUsage } from "./message.js"
 import type { ToolUsage, ToolName } from "./tool.js"
-import type { StaticAppProperties, GitProperties } from "./telemetry.js"
+import type { StaticAppProperties, GitProperties } from "./cloud.js"
 import type { TodoItem } from "./todo.js"
 
 /**

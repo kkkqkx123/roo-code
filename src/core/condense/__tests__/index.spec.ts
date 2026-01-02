@@ -1191,9 +1191,9 @@ describe("summarizeConversation with custom settings", () => {
 	})
 
 	/**
-	 * Test that telemetry is called for custom prompt usage
+	 * Test that custom prompt functionality works correctly
 	 */
-	it("should capture telemetry when using custom prompt", async () => {
+	it("should use custom prompt when provided", async () => {
 		await summarizeConversation(
 			sampleMessages,
 			mockMainApiHandler,
@@ -1211,9 +1211,9 @@ describe("summarizeConversation with custom settings", () => {
 	})
 
 	/**
-	 * Test that telemetry is called for custom API handler usage
+	 * Test that custom API handler functionality works correctly
 	 */
-	it("should capture telemetry when using custom API handler", async () => {
+	it("should use custom API handler when provided", async () => {
 		await summarizeConversation(
 			sampleMessages,
 			mockMainApiHandler,
@@ -1230,9 +1230,9 @@ describe("summarizeConversation with custom settings", () => {
 	})
 
 	/**
-	 * Test that telemetry is called with both custom prompt and API handler
+	 * Test that custom prompt and API handler work together
 	 */
-	it("should capture telemetry when using both custom prompt and API handler", async () => {
+	it("should use custom prompt and API handler together when both are provided", async () => {
 		await summarizeConversation(
 			sampleMessages,
 			mockMainApiHandler,

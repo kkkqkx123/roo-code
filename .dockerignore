@@ -84,6 +84,5 @@ src/node_modules
 !packages/config-typescript/
 !packages/evals/
 !packages/ipc/
-!packages/telemetry/
 !packages/types/
 !locales/

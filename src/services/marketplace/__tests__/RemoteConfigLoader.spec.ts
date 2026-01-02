@@ -8,11 +8,6 @@ import type { MarketplaceItemType } from "@roo-code/types"
 vi.mock("axios")
 const mockedAxios = axios as any
 
-// Mock the cloud config
-vi.mock("@roo-code/cloud", () => ({
-	getRooCodeApiUrl: () => "https://test.api.com",
-}))
-
 describe("RemoteConfigLoader", () => {
 	let loader: RemoteConfigLoader
 

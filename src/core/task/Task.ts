@@ -2823,7 +2823,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						let bgCacheReadTokens = currentTokens.cacheRead
 						let bgTotalCost = currentTokens.total
 
-						// Helper function to capture telemetry and update messages
+						// Helper function to capture usage data and update messages
 						const captureUsageData = async (
 							tokens: {
 								input: number

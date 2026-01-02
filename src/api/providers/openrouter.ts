@@ -183,7 +183,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 	}
 
 	/**
-	 * Handle OpenRouter streaming error response and report to telemetry.
+	 * Handle OpenRouter streaming error response.
 	 * OpenRouter may include metadata.raw with the actual upstream provider error.
 	 * @param error The error object (not wrapped - receives the error directly)
 	 */

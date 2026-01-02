@@ -8,7 +8,33 @@ import { globalSettingsSchema } from "./global-settings.js"
 import { providerSettingsWithIdSchema } from "./provider-settings.js"
 import { mcpMarketplaceItemSchema } from "./marketplace.js"
 import { clineMessageSchema, queuedMessageSchema, tokenUsageSchema } from "./message.js"
-import { staticAppPropertiesSchema, gitPropertiesSchema } from "./telemetry.js"
+
+/**
+ * StaticAppProperties
+ */
+
+export const staticAppPropertiesSchema = z.object({
+	extensionVersion: z.string(),
+	vscodeVersion: z.string(),
+	locale: z.string(),
+	platform: z.string(),
+	architecture: z.string(),
+})
+
+export type StaticAppProperties = z.infer<typeof staticAppPropertiesSchema>
+
+/**
+ * GitProperties
+ */
+
+export const gitPropertiesSchema = z.object({
+	gitExecutablePath: z.string().optional(),
+	gitVersion: z.string().optional(),
+	gitDir: z.string().optional(),
+	workingDirectory: z.string().optional(),
+})
+
+export type GitProperties = z.infer<typeof gitPropertiesSchema>
 
 /**
  * JWTPayload

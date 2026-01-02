@@ -293,7 +293,7 @@ export class ContextProxy {
 		// Sanitize invalid/removed apiProvider values before parsing
 		// This handles cases where a user had a provider selected that was later removed
 		// from the extension (e.g., "glama"). We sanitize here to avoid repeated
-		// schema validation errors that can cause infinite loops in telemetry.
+		// schema validation errors that can cause issues.
 		const sanitizedValues = this.sanitizeProviderValues(values)
 
 		try {
