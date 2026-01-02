@@ -16,7 +16,6 @@ import {
 	geminiModels,
 	ApiProviderError,
 } from "@roo-code/types"
-import { TelemetryService } from "@roo-code/telemetry"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 import { safeJsonParse } from "../../shared/safeJsonParse"
@@ -332,10 +331,6 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				}
 			}
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error)
-			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "createMessage")
-			TelemetryService.instance.captureException(apiError)
-
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_stream", { error: error.message }))
 			}
@@ -443,10 +438,6 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 			return text
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error)
-			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "completePrompt")
-			TelemetryService.instance.captureException(apiError)
-
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_complete_prompt", { error: error.message }))
 			}
