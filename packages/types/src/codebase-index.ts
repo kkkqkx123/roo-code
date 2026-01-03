@@ -15,6 +15,134 @@ export const CODEBASE_INDEX_DEFAULTS = {
 } as const
 
 /**
+ * VectorStorageConfig
+ */
+
+export const vectorStorageConfigSchema = z.object({
+	mode: z.enum(["auto", "preset", "custom"]),
+	preset: z.enum(["small", "medium", "large"]).optional(),
+	customConfig: z
+		.object({
+			hnsw: z.object({
+				m: z.number().min(2).max(128),
+				ef_construct: z.number().min(10).max(1000),
+				on_disk: z.boolean(),
+			}),
+			vectors: z.object({
+				on_disk: z.boolean(),
+				quantization: z
+					.object({
+						enabled: z.boolean(),
+						type: z.enum(["scalar", "product"]),
+						bits: z.number().optional(),
+					})
+					.optional(),
+			}),
+			wal: z
+				.object({
+					capacity_mb: z.number(),
+					segments: z.number(),
+				})
+				.optional(),
+			optimizer: z
+				.object({
+					indexing_threshold: z.number(),
+				})
+				.optional(),
+		})
+		.optional(),
+	thresholds: z
+		.object({
+			small: z.number(),
+			medium: z.number(),
+		})
+		.optional(),
+})
+
+export type VectorStorageConfig = z.infer<typeof vectorStorageConfigSchema>
+
+export type CustomVectorStorageConfig = NonNullable<z.infer<typeof vectorStorageConfigSchema>["customConfig"]>
+
+export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
+	small: {
+		mode: "preset",
+		preset: "small",
+		customConfig: {
+			hnsw: {
+				m: 16,
+				ef_construct: 128,
+				on_disk: false,
+			},
+			vectors: {
+				on_disk: false,
+			},
+			wal: {
+				capacity_mb: 32,
+				segments: 2,
+			},
+			optimizer: {
+				indexing_threshold: 10000,
+			},
+		},
+	},
+	medium: {
+		mode: "preset",
+		preset: "medium",
+		customConfig: {
+			hnsw: {
+				m: 24,
+				ef_construct: 256,
+				on_disk: true,
+			},
+			vectors: {
+				on_disk: true,
+			},
+			wal: {
+				capacity_mb: 64,
+				segments: 4,
+			},
+			optimizer: {
+				indexing_threshold: 20000,
+			},
+		},
+	},
+	large: {
+		mode: "preset",
+		preset: "large",
+		customConfig: {
+			hnsw: {
+				m: 32,
+				ef_construct: 256,
+				on_disk: true,
+			},
+			vectors: {
+				on_disk: true,
+				quantization: {
+					enabled: true,
+					type: "scalar",
+					bits: 8,
+				},
+			},
+			wal: {
+				capacity_mb: 128,
+				segments: 8,
+			},
+			optimizer: {
+				indexing_threshold: 50000,
+			},
+		},
+	},
+}
+
+export const DEFAULT_VECTOR_STORAGE_CONFIG: VectorStorageConfig = {
+	mode: "auto",
+	thresholds: {
+		small: 10000,
+		medium: 100000,
+	},
+}
+
+/**
  * CodebaseIndexConfig
  */
 
@@ -42,6 +170,8 @@ export const codebaseIndexConfigSchema = z.object({
 		.min(CODEBASE_INDEX_DEFAULTS.MIN_SEARCH_RESULTS)
 		.max(CODEBASE_INDEX_DEFAULTS.MAX_SEARCH_RESULTS)
 		.optional(),
+	// Vector storage configuration
+	codebaseIndexVectorStorageConfig: vectorStorageConfigSchema.optional(),
 	// OpenAI Compatible specific fields
 	codebaseIndexOpenAiCompatibleBaseUrl: z.string().optional(),
 	codebaseIndexOpenAiCompatibleModelDimension: z.number().optional(),

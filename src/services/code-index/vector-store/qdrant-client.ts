@@ -6,6 +6,7 @@ import { IVectorStore } from "../interfaces/vector-store"
 import { Payload, VectorStoreSearchResult } from "../interfaces"
 import { DEFAULT_MAX_SEARCH_RESULTS, DEFAULT_SEARCH_MIN_SCORE, QDRANT_CODE_BLOCK_NAMESPACE } from "../constants"
 import { t } from "../../../i18n"
+import { VectorStorageConfigManager } from "../vector-storage-config-manager"
 
 /**
  * Qdrant implementation of the vector store interface
@@ -18,13 +19,23 @@ export class QdrantVectorStore implements IVectorStore {
 	private readonly collectionName: string
 	private readonly qdrantUrl: string = "http://localhost:6333"
 	private readonly workspacePath: string
+	private readonly configManager?: VectorStorageConfigManager
 
 	/**
 	 * Creates a new Qdrant vector store
 	 * @param workspacePath Path to the workspace
 	 * @param url Optional URL to the Qdrant server
+	 * @param vectorSize Size of the vectors
+	 * @param apiKey Optional API key for Qdrant
+	 * @param configManager Optional vector storage configuration manager
 	 */
-	constructor(workspacePath: string, url: string, vectorSize: number, apiKey?: string) {
+	constructor(
+		workspacePath: string,
+		url: string,
+		vectorSize: number,
+		apiKey?: string,
+		configManager?: VectorStorageConfigManager,
+	) {
 		// Parse the URL to determine the appropriate QdrantClient configuration
 		const parsedUrl = this.parseQdrantUrl(url)
 
@@ -81,6 +92,7 @@ export class QdrantVectorStore implements IVectorStore {
 		const hash = createHash("sha256").update(workspacePath).digest("hex")
 		this.vectorSize = vectorSize
 		this.collectionName = `ws-${hash.substring(0, 16)}`
+		this.configManager = configManager
 	}
 
 	/**
@@ -127,6 +139,22 @@ export class QdrantVectorStore implements IVectorStore {
 		}
 	}
 
+	private async getConfig(): Promise<{
+		vectors: { on_disk: boolean }
+		hnsw: { m: number; ef_construct: number; on_disk: boolean }
+		optimizer?: { indexing_threshold: number }
+		wal?: { capacity_mb: number; segments: number }
+	}> {
+		if (this.configManager) {
+			return await this.configManager.getCollectionConfig(this.collectionName)
+		}
+		return {
+			vectors: { on_disk: true },
+			hnsw: { m: 64, ef_construct: 512, on_disk: true },
+			optimizer: { indexing_threshold: 20000 },
+		}
+	}
+
 	private async getCollectionInfo(): Promise<Schemas["CollectionInfo"] | null> {
 		try {
 			const collectionInfo = await this.client.getCollection(this.collectionName)
@@ -152,17 +180,20 @@ export class QdrantVectorStore implements IVectorStore {
 			const collectionInfo = await this.getCollectionInfo()
 
 			if (collectionInfo === null) {
-				// Collection info not retrieved (assume not found or inaccessible), create it
+				const config = await this.getConfig()
 				await this.client.createCollection(this.collectionName, {
 					vectors: {
 						size: this.vectorSize,
 						distance: this.DISTANCE_METRIC,
-						on_disk: true,
+						on_disk: config.vectors.on_disk,
 					},
 					hnsw_config: {
-						m: 64,
-						ef_construct: 512,
-						on_disk: true,
+						m: config.hnsw.m,
+						ef_construct: config.hnsw.ef_construct,
+						on_disk: config.hnsw.on_disk,
+					},
+					optimizers_config: {
+						indexing_threshold: config.optimizer?.indexing_threshold ?? 20000,
 					},
 				})
 				created = true
@@ -248,18 +279,22 @@ export class QdrantVectorStore implements IVectorStore {
 				`[QdrantVectorStore] Creating new collection ${this.collectionName} with vector size ${this.vectorSize}...`,
 			)
 			recreationAttempted = true
+			const config = await this.getConfig()
 			await this.client.createCollection(this.collectionName, {
 				vectors: {
 					size: this.vectorSize,
-					distance: this.DISTANCE_METRIC,
-					on_disk: true,
-				},
-				hnsw_config: {
-					m: 64,
-					ef_construct: 512,
-					on_disk: true,
-				},
-			})
+				distance: this.DISTANCE_METRIC,
+				on_disk: config.vectors.on_disk,
+			},
+			hnsw_config: {
+				m: config.hnsw.m,
+				ef_construct: config.hnsw.ef_construct,
+				on_disk: config.hnsw.on_disk,
+			},
+			optimizers_config: {
+				indexing_threshold: config.optimizer?.indexing_threshold ?? 20000,
+			},
+		})
 			console.log(`[QdrantVectorStore] Successfully created new collection ${this.collectionName}`)
 			return true
 		} catch (recreationError) {

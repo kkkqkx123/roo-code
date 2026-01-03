@@ -13,6 +13,8 @@ import { Ignore } from "ignore"
 import { t } from "../../i18n"
 import { Package } from "../../shared/package"
 import { BATCH_SEGMENT_THRESHOLD } from "./constants"
+import { VectorStorageConfigManager } from "./vector-storage-config-manager"
+import { CollectionSizeEstimator } from "./vector-store/collection-size-estimator"
 
 /**
  * Factory class responsible for creating and configuring code indexing service dependencies.
@@ -115,8 +117,22 @@ export class CodeIndexServiceFactory {
 			throw new Error(t("embeddings:serviceFactory.qdrantUrlMissing"))
 		}
 
-		// Assuming constructor is updated: new QdrantVectorStore(workspacePath, url, vectorSize, apiKey?)
-		return new QdrantVectorStore(this.workspacePath, config.qdrantUrl, vectorSize, config.qdrantApiKey)
+		const collectionSizeEstimator = new CollectionSizeEstimator(
+			config.qdrantUrl,
+			config.qdrantApiKey,
+		)
+		const vectorStorageConfigManager = new VectorStorageConfigManager(
+			this.configManager.getContextProxy(),
+			collectionSizeEstimator,
+		)
+
+		return new QdrantVectorStore(
+			this.workspacePath,
+			config.qdrantUrl,
+			vectorSize,
+			config.qdrantApiKey,
+			vectorStorageConfigManager,
+		)
 	}
 
 	/**

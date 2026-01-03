@@ -13,6 +13,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { AlertTriangle } from "lucide-react"
 
 import { CODEBASE_INDEX_DEFAULTS } from "@roo-code/types"
+import type { VectorStorageConfig } from "@roo-code/types"
 
 import type { EmbedderProvider } from "@roo/embeddingModels"
 import type { IndexingStatus } from "@roo/ExtensionMessage"
@@ -44,6 +45,8 @@ import {
 	Button,
 } from "@src/components/ui"
 import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
+import { VectorStorageSettings } from "@src/components/settings/VectorStorageSettings"
+import { VectorStorageAdvancedSettings } from "@src/components/settings/VectorStorageAdvancedSettings"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
 import {
 	useOpenRouterModelProviders,
@@ -69,6 +72,9 @@ interface LocalCodeIndexSettings {
 	codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 	codebaseIndexSearchMaxResults?: number
 	codebaseIndexSearchMinScore?: number
+
+	// Vector storage configuration
+	codebaseIndexVectorStorageConfig?: VectorStorageConfig
 
 	// Bedrock-specific settings
 	codebaseIndexBedrockRegion?: string
@@ -1588,6 +1594,33 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												<span className="codicon codicon-discard" />
 											</VSCodeButton>
 										</div>
+									</div>
+
+									{/* Vector Storage Configuration */}
+									<div className="space-y-4 pt-4 border-t border-vscode-panel-border">
+										<h4 className="text-sm font-semibold">
+											{t("settings:codeIndex.vectorStorage.title")}
+										</h4>
+										<VectorStorageSettings
+											config={
+												currentSettings.codebaseIndexVectorStorageConfig || {
+													mode: "auto",
+												}
+											}
+											onChange={(config) => updateSetting("codebaseIndexVectorStorageConfig", config)}
+										/>
+										{currentSettings.codebaseIndexVectorStorageConfig?.mode === "custom" &&
+											currentSettings.codebaseIndexVectorStorageConfig.customConfig && (
+												<VectorStorageAdvancedSettings
+													config={currentSettings.codebaseIndexVectorStorageConfig.customConfig}
+													onChange={(customConfig) =>
+														updateSetting("codebaseIndexVectorStorageConfig", {
+															...currentSettings.codebaseIndexVectorStorageConfig,
+															customConfig,
+														})
+													}
+												/>
+											)}
 									</div>
 								</div>
 							)}
