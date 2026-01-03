@@ -1,4 +1,4 @@
-import * as vscode from "vscode"
+// 使用字符/4判断，假定100token/vector
 import * as path from "path"
 import * as fs from "fs/promises"
 import { listFiles } from "../glob/list-files"
@@ -101,9 +101,5 @@ export class TokenBasedSizeEstimator {
 
 		const codeMultiplier = 1.2
 		return Math.floor(estimatedTokens * codeMultiplier)
-	}
-
-	async estimateVectorCountFromFiles(fileCount: number): Promise<number> {
-		return fileCount * this.avgVectorsPerFile
 	}
 }

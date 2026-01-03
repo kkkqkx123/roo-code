@@ -1,9 +1,6 @@
 import { type AgentPageContent } from "@/app/shared/agent-page-content"
 import Link from "next/link"
 
-// Workaround for next/image choking on these for some reason
-import hero from "../../public/heroes/agent-pr-fixer.png"
-
 // Re-export for convenience
 export type { AgentPageContent }
 
@@ -16,12 +13,6 @@ export const content: AgentPageContent = {
 			"Roo Code's PR Fixer applies high-quality changes to your PRs, right from GitHub. Invoke via a PR comment and it will read the entire comment history to understand context, agreements, and tradeoffs — then implement the right fix.",
 			"As always, you bring the model key; we orchestrate smart, efficient workflows.",
 		],
-		image: {
-			url: hero.src,
-			width: 800,
-			height: 711,
-			alt: "Example of a PR Fixer applying changes from review comments",
-		},
 		crossAgentLink: {
 			text: "Works great with",
 			links: [
