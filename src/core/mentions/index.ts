@@ -2,7 +2,6 @@ import fs from "fs/promises"
 import * as path from "path"
 
 import * as vscode from "vscode"
-import { isBinaryFile } from "isbinaryfile"
 
 import { mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "../../shared/context-mentions"
 
@@ -20,6 +19,7 @@ import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { getCommand, type Command } from "../../services/command/commands"
 
 import { t } from "../../i18n"
+import { isBinaryFileOptimized } from "../../utils/binary-file-detector"
 
 function getUrlErrorMessage(error: unknown): string {
 	const errorMessage = error instanceof Error ? error.message : String(error)
@@ -314,7 +314,7 @@ async function getFileOrFolderContent(
 						fileContentPromises.push(
 							(async () => {
 								try {
-									const isBinary = await isBinaryFile(absoluteFilePath).catch(() => false)
+									const isBinary = await isBinaryFileOptimized(absoluteFilePath)
 									if (isBinary) {
 										return undefined
 									}

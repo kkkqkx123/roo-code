@@ -1,5 +1,4 @@
 import path from "path"
-import { isBinaryFile } from "isbinaryfile"
 import type { FileEntry, LineRange } from "@roo-code/types"
 import { isNativeProtocol, ANTHROPIC_DEFAULT_MAX_TOKENS } from "@roo-code/types"
 
@@ -17,6 +16,7 @@ import { extractTextFromFile, addLineNumbers, getSupportedBinaryFormats } from "
 import { parseSourceCodeDefinitionsForFile } from "../../services/tree-sitter"
 import { parseXml } from "../../utils/xml"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { isBinaryFileOptimized } from "../../utils/binary-file-detector"
 import {
 	DEFAULT_MAX_IMAGE_FILE_SIZE_MB,
 	DEFAULT_MAX_TOTAL_IMAGE_SIZE_MB,
@@ -338,7 +338,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				const fullPath = path.resolve(task.cwd, relPath)
 
 				try {
-					const [totalLines, isBinary] = await Promise.all([countFileLines(fullPath), isBinaryFile(fullPath)])
+					const isBinary = await isBinaryFileOptimized(fullPath)
 
 					if (isBinary) {
 						const fileExtension = path.extname(relPath).toLowerCase()
@@ -387,7 +387,6 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 						}
 
 						if (supportedBinaryFormats && supportedBinaryFormats.includes(fileExtension)) {
-							// Use extractTextFromFile for supported binary formats (PDF, DOCX, etc.)
 							try {
 								const content = await extractTextFromFile(fullPath)
 								const numberedContent = addLineNumbers(content)
@@ -429,6 +428,8 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 							continue
 						}
 					}
+
+					const totalLines = await countFileLines(fullPath)
 
 					if (fileResult.lineRanges && fileResult.lineRanges.length > 0) {
 						const rangeResults: string[] = []

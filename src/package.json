@@ -411,6 +411,49 @@
 					"type": "boolean",
 					"default": false,
 					"description": "%settings.debug.description%"
+				},
+				"roo-cline.binaryFileIgnorePatterns": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"*.png",
+						"*.jpg",
+						"*.jpeg",
+						"*.gif",
+						"*.bmp",
+						"*.ico",
+						"*.svg",
+						"*.webp",
+						"*.pdf",
+						"*.zip",
+						"*.tar",
+						"*.gz",
+						"*.rar",
+						"*.7z",
+						"*.exe",
+						"*.dll",
+						"*.so",
+						"*.dylib",
+						"*.bin",
+						"*.dat",
+						"*.db",
+						"*.sqlite",
+						"*.mp3",
+						"*.mp4",
+						"*.avi",
+						"*.mov",
+						"*.wav",
+						"*.flac",
+						"*.ogg",
+						"*.woff",
+						"*.woff2",
+						"*.ttf",
+						"*.otf",
+						"*.eot"
+					],
+					"description": "%settings.binaryFileIgnorePatterns.description%"
 				}
 			}
 		}

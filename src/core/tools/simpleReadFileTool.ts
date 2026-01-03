@@ -1,5 +1,4 @@
 import path from "path"
-import { isBinaryFile } from "isbinaryfile"
 
 import { Task } from "../task/Task"
 import { ClineSayTool } from "../../shared/ExtensionMessage"
@@ -14,6 +13,7 @@ import { readLines } from "../../integrations/misc/read-lines"
 import { extractTextFromFile, addLineNumbers, getSupportedBinaryFormats } from "../../integrations/misc/extract-text"
 import { parseSourceCodeDefinitionsForFile } from "../../services/tree-sitter"
 import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
+import { isBinaryFileOptimized } from "../../utils/binary-file-detector"
 import {
 	DEFAULT_MAX_IMAGE_FILE_SIZE_MB,
 	DEFAULT_MAX_TOTAL_IMAGE_SIZE_MB,
@@ -125,8 +125,8 @@ export async function simpleReadFileTool(
 			await cline.say("user_feedback", text, images)
 		}
 
-		// Process the file
-		const [totalLines, isBinary] = await Promise.all([countFileLines(fullPath), isBinaryFile(fullPath)])
+		// Process the file - check if binary first to avoid unnecessary line counting
+		const isBinary = await isBinaryFileOptimized(fullPath)
 
 		// Handle binary files
 		if (isBinary) {
@@ -200,6 +200,9 @@ export async function simpleReadFileTool(
 				return
 			}
 		}
+
+		// Count lines only for non-binary files
+		const totalLines = await countFileLines(fullPath)
 
 		// Handle definitions-only mode
 		if (maxReadFileLine === 0) {
