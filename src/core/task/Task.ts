@@ -1622,7 +1622,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	private async resumeTaskFromHistory() {
+		console.log(`[resumeTaskFromHistory] Loading saved messages for task ${this.taskId}`)
 		const modifiedClineMessages = await this.getSavedClineMessages()
+		console.log(`[resumeTaskFromHistory] Found ${modifiedClineMessages.length} messages for task ${this.taskId}`)
+
+		// If no messages were loaded, this might indicate a problem with the file
+		if (modifiedClineMessages.length === 0) {
+			console.warn(`[resumeTaskFromHistory] No messages found for task ${this.taskId}, this may cause UI to appear empty`)
+		}
 
 		// Remove any resume messages that may have been added before.
 		const lastRelevantMessageIndex = findLastIndex(

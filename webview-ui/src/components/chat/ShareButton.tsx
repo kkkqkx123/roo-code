@@ -5,7 +5,6 @@ import { Share2Icon } from "lucide-react"
 import { type HistoryItem, type ShareVisibility } from "@roo-code/types"
 
 import { vscode } from "@/utils/vscode"
-import { useExtensionState } from "@/context/ExtensionStateContext"
 import {
 	Popover,
 	PopoverContent,

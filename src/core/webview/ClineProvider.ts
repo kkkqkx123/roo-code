@@ -21,8 +21,6 @@ import {
 	type TerminalActionId,
 	type TerminalActionPromptType,
 	type HistoryItem,
-	type CloudUserInfo,
-	type CloudOrganizationMembership,
 	type CreateTaskOptions,
 	type TokenUsage,
 	type ToolUsage,
@@ -2437,8 +2435,59 @@ export class ClineProvider
 			}
 		}
 
+		// Verify that UI messages file exists and is accessible before rehydration
+		if (uiMessagesFilePath) {
+			try {
+				const fs = require('fs/promises')
+				const fileExists = await fs.access(uiMessagesFilePath).then(() => true).catch(() => false)
+				if (fileExists) {
+					// Verify the file is readable and contains valid JSON
+					const fileContent = await fs.readFile(uiMessagesFilePath, 'utf8')
+					if (fileContent.trim()) {
+						try {
+							JSON.parse(fileContent)
+							console.log(`[cancelTask] UI messages file verified: ${uiMessagesFilePath}`)
+						} catch (jsonError) {
+							console.warn(`[cancelTask] UI messages file contains invalid JSON: ${jsonError.message}`)
+						}
+					} else {
+						console.warn(`[cancelTask] UI messages file is empty: ${uiMessagesFilePath}`)
+					}
+				} else {
+					console.warn(`[cancelTask] UI messages file does not exist: ${uiMessagesFilePath}`)
+				}
+			} catch (error) {
+				console.error(`[cancelTask] Error checking UI messages file: ${error.message}`)
+			}
+		}
+
 		// Clears task again, so we need to abortTask manually above.
 		await this.createTaskWithHistoryItem({ ...historyItem, rootTask, parentTask })
+
+		// Verify that the rehydrated task has loaded UI messages successfully
+		const rehydratedTask = this.getCurrentTask()
+		if (rehydratedTask && rehydratedTask.clineMessages.length === 0) {
+			console.warn(`[cancelTask] Rehydrated task has no UI messages, attempting to reload from file`)
+			// Force reload messages from file
+			try {
+				const globalStoragePath = this.contextProxy.globalStorageUri.fsPath
+				const messages = await readTaskMessages({
+					taskId: rehydratedTask.taskId,
+					globalStoragePath
+				})
+				if (messages.length > 0) {
+					console.log(`[cancelTask] Found ${messages.length} messages in file, updating task state`)
+					rehydratedTask.clineMessages = messages
+					await this.postStateToWebview()
+				} else {
+					console.warn(`[cancelTask] No messages found in file either, UI may appear empty`)
+				}
+			} catch (reloadError) {
+				console.error(`[cancelTask] Error reloading messages from file: ${reloadError.message}`)
+			}
+		} else if (rehydratedTask) {
+			console.log(`[cancelTask] Rehydrated task has ${rehydratedTask.clineMessages.length} UI messages`)
+		}
 	}
 
 	// Clear the current task without treating it as a subtask.

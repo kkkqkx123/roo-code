@@ -8,7 +8,6 @@ import {
 	type ExperimentId,
 	type TodoItem,
 	type OrganizationAllowList,
-	type CloudOrganizationMembership,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"

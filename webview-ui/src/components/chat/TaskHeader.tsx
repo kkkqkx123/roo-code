@@ -1,6 +1,5 @@
-import { memo, useEffect, useRef, useState, useMemo } from "react"
+import { memo, useRef, useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import DismissibleUpsell from "@src/components/common/DismissibleUpsell"
 import {
 	ChevronUp,
 	ChevronDown,
@@ -16,7 +15,6 @@ import prettyBytes from "pretty-bytes"
 import type { ClineMessage } from "@roo-code/types"
 
 import { getModelMaxOutputTokens } from "@roo/api"
-import { findLastIndex } from "@roo/array"
 
 import { formatLargeNumber } from "@src/utils/format"
 import { cn } from "@src/lib/utils"
@@ -62,20 +60,6 @@ const TaskHeader = ({
 	const { apiConfiguration, currentTaskItem, clineMessages, isBrowserSessionActive } = useExtensionState()
 	const { id: modelId, info: model } = useSelectedModel(apiConfiguration)
 	const [isTaskExpanded, setIsTaskExpanded] = useState(false)
-
-	// Check if the task is complete by looking at the last relevant message (skipping resume messages)
-	const isTaskComplete =
-		clineMessages && clineMessages.length > 0
-			? (() => {
-					const lastRelevantIndex = findLastIndex(
-						clineMessages,
-						(m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"),
-					)
-					return lastRelevantIndex !== -1
-						? clineMessages[lastRelevantIndex]?.ask === "completion_result"
-						: false
-				})()
-			: false
 
 	const textContainerRef = useRef<HTMLDivElement>(null)
 	const textRef = useRef<HTMLDivElement>(null)

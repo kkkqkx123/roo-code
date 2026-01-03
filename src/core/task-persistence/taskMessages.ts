@@ -23,9 +23,24 @@ export async function readTaskMessages({
 	const fileExists = await fileExistsAtPath(filePath)
 
 	if (fileExists) {
-		return JSON.parse(await fs.readFile(filePath, "utf8"))
+		try {
+			const fileContent = await fs.readFile(filePath, "utf8")
+			if (!fileContent.trim()) {
+				console.warn(`[readTaskMessages] UI messages file is empty for task ${taskId}: ${filePath}`)
+				return []
+			}
+			const messages = JSON.parse(fileContent)
+			console.log(`[readTaskMessages] Successfully loaded ${messages.length} UI messages for task ${taskId}`)
+			return messages
+		} catch (error) {
+			console.error(`[readTaskMessages] Error reading UI messages file for task ${taskId}: ${error.message}`)
+			console.error(`[readTaskMessages] File path: ${filePath}`)
+			// Return empty array to allow graceful recovery
+			return []
+		}
 	}
 
+	console.log(`[readTaskMessages] No UI messages file found for task ${taskId}: ${filePath}`)
 	return []
 }
 
