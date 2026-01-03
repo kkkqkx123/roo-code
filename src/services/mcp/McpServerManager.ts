@@ -1,6 +1,5 @@
 import * as vscode from "vscode"
-import { McpHub } from "./McpHub"
-import { ClineProvider } from "../../core/webview/ClineProvider"
+import { McpHub, ClineProviderMcpLike } from "./McpHub"
 
 /**
  * Singleton manager for MCP server instances.
@@ -9,7 +8,7 @@ import { ClineProvider } from "../../core/webview/ClineProvider"
 export class McpServerManager {
 	private static instance: McpHub | null = null
 	private static readonly GLOBAL_STATE_KEY = "mcpHubInstanceId"
-	private static providers: Set<ClineProvider> = new Set()
+	private static providers: Set<ClineProviderMcpLike> = new Set()
 	private static initializationPromise: Promise<McpHub> | null = null
 
 	/**
@@ -17,7 +16,7 @@ export class McpServerManager {
 	 * Creates a new instance if one doesn't exist.
 	 * Thread-safe implementation using a promise-based lock.
 	 */
-	static async getInstance(context: vscode.ExtensionContext, provider: ClineProvider): Promise<McpHub> {
+	static async getInstance(context: vscode.ExtensionContext, provider: ClineProviderMcpLike): Promise<McpHub> {
 		// Register the provider
 		this.providers.add(provider)
 
@@ -54,7 +53,7 @@ export class McpServerManager {
 	 * Remove a provider from the tracked set.
 	 * This is called when a webview is disposed.
 	 */
-	static unregisterProvider(provider: ClineProvider): void {
+	static unregisterProvider(provider: ClineProviderMcpLike): void {
 		this.providers.delete(provider)
 	}
 
@@ -63,7 +62,7 @@ export class McpServerManager {
 	 */
 	static notifyProviders(message: any): void {
 		this.providers.forEach((provider) => {
-			provider.postMessageToWebview(message).catch((error) => {
+			provider.postMessageToWebview(message).catch((error: any) => {
 				console.error("Failed to notify provider:", error)
 			})
 		})

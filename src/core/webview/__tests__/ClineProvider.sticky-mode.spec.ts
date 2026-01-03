@@ -449,11 +449,8 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock getTaskWithId
 			vi.spyOn(provider, "getTaskWithId").mockResolvedValue({
+				task: undefined,
 				historyItem,
-				taskDirPath: "/test/path",
-				apiConversationHistoryFilePath: "/test/path/api_history.json",
-				uiMessagesFilePath: "/test/path/ui_messages.json",
-				apiConversationHistory: [],
 			})
 
 			// Mock handleModeSwitch to track calls
@@ -648,11 +645,8 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock getTaskWithId
 			vi.spyOn(provider, "getTaskWithId").mockResolvedValue({
+				task: undefined,
 				historyItem,
-				taskDirPath: "/test/path",
-				apiConversationHistoryFilePath: "/test/path/api_history.json",
-				uiMessagesFilePath: "/test/path/ui_messages.json",
-				apiConversationHistory: [],
 			})
 
 			// Mock handleModeSwitch to track calls
@@ -734,11 +728,8 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock getTaskWithId
 			vi.spyOn(provider, "getTaskWithId").mockResolvedValue({
+				task: undefined,
 				historyItem,
-				taskDirPath: "/test/path",
-				apiConversationHistoryFilePath: "/test/path/api_history.json",
-				uiMessagesFilePath: "/test/path/ui_messages.json",
-				apiConversationHistory: [],
 			})
 
 			// Mock handleModeSwitch to track calls
@@ -1143,11 +1134,8 @@ describe("ClineProvider - Sticky Mode", () => {
 			vi.spyOn(provider, "getTaskWithId").mockImplementation(async () => {
 				await new Promise((resolve) => setTimeout(resolve, 100))
 				return {
+					task: undefined,
 					historyItem,
-					taskDirPath: "/test/path",
-					apiConversationHistoryFilePath: "/test/path/api_history.json",
-					uiMessagesFilePath: "/test/path/ui_messages.json",
-					apiConversationHistory: [],
 				}
 			})
 

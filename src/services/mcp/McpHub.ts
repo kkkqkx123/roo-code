@@ -19,8 +19,20 @@ import * as vscode from "vscode"
 import { z } from "zod"
 import { t } from "../../i18n"
 
-import { ClineProvider } from "../../core/webview/ClineProvider"
+import type { TaskProviderLike } from "@roo-code/types"
 import { GlobalFileNames } from "../../shared/globalFileNames"
+
+/**
+ * Extended interface for ClineProvider-like objects with MCP-specific methods
+ */
+export interface ClineProviderMcpLike extends TaskProviderLike {
+	ensureMcpServersDirectoryExists(): Promise<string>
+	ensureSettingsDirectoryExists(): Promise<string>
+	getState(): Promise<any>
+	context: vscode.ExtensionContext
+	postMessageToWebview(message: any): Promise<void>
+}
+
 import {
 	McpResource,
 	McpResourceResponse,
@@ -143,7 +155,7 @@ const McpSettingsSchema = z.object({
 })
 
 export class McpHub {
-	private providerRef: WeakRef<ClineProvider>
+	private providerRef: WeakRef<ClineProviderMcpLike>
 	private disposables: vscode.Disposable[] = []
 	private settingsWatcher?: vscode.FileSystemWatcher
 	private fileWatchers: Map<string, FSWatcher[]> = new Map()
@@ -157,7 +169,7 @@ export class McpHub {
 	private flagResetTimer?: NodeJS.Timeout
 	private sanitizedNameRegistry: Map<string, string> = new Map()
 
-	constructor(provider: ClineProvider) {
+	constructor(provider: ClineProviderMcpLike) {
 		this.providerRef = new WeakRef(provider)
 		this.watchMcpSettingsFile()
 		this.watchProjectMcpFile().catch(console.error)
@@ -1372,7 +1384,7 @@ export class McpHub {
 		})
 
 		// Send sorted servers to webview
-		const targetProvider: ClineProvider | undefined = this.providerRef.deref()
+		const targetProvider: ClineProviderMcpLike | undefined = this.providerRef.deref()
 
 		if (targetProvider) {
 			const serversToSend = sortedConnections.map((connection) => connection.server)

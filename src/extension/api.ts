@@ -203,7 +203,7 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 	}
 
 	public isReady() {
-		return this.sidebarProvider.viewLaunched
+		return this.sidebarProvider.isViewLaunched
 	}
 
 	private registerListeners(provider: ClineProvider) {
@@ -393,7 +393,11 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 			throw new Error(`Profile with name "${name}" already exists`)
 		}
 
-		const id = await this.sidebarProvider.upsertProviderProfile(name, profile ?? {}, activate)
+		const id = await this.sidebarProvider.upsertProviderProfile(
+			name,
+			profile || {},
+			activate,
+		)
 
 		if (!id) {
 			throw new Error(`Failed to create profile with name "${name}"`)
@@ -413,7 +417,11 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 			throw new Error(`Profile with name "${name}" does not exist`)
 		}
 
-		const id = await this.sidebarProvider.upsertProviderProfile(name, profile, activate)
+		const id = await this.sidebarProvider.upsertProviderProfile(
+			name,
+			profile,
+			activate,
+		)
 
 		if (!id) {
 			throw new Error(`Failed to update profile with name "${name}"`)
@@ -427,7 +435,11 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 		profile: ProviderSettings,
 		activate: boolean = true,
 	): Promise<string | undefined> {
-		const id = await this.sidebarProvider.upsertProviderProfile(name, profile, activate)
+		const id = await this.sidebarProvider.upsertProviderProfile(
+			name,
+			profile,
+			activate,
+		)
 
 		if (!id) {
 			throw new Error(`Failed to upsert profile with name "${name}"`)

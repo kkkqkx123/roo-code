@@ -121,8 +121,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 				const lastUserMsgIndex = userMsgIndices[userMsgIndices.length - 1] ?? -1
 				const secondLastMsgUserIndex = userMsgIndices[userMsgIndices.length - 2] ?? -1
 
-				try {
-					stream = await this.client.messages.create(
+				stream = await this.client.messages.create(
 						{
 							model: modelId,
 							max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
@@ -174,14 +173,10 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 							}
 						})(),
 					)
-				} catch (error) {
-					throw error
-				}
 				break
 			}
 			default: {
-				try {
-					stream = (await this.client.messages.create({
+				stream = (await this.client.messages.create({
 						model: modelId,
 						max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 						temperature,
@@ -189,10 +184,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 						messages: sanitizedMessages,
 						stream: true,
 						...nativeToolParams,
-					})) as any
-				} catch (error) {
-					throw error
-				}
+				})) as any
 				break
 			}
 		}
@@ -367,18 +359,14 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		let { id: model, temperature } = this.getModel()
 
 		let message
-		try {
-			message = await this.client.messages.create({
-				model,
-				max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
-				thinking: undefined,
-				temperature,
-				messages: [{ role: "user", content: prompt }],
-				stream: false,
-			})
-		} catch (error) {
-			throw error
-		}
+		message = await this.client.messages.create({
+			model,
+			max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
+			thinking: undefined,
+			temperature,
+			messages: [{ role: "user", content: prompt }],
+			stream: false,
+		})
 
 		const content = message.content.find(({ type }) => type === "text")
 		return content?.type === "text" ? content.text : ""
