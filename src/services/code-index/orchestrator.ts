@@ -5,6 +5,7 @@ import { CodeIndexStateManager, IndexingState } from "./state-manager"
 import { IFileWatcher, IVectorStore, BatchProcessingSummary } from "./interfaces"
 import { DirectoryScanner } from "./processors"
 import { CacheManager } from "./cache-manager"
+import { TokenBasedSizeEstimator } from "./token-based-size-estimator"
 import { t } from "../../i18n"
 
 /**
@@ -22,6 +23,7 @@ export class CodeIndexOrchestrator {
 		private readonly vectorStore: IVectorStore,
 		private readonly scanner: DirectoryScanner,
 		private readonly fileWatcher: IFileWatcher,
+		private readonly tokenBasedSizeEstimator: TokenBasedSizeEstimator,
 	) {}
 
 	/**
@@ -116,8 +118,33 @@ export class CodeIndexOrchestrator {
 		this._isProcessing = true
 		this.stateManager.setSystemState("Indexing", "Initializing services...")
 
-		// Track whether we successfully connected to Qdrant and started indexing
-		// This helps us decide whether to preserve cache on error
+		const collectionExists = await this.vectorStore.collectionExists()
+
+		if (!collectionExists) {
+			this.stateManager.setSystemState("Indexing", "Estimating collection size...")
+
+			const estimation = await this.tokenBasedSizeEstimator.estimateCollectionSize(this.workspacePath)
+
+			console.log(
+				`[CodeIndexOrchestrator] Collection size estimation: ${estimation.estimatedVectorCount} vectors from ${estimation.fileCount} files (${estimation.estimatedTokenCount} tokens)`,
+			)
+
+			if (this.vectorStore.setCollectionConfigFromEstimation) {
+				await this.vectorStore.setCollectionConfigFromEstimation(estimation)
+			}
+
+			const config = this.configManager.getConfig()
+			if (config.requireIndexingConfirmation !== false) {
+				const confirmed = await this._confirmIndexingStart(estimation)
+				if (!confirmed) {
+					this._isProcessing = false
+					this.stateManager.setSystemState("Standby", "Indexing cancelled by user.")
+					console.log("[CodeIndexOrchestrator] Indexing cancelled by user.")
+					return
+				}
+			}
+		}
+
 		let indexingStarted = false
 
 		try {
@@ -309,6 +336,25 @@ export class CodeIndexOrchestrator {
 		} finally {
 			this._isProcessing = false
 		}
+	}
+
+	/**
+	 * Confirms with the user before starting indexing.
+	 * @param estimation The size estimation result
+	 * @returns Promise resolving to boolean indicating if user confirmed
+	 */
+	private async _confirmIndexingStart(estimation: import("./interfaces/vector-store").SizeEstimationResult): Promise<boolean> {
+		const fileSizeMB = (estimation.totalFileSize / (1024 * 1024)).toFixed(2)
+		const message = `Start indexing workspace?\n\nEstimated size:\n- ${estimation.fileCount} files\n- ${estimation.estimatedTokenCount.toLocaleString()} tokens\n- ${estimation.estimatedVectorCount.toLocaleString()} vectors\n- ${fileSizeMB} MB total size`
+
+		const result = await vscode.window.showInformationMessage(
+			message,
+			{ modal: true },
+			"Start",
+			"Cancel",
+		)
+
+		return result === "Start"
 	}
 
 	/**

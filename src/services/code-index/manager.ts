@@ -9,6 +9,7 @@ import { CodeIndexSearchService } from "./search-service"
 import { CodeIndexOrchestrator } from "./orchestrator"
 import { CacheManager } from "./cache-manager"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
+import { TokenBasedSizeEstimator } from "./token-based-size-estimator"
 import fs from "fs/promises"
 import ignore from "ignore"
 import path from "path"
@@ -25,6 +26,7 @@ export class CodeIndexManager {
 	private _orchestrator: CodeIndexOrchestrator | undefined
 	private _searchService: CodeIndexSearchService | undefined
 	private _cacheManager: CacheManager | undefined
+	private _tokenBasedSizeEstimator: TokenBasedSizeEstimator | undefined
 
 	// Flag to prevent race conditions during error recovery
 	private _isRecoveringFromError = false
@@ -342,6 +344,7 @@ export class CodeIndexManager {
 		}
 
 		// (Re)Initialize orchestrator
+		this._tokenBasedSizeEstimator = new TokenBasedSizeEstimator()
 		this._orchestrator = new CodeIndexOrchestrator(
 			this._configManager!,
 			this._stateManager,
@@ -350,6 +353,7 @@ export class CodeIndexManager {
 			vectorStore,
 			scanner,
 			fileWatcher,
+			this._tokenBasedSizeEstimator,
 		)
 
 		// (Re)Initialize search service

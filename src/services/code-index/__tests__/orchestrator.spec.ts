@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { CodeIndexOrchestrator } from "../orchestrator"
+import { TokenBasedSizeEstimator } from "../token-based-size-estimator"
 
 // Mock vscode workspace so startIndexing passes workspace check
 vi.mock("vscode", () => {
@@ -38,6 +39,18 @@ vi.mock("../../i18n", () => ({
 	},
 }))
 
+// Mock TokenBasedSizeEstimator
+vi.mock("../token-based-size-estimator", () => ({
+	TokenBasedSizeEstimator: vi.fn().mockImplementation(() => ({
+		estimateCollectionSize: vi.fn().mockResolvedValue({
+			estimatedVectorCount: 1000,
+			estimatedTokenCount: 100000,
+			fileCount: 100,
+			totalFileSize: 1000000,
+		}),
+	})),
+}))
+
 describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 	const workspacePath = "/test/workspace"
 
@@ -47,6 +60,7 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 	let vectorStore: any
 	let scanner: any
 	let fileWatcher: any
+	let tokenBasedSizeEstimator: any
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -73,6 +87,7 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 		}
 
 		vectorStore = {
+			collectionExists: vi.fn().mockResolvedValue(true),
 			initialize: vi.fn(),
 			hasIndexedData: vi.fn(),
 			markIndexingIncomplete: vi.fn(),
@@ -91,6 +106,8 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 			onDidFinishBatchProcessing: vi.fn().mockReturnValue({ dispose: vi.fn() }),
 			dispose: vi.fn(),
 		}
+
+		tokenBasedSizeEstimator = new TokenBasedSizeEstimator()
 	})
 
 	it("should not call clearCollection() or clear cache when initialize() fails (indexing not started)", async () => {
@@ -105,6 +122,7 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 			vectorStore,
 			scanner,
 			fileWatcher,
+			tokenBasedSizeEstimator,
 		)
 
 		// Act
@@ -134,6 +152,7 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 			vectorStore,
 			scanner,
 			fileWatcher,
+			tokenBasedSizeEstimator,
 		)
 
 		// Act

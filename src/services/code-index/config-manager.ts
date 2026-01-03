@@ -27,6 +27,7 @@ export class CodeIndexConfigManager {
 	private searchMinScore?: number
 	private searchMaxResults?: number
 	private vectorStorageConfig?: VectorStorageConfig
+	private requireIndexingConfirmation?: boolean = true
 
 	constructor(private readonly contextProxy: ContextProxy) {
 		// Initialize with current configuration to avoid false restart triggers
@@ -56,6 +57,12 @@ export class CodeIndexConfigManager {
 			codebaseIndexSearchMaxResults: undefined,
 			codebaseIndexBedrockRegion: "us-east-1",
 			codebaseIndexBedrockProfile: "",
+			codebaseIndexOpenAiCompatibleBaseUrl: "",
+			codebaseIndexOpenAiCompatibleModelDimension: undefined,
+			codebaseIndexOpenRouterSpecificProvider: "",
+			codebaseIndexVectorStorageConfig: undefined,
+			codebaseIndexEmbedderModelDimension: undefined,
+			codebaseIndexRequireIndexingConfirmation: true,
 		}
 
 		const {
@@ -81,6 +88,7 @@ export class CodeIndexConfigManager {
 		const openRouterApiKey = this.contextProxy?.getSecret("codebaseIndexOpenRouterApiKey") ?? ""
 		const openRouterSpecificProvider = codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider ?? ""
 		const vectorStorageConfig = codebaseIndexConfig.codebaseIndexVectorStorageConfig
+		const requireIndexingConfirmation = codebaseIndexConfig.codebaseIndexRequireIndexingConfirmation ?? true
 
 		// Update instance variables with configuration
 		this.codebaseIndexEnabled = codebaseIndexEnabled ?? false
@@ -89,6 +97,7 @@ export class CodeIndexConfigManager {
 		this.searchMinScore = codebaseIndexSearchMinScore
 		this.searchMaxResults = codebaseIndexSearchMaxResults
 		this.vectorStorageConfig = vectorStorageConfig
+		this.requireIndexingConfirmation = requireIndexingConfirmation
 
 		// Validate and set model dimension
 		const rawDimension = codebaseIndexConfig.codebaseIndexEmbedderModelDimension
@@ -109,20 +118,10 @@ export class CodeIndexConfigManager {
 		this.openAiOptions = { openAiNativeApiKey: openAiKey }
 
 		// Set embedder provider with support for openai-compatible
-		if (codebaseIndexEmbedderProvider === "ollama") {
-			this.embedderProvider = "ollama"
-		} else if (codebaseIndexEmbedderProvider === "openai-compatible") {
+		if (codebaseIndexEmbedderProvider === "openai-compatible") {
 			this.embedderProvider = "openai-compatible"
 		} else if (codebaseIndexEmbedderProvider === "gemini") {
 			this.embedderProvider = "gemini"
-		} else if (codebaseIndexEmbedderProvider === "mistral") {
-			this.embedderProvider = "mistral"
-		} else if (codebaseIndexEmbedderProvider === "vercel-ai-gateway") {
-			this.embedderProvider = "vercel-ai-gateway"
-		} else if ((codebaseIndexEmbedderProvider as string) === "bedrock") {
-			this.embedderProvider = "bedrock"
-		} else if (codebaseIndexEmbedderProvider === "openrouter") {
-			this.embedderProvider = "openrouter"
 		} else {
 			this.embedderProvider = "openai"
 		}
@@ -464,6 +463,7 @@ export class CodeIndexConfigManager {
 			searchMinScore: this.currentSearchMinScore,
 			searchMaxResults: this.currentSearchMaxResults,
 			vectorStorageConfig: this.vectorStorageConfig,
+			requireIndexingConfirmation: this.requireIndexingConfirmation,
 		}
 	}
 

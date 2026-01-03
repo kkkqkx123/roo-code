@@ -76,6 +76,9 @@ interface LocalCodeIndexSettings {
 	// Vector storage configuration
 	codebaseIndexVectorStorageConfig?: VectorStorageConfig
 
+	// Indexing confirmation requirement
+	codebaseIndexRequireIndexingConfirmation?: boolean
+
 	// Bedrock-specific settings
 	codebaseIndexBedrockRegion?: string
 	codebaseIndexBedrockProfile?: string
@@ -223,6 +226,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexEmbedderModelDimension: undefined,
 		codebaseIndexSearchMaxResults: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 		codebaseIndexSearchMinScore: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+		codebaseIndexRequireIndexingConfirmation: true,
 		codebaseIndexBedrockRegion: "",
 		codebaseIndexBedrockProfile: "",
 		codeIndexOpenAiKey: "",
@@ -262,6 +266,8 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					codebaseIndexConfig.codebaseIndexSearchMaxResults ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 				codebaseIndexSearchMinScore:
 					codebaseIndexConfig.codebaseIndexSearchMinScore ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+				codebaseIndexRequireIndexingConfirmation:
+					codebaseIndexConfig.codebaseIndexRequireIndexingConfirmation ?? true,
 				codebaseIndexBedrockRegion: codebaseIndexConfig.codebaseIndexBedrockRegion || "",
 				codebaseIndexBedrockProfile: codebaseIndexConfig.codebaseIndexBedrockProfile || "",
 				codeIndexOpenAiKey: "",
@@ -1621,6 +1627,28 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													}
 												/>
 											)}
+									</div>
+
+									{/* Indexing Confirmation */}
+									<div className="space-y-2 pt-4 border-t border-vscode-panel-border">
+										<div className="flex items-center gap-2">
+											<VSCodeCheckbox
+												checked={currentSettings.codebaseIndexRequireIndexingConfirmation ?? true}
+												onChange={(e: any) =>
+													updateSetting("codebaseIndexRequireIndexingConfirmation", e.target.checked)
+												}>
+												<label className="text-sm font-medium">
+													{t("settings:codeIndex.requireIndexingConfirmation")}
+												</label>
+											</VSCodeCheckbox>
+											<StandardTooltip
+												content={t("settings:codeIndex.requireIndexingConfirmationDescription")}>
+												<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
+											</StandardTooltip>
+										</div>
+										<p className="text-xs text-vscode-descriptionForeground mt-1 mb-0">
+											{t("settings:codeIndex.requireIndexingConfirmationDescription")}
+										</p>
 									</div>
 								</div>
 							)}

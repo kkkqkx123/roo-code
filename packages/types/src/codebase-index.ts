@@ -180,6 +180,8 @@ export const codebaseIndexConfigSchema = z.object({
 	codebaseIndexBedrockProfile: z.string().optional(),
 	// OpenRouter specific fields
 	codebaseIndexOpenRouterSpecificProvider: z.string().optional(),
+	// Indexing confirmation requirement
+	codebaseIndexRequireIndexingConfirmation: z.boolean().optional(),
 })
 
 export type CodebaseIndexConfig = z.infer<typeof codebaseIndexConfigSchema>

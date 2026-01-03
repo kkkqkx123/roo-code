@@ -240,10 +240,6 @@ export interface WebviewMessage {
 			| "ollama"
 			| "openai-compatible"
 			| "gemini"
-			| "mistral"
-			| "vercel-ai-gateway"
-			| "bedrock"
-			| "openrouter"
 		codebaseIndexEmbedderBaseUrl?: string
 		codebaseIndexEmbedderModelId: string
 		codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
@@ -253,6 +249,7 @@ export interface WebviewMessage {
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
 		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
+		codebaseIndexRequireIndexingConfirmation?: boolean
 
 		// Secret settings
 		codeIndexOpenAiKey?: string

@@ -131,6 +131,7 @@ export interface CodeIndexConfig {
 	searchMinScore?: number
 	searchMaxResults?: number
 	vectorStorageConfig?: VectorStorageConfig
+	requireIndexingConfirmation?: boolean
 }
 
 /**

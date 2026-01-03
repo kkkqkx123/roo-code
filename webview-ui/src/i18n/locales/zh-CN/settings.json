@@ -169,7 +169,38 @@
 		"searchMinScoreResetTooltip": "恢复默认值 (0.4)",
 		"searchMaxResultsLabel": "最大搜索结果数",
 		"searchMaxResultsDescription": "查询代码库索引时返回的最大搜索结果数。较高的值提供更多上下文，但可能包含相关性较低的结果。",
-		"resetToDefault": "恢复默认值"
+		"resetToDefault": "恢复默认值",
+		"vectorStorage": {
+			"mode": "配置模式",
+			"modeDescription": "选择向量存储参数的配置方式",
+			"modes": {
+				"auto": "自动",
+				"preset": "预设",
+				"custom": "自定义"
+			},
+			"preset": "预设配置",
+			"presetDescription": "选择针对不同集合大小优化的预设配置",
+			"presets": {
+				"small": "小型（≤1万向量）",
+				"medium": "中型（≤10万向量）",
+				"large": "大型（>10万向量）"
+			},
+			"thresholds": {
+				"small": "小型集合阈值",
+				"smallDescription": "小型集合配置的最大向量数（默认：10,000）",
+				"medium": "中型集合阈值",
+				"mediumDescription": "中型集合配置的最大向量数（默认：100,000）"
+			},
+			"hnswConfig": "HNSW 索引配置",
+			"hnswM": "HNSW M",
+			"hnswMDescription": "每个节点的双向链接数。较高的值提高召回率，但增加内存使用和构建时间。",
+			"hnswEfConstruct": "HNSW Ef Construct",
+			"hnswEfConstructDescription": "索引构建期间动态候选列表的大小。较高的值提高索引质量，但增加构建时间。",
+			"hnswOnDisk": "HNSW 存储在磁盘",
+			"vectorConfig": "向量存储配置",
+			"vectorsOnDisk": "将向量存储在磁盘上",
+			"quantization": "启用量化"
+		}
 	},
 	"autoApprove": {
 		"toggleShortcut": "您可以<SettingsLink>在 IDE 首选项中</SettingsLink>为此设置配置全局快捷方式。",

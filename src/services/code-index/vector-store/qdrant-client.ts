@@ -151,7 +151,16 @@ export class QdrantVectorStore implements IVectorStore {
 		return {
 			vectors: { on_disk: true },
 			hnsw: { m: 64, ef_construct: 512, on_disk: true },
-			optimizer: { indexing_threshold: 20000 },
+			optimizer: { indexing_threshold: 200000 },
+		}
+	}
+
+	async setCollectionConfigFromEstimation(estimation: import("../interfaces/vector-store").SizeEstimationResult): Promise<void> {
+		if (this.configManager) {
+			const config = await this.configManager.getCollectionConfigFromEstimation(estimation)
+			console.log(
+				`[QdrantVectorStore] Using configuration for estimated ${estimation.estimatedVectorCount} vectors: HNSW m=${config.hnsw.m}, ef_construct=${config.hnsw.ef_construct}`,
+			)
 		}
 	}
 

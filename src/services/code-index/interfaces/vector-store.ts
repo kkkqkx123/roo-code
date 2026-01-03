@@ -7,12 +7,25 @@ export type PointStruct = {
 	payload: Record<string, any>
 }
 
+export interface SizeEstimationResult {
+	estimatedVectorCount: number
+	estimatedTokenCount: number
+	fileCount: number
+	totalFileSize: number
+}
+
 export interface IVectorStore {
 	/**
 	 * Initializes the vector store
 	 * @returns Promise resolving to boolean indicating if a new collection was created
 	 */
 	initialize(): Promise<boolean>
+
+	/**
+	 * Sets the collection configuration based on size estimation
+	 * @param estimation The size estimation result
+	 */
+	setCollectionConfigFromEstimation?(estimation: SizeEstimationResult): Promise<void>
 
 	/**
 	 * Upserts points into the vector store
