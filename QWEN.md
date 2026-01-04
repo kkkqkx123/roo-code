@@ -21,8 +21,6 @@ The project follows a monorepo structure with multiple packages:
 - **`apps/`**: 
   - `vscode-e2e`: End-to-end testing
   - `vscode-nightly`: Nightly build version
-  - `web-evals`: Web evaluation components
-  - `web-roo-code`: Web version of Roo Code (Next.js application)
 - **`packages/`**:
   - `build`: Build configuration
   - `config-eslint`: ESLint configuration
@@ -30,7 +28,6 @@ The project follows a monorepo structure with multiple packages:
   - `docs`: Documentation
   - `evals`: Evaluation framework
   - `ipc`: Inter-process communication layer
-  - `telemetry`: Telemetry services
   - `types`: Shared TypeScript types
 
 ## Building and Running

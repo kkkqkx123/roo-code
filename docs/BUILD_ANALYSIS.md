@@ -10,9 +10,7 @@ Roo-Code 是一个基于 VSCode 的 AI 编程助手扩展项目，采用 monorep
 Roo-Code/
 ├── apps/                      # 应用层
 │   ├── vscode-e2e/           # VSCode E2E 测试
-│   ├── vscode-nightly/       # VSCode 扩展构建（ nightly 版本）
-│   ├── web-evals/            # Web 评估应用
-│   └── web-roo-code/         # Web 主站
+│   └── vscode-nightly/       # VSCode 扩展构建（ nightly 版本）
 ├── packages/                  # 共享包
 │   ├── build/                # 构建工具库（ esbuild 封装）
 │   ├── config-eslint/        # ESLint 配置
