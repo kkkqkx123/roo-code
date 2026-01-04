@@ -640,6 +640,38 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		provider.on(RooCodeEventName.ProviderProfileChanged, this.providerProfileChangeListener)
 	}
 
+	private isValidTokenCount(count: number | undefined): boolean {
+		return count !== undefined && count !== null && count > 0
+	}
+
+	private async estimateTokensWithTiktoken(): Promise<{ inputTokens: number; outputTokens: number } | null> {
+		try {
+			let inputTokens = 0
+			let outputTokens = 0
+
+			if (this.userMessageContent.length > 0) {
+				inputTokens = await this.api.countTokens(this.userMessageContent)
+			}
+
+			if (this.assistantMessageContent.length > 0) {
+				const assistantContent = this.assistantMessageContent.map((block) => {
+					if (block.type === "text") {
+						return { type: "text" as const, text: block.content }
+					} else if (block.type === "tool_use") {
+						return { type: "text" as const, text: JSON.stringify(block.params) }
+					}
+					return { type: "text" as const, text: "" }
+				})
+				outputTokens = await this.api.countTokens(assistantContent)
+			}
+
+			return { inputTokens, outputTokens }
+		} catch (error) {
+			console.error("Failed to estimate tokens with tiktoken:", error)
+			return null
+		}
+	}
+
 	/**
 	 * Wait for the task mode to be initialized before proceeding.
 	 * This method ensures that any operations depending on the task mode
@@ -2496,6 +2528,17 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								break
 							}
 							case "usage":
+								if (!this.isValidTokenCount(chunk.inputTokens) || !this.isValidTokenCount(chunk.outputTokens)) {
+									const estimatedTokens = await this.estimateTokensWithTiktoken()
+									if (estimatedTokens) {
+										if (!this.isValidTokenCount(chunk.inputTokens)) {
+											chunk.inputTokens = estimatedTokens.inputTokens
+										}
+										if (!this.isValidTokenCount(chunk.outputTokens)) {
+											chunk.outputTokens = estimatedTokens.outputTokens
+										}
+									}
+								}
 								inputTokens += chunk.inputTokens
 								outputTokens += chunk.outputTokens
 								cacheWriteTokens += chunk.cacheWriteTokens ?? 0
