@@ -224,9 +224,6 @@ export class ClineProvider
 		// Set TaskManager in StateCoordinator to enable isBrowserSessionActive check
 		this.stateCoordinator.setTaskManager(this.taskManager)
 		
-		// Initialize WebviewCoordinator
-		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel)
-		
 		// Initialize ProviderCoordinator
 		this.providerCoordinator = new ProviderCoordinator(this.context, this.contextProxy)
 		
@@ -246,6 +243,11 @@ export class ClineProvider
 			await this.postStateToWebview()
 		})
 		
+		this.marketplaceManager = new MarketplaceManager(this.context, this._customModesManager)
+		
+		// Initialize WebviewCoordinator with provider and marketplaceManager
+		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this, this.marketplaceManager)
+		
 		// Initialize MCP Hub
 		McpServerManager.getInstance(this.context, this)
 			.then((hub) => {
@@ -255,8 +257,6 @@ export class ClineProvider
 			.catch((error) => {
 				this.log(`Failed to initialize MCP Hub: ${error}`)
 			})
-		
-		this.marketplaceManager = new MarketplaceManager(this.context, this._customModesManager)
 		
 		// Set codebase index models
 		this.stateCoordinator.updateGlobalState("codebaseIndexModels", EMBEDDING_MODEL_PROFILES)
