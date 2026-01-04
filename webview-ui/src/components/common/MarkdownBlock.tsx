@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react"
+import React, { memo, useMemo, useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import styled from "styled-components"
 import { visit } from "unist-util-visit"
@@ -204,6 +204,34 @@ const StyledMarkdown = styled.div`
 `
 
 const MarkdownBlock = memo(({ markdown }: MarkdownBlockProps) => {
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		const handleCopy = async (e: ClipboardEvent) => {
+			const selection = window.getSelection()
+			if (!selection || selection.isCollapsed || !containerRef.current) {
+				return
+			}
+
+			const range = selection.getRangeAt(0)
+			const container = range.commonAncestorContainer
+
+			if (container instanceof HTMLElement && containerRef.current.contains(container)) {
+				e.preventDefault()
+				try {
+					await navigator.clipboard.writeText(markdown || "")
+				} catch (error) {
+					console.error("Failed to copy markdown:", error)
+				}
+			}
+		}
+
+		document.addEventListener("copy", handleCopy)
+		return () => {
+			document.removeEventListener("copy", handleCopy)
+		}
+	}, [markdown])
+
 	const components = useMemo(
 		() => ({
 			table: ({ children, ...props }: any) => {
@@ -304,7 +332,7 @@ const MarkdownBlock = memo(({ markdown }: MarkdownBlockProps) => {
 	)
 
 	return (
-		<StyledMarkdown>
+		<StyledMarkdown ref={containerRef}>
 			<ReactMarkdown
 				remarkPlugins={[
 					remarkGfm,
