@@ -563,6 +563,39 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			text = text.trim()
 
 			if (text || images.length > 0) {
+				// If there's an active ask (e.g., followup question), send as askResponse directly
+				// This ensures user responses to questions are not queued
+				if (clineAskRef.current) {
+					if (clineAskRef.current === "followup") {
+						markFollowUpAsAnswered()
+					}
+
+					userRespondedRef.current = true
+
+					switch (clineAskRef.current) {
+						case "followup":
+						case "tool":
+						case "browser_action_launch":
+						case "command":
+						case "command_output":
+						case "use_mcp_server":
+						case "completion_result":
+						case "resume_task":
+						case "resume_completed_task":
+						case "mistake_limit_reached":
+							vscode.postMessage({
+								type: "askResponse",
+								askResponse: "messageResponse",
+								text,
+								images,
+							})
+							break
+					}
+
+					handleChatReset()
+					return
+				}
+
 				// Queue message if:
 				// - Task is busy (sendingDisabled)
 				// - API request in progress (isStreaming)
@@ -587,36 +620,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 				if (messagesRef.current.length === 0) {
 					vscode.postMessage({ type: "newTask", text, images })
-				} else if (clineAskRef.current) {
-					if (clineAskRef.current === "followup") {
-						markFollowUpAsAnswered()
-					}
-
-					// Use clineAskRef.current
-					switch (
-						clineAskRef.current // Use clineAskRef.current
-					) {
-						case "followup":
-						case "tool":
-						case "browser_action_launch":
-						case "command": // User can provide feedback to a tool or command use.
-						case "command_output": // User can send input to command stdin.
-						case "use_mcp_server":
-						case "completion_result": // If this happens then the user has feedback for the completion result.
-						case "resume_task":
-						case "resume_completed_task":
-						case "mistake_limit_reached":
-							vscode.postMessage({
-								type: "askResponse",
-								askResponse: "messageResponse",
-								text,
-								images,
-							})
-							break
-						// There is no other case that a textfield should be enabled.
-					}
 				} else {
-					// This is a new message in an ongoing task.
 					vscode.postMessage({ type: "askResponse", askResponse: "messageResponse", text, images })
 				}
 
