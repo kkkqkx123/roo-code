@@ -132,7 +132,6 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		const nestedGitPath = await this.getNestedGitRepository()
 
 		if (nestedGitPath) {
-			// Show persistent error message with the offending path
 			const relativePath = path.relative(this.workspaceDir, nestedGitPath)
 			const message = t("common:errors.nested_git_repos_warning", { path: relativePath })
 			vscode.window.showErrorMessage(message)
@@ -165,16 +164,44 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 			this.baseHash = await git.revparse(["HEAD"])
 		} else {
 			this.log(`[${this.constructor.name}#initShadowGit] creating shadow git repo at ${this.checkpointsDir}`)
-			await git.init()
-			await git.addConfig("core.worktree", this.workspaceDir) // Sets the working tree to the current workspace.
-			await git.addConfig("commit.gpgSign", "false") // Disable commit signing for shadow repo.
-			await git.addConfig("user.name", "Roo Code")
-			await git.addConfig("user.email", "noreply@example.com")
-			await this.writeExcludeFile()
-			await this.stageAll(git)
-			const { commit } = await git.commit("initial commit", { "--allow-empty": null })
-			this.baseHash = commit
-			created = true
+
+			const hasGitRepo = await this.hasGitRepository(this.workspaceDir)
+
+			if (hasGitRepo) {
+				this.log(`[${this.constructor.name}#initShadowGit] detected git repository, using alternates`)
+
+				const gitObjectsPath = await this.getGitObjectsPath(this.workspaceDir)
+
+				if (gitObjectsPath) {
+					await git.init()
+					await git.addConfig("core.worktree", this.workspaceDir)
+					await git.addConfig("commit.gpgSign", "false")
+					await git.addConfig("user.name", "Roo Code")
+					await git.addConfig("user.email", "noreply@example.com")
+					await git.addConfig("gc.auto", "0")
+					await git.addConfig("gc.autoDetach", "false")
+					await this.setupGitAlternates(gitObjectsPath)
+					await this.writeExcludeFile()
+
+					try {
+						this.baseHash = await git.revparse(["HEAD"])
+						this.log(`[${this.constructor.name}#initShadowGit] using existing HEAD: ${this.baseHash}`)
+					} catch {
+						const { commit } = await git.commit("initial commit", { "--allow-empty": null })
+						this.baseHash = commit
+					}
+
+					created = true
+				} else {
+					this.log(`[${this.constructor.name}#initShadowGit] could not get git objects path, falling back to regular init`)
+					await this.initializeRegularRepo(git)
+					created = true
+				}
+			} else {
+				this.log(`[${this.constructor.name}#initShadowGit] no git repository detected, using regular init`)
+				await this.initializeRegularRepo(git)
+				created = true
+			}
 		}
 
 		const duration = Date.now() - startTime
@@ -186,6 +213,10 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		this.git = git
 
 		await onInit?.()
+
+		if (!this.baseHash) {
+			throw new Error("Base hash was not set during initialization")
+		}
 
 		this.emit("initialize", {
 			type: "initialize",
@@ -282,6 +313,60 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		}
 
 		return this.shadowGitConfigWorktree
+	}
+
+	private async hasGitRepository(workspaceDir: string): Promise<boolean> {
+		const gitDir = path.join(workspaceDir, ".git")
+		try {
+			await fs.access(gitDir)
+			return true
+		} catch {
+			return false
+		}
+	}
+
+	private async getGitObjectsPath(workspaceDir: string): Promise<string | null> {
+		const gitDir = path.join(workspaceDir, ".git")
+		try {
+			const gitDirStat = await fs.stat(gitDir)
+
+			if (gitDirStat.isDirectory()) {
+				const objectsPath = path.join(gitDir, "objects")
+				await fs.access(objectsPath)
+				return objectsPath
+			} else if (gitDirStat.isFile()) {
+				const gitFile = await fs.readFile(gitDir, "utf-8")
+				const gitDirPath = gitFile.trim()
+				const objectsPath = path.join(gitDirPath, "objects")
+				await fs.access(objectsPath)
+				return objectsPath
+			}
+		} catch {
+			return null
+		}
+
+		return null
+	}
+
+	private async setupGitAlternates(gitObjectsPath: string): Promise<void> {
+		const alternatesDir = path.join(this.dotGitDir, "objects", "info")
+		await fs.mkdir(alternatesDir, { recursive: true })
+
+		const normalizedPath = path.normalize(gitObjectsPath)
+		const alternatesFile = path.join(alternatesDir, "alternates")
+		await fs.writeFile(alternatesFile, normalizedPath)
+	}
+
+	private async initializeRegularRepo(git: SimpleGit): Promise<void> {
+		await git.init()
+		await git.addConfig("core.worktree", this.workspaceDir)
+		await git.addConfig("commit.gpgSign", "false")
+		await git.addConfig("user.name", "Roo Code")
+		await git.addConfig("user.email", "noreply@example.com")
+		await this.writeExcludeFile()
+		await this.stageAll(git)
+		const { commit } = await git.commit("initial commit", { "--allow-empty": null })
+		this.baseHash = commit
 	}
 
 	public async saveCheckpoint(
