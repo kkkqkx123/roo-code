@@ -562,7 +562,7 @@
 		"@types/stream-json": "^1.7.8",
 		"@types/tmp": "^0.2.6",
 		"@types/turndown": "^5.0.5",
-		"@types/vscode": "^1.84.0",
+		"@types/vscode": "^1.107.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "3.3.2",
 		"esbuild": "^0.25.0",
