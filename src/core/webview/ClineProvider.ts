@@ -992,6 +992,13 @@ export class ClineProvider
 	}
 
 	/**
+	 * Static method to get all active instances
+	 */
+	public static getActiveInstances(): Set<ClineProvider> {
+		return this.activeInstances
+	}
+
+	/**
 	 * Static method to get instance
 	 */
 	public static async getInstance(): Promise<ClineProvider | undefined> {

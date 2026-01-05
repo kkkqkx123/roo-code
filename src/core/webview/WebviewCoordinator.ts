@@ -31,6 +31,9 @@ export class WebviewCoordinator {
 	public async resolveWebviewView(webviewView: vscode.WebviewView | vscode.WebviewPanel): Promise<void> {
 		this.view = webviewView
 
+		// Clear any existing webview resources before setting up new ones
+		this.clearWebviewResources()
+
 		// Set webview options
 		webviewView.webview.options = {
 			// Allow scripts in the webview

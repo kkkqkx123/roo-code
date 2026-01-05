@@ -8,6 +8,7 @@ import { getCommand } from "../utils/commands"
 import { ClineProvider } from "../core/webview/ClineProvider"
 import { ContextProxy } from "../core/config/ContextProxy"
 import { focusPanel } from "../utils/focusPanel"
+import { createLogger } from "../utils/logger"
 
 import { registerHumanRelayCallback, unregisterHumanRelayCallback, handleHumanRelayResponse } from "./humanRelay"
 import { handleNewTask } from "./handleTask"
@@ -16,13 +17,12 @@ import { importSettingsWithFeedback } from "../core/config/importExport"
 import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
 
-/**
- * Helper to get the visible ClineProvider instance or log if not found.
- */
+const logger = createLogger(vscode.window.createOutputChannel(Package.outputChannel), "Commands")
+
 export function getVisibleProviderOrLog(outputChannel: vscode.OutputChannel): ClineProvider | undefined {
 	const visibleProvider = ClineProvider.getVisibleInstance()
 	if (!visibleProvider) {
-		outputChannel.appendLine("Cannot find any visible Roo Code instances.")
+		logger.warn("Cannot find any visible Roo Code instances.")
 		return undefined
 	}
 	return visibleProvider
@@ -64,11 +64,22 @@ export type RegisterCommandOptions = {
 
 export const registerCommands = (options: RegisterCommandOptions) => {
 	const { context } = options
+	logger.info("Starting command registration...")
 
-	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
+	const commandsMap = getCommandsMap(options)
+	logger.debug(`Found ${Object.keys(commandsMap).length} commands to register`)
+
+	for (const [id, callback] of Object.entries(commandsMap)) {
 		const command = getCommand(id as CommandId)
-		context.subscriptions.push(vscode.commands.registerCommand(command, callback))
+		try {
+			context.subscriptions.push(vscode.commands.registerCommand(command, callback))
+			logger.debug(`✓ Registered: ${command}`)
+		} catch (error) {
+			logger.error(`✗ Failed to register ${command}`, error)
+		}
 	}
+
+	logger.info("Command registration completed")
 }
 
 const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOptions): Record<CommandId, any> => ({
@@ -163,19 +174,18 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		try {
 			await focusPanel(tabPanel, sidebarPanel)
 
-			// Send focus input message only for sidebar panels
 			if (sidebarPanel && getPanel() === sidebarPanel) {
 				provider.postMessageToWebview({ type: "action", action: "focusInput" })
 			}
 		} catch (error) {
-			outputChannel.appendLine(`Error focusing input: ${error}`)
+			logger.error("Error focusing input", error)
 		}
 	},
 	focusPanel: async () => {
 		try {
 			await focusPanel(tabPanel, sidebarPanel)
 		} catch (error) {
-			outputChannel.appendLine(`Error focusing panel: ${error}`)
+			logger.error("Error focusing panel", error)
 		}
 	},
 	acceptInput: () => {

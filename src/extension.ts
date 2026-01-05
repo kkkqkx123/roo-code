@@ -14,6 +14,7 @@ try {
 
 import "./utils/path" // Necessary to have access to String.prototype.toPosix.
 import { createOutputChannelLogger, createDualLogger } from "./utils/outputChannelLogger"
+import { createLogger, LogLevel } from "./utils/logger"
 
 import { Package } from "./shared/package"
 import { formatLanguage } from "./shared/language"
@@ -49,6 +50,7 @@ import { flushModels, initializeModelCacheRefresh, refreshModels } from "./api/p
 
 let outputChannel: vscode.OutputChannel
 let extensionContext: vscode.ExtensionContext
+let logger: ReturnType<typeof createLogger>
 
 // This method is called when your extension is activated.
 // Your extension is activated the very first time the command is executed.
@@ -56,37 +58,44 @@ export async function activate(context: vscode.ExtensionContext) {
 	extensionContext = context
 	outputChannel = vscode.window.createOutputChannel(Package.outputChannel)
 	context.subscriptions.push(outputChannel)
-	outputChannel.appendLine(`${Package.name} extension activated - ${JSON.stringify(Package)}`)
 
-	// Migrate old settings to new
-	await migrateSettings(context, outputChannel)
+	logger = createLogger(outputChannel, "Extension", LogLevel.DEBUG)
+	logger.info(`${Package.name} extension activated`)
+	logger.debug(`Package configuration: ${JSON.stringify(Package)}`)
 
-	// Create logger for cloud services.
+	try {
+		await migrateSettings(context, outputChannel)
+		logger.debug("Settings migrated successfully")
+	} catch (error) {
+		logger.error("Failed to migrate settings", error)
+	}
+
 	const cloudLogger = createDualLogger(createOutputChannelLogger(outputChannel))
 
-	// Initialize MDM service
 	const mdmService = await MdmService.createInstance(cloudLogger)
+	logger.info(`MDM service initialized: ${mdmService ? "success" : "failed"}`)
 
-	// Initialize i18n for internationalization support.
 	initializeI18n(context.globalState.get("language") ?? formatLanguage(vscode.env.language))
+	logger.info(
+		`i18n initialized with language: ${context.globalState.get("language") || formatLanguage(vscode.env.language)}`,
+	)
 
-	// Initialize terminal shell execution handlers.
 	TerminalRegistry.initialize()
+	logger.info("TerminalRegistry initialized")
 
-	// Initialize Claude Code OAuth manager for direct API access.
 	claudeCodeOAuthManager.initialize(context)
+	logger.info("Claude Code OAuth manager initialized")
 
-	// Get default commands from configuration.
 	const defaultCommands = vscode.workspace.getConfiguration(Package.name).get<string[]>("allowedCommands") || []
 
-	// Initialize global state if not already set.
 	if (!context.globalState.get("allowedCommands")) {
 		context.globalState.update("allowedCommands", defaultCommands)
+		logger.debug(`Initialized default allowedCommands: ${defaultCommands.join(", ")}`)
 	}
 
 	const contextProxy = await ContextProxy.getInstance(context)
+	logger.info("ContextProxy instance created")
 
-	// Initialize code index managers for all workspace folders.
 	const codeIndexManagers: CodeIndexManager[] = []
 
 	if (vscode.workspace.workspaceFolders) {
@@ -96,42 +105,39 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (manager) {
 				codeIndexManagers.push(manager)
 
-				// Initialize in background; do not block extension activation
 				void manager.initialize(contextProxy).catch((error) => {
-					const message = error instanceof Error ? error.message : String(error)
-					outputChannel.appendLine(
-						`[CodeIndexManager] Error during background CodeIndexManager configuration/indexing for ${folder.uri.fsPath}: ${message}`,
-					)
+					logger.error(`CodeIndexManager initialization failed for ${folder.uri.fsPath}`, error)
 				})
 
 				context.subscriptions.push(manager)
 			}
 		}
 	}
+	logger.info(`CodeIndexManager initialized for ${codeIndexManagers.length} workspace folders`)
 
-	// Initialize the provider.
 	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService)
+	logger.info("ClineProvider created with renderContext: sidebar")
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ClineProvider.sideBarId, provider, {
 			webviewOptions: { retainContextWhenHidden: true },
 		}),
 	)
+	logger.info(`WebviewViewProvider registered with ID: ${ClineProvider.sideBarId}`)
 
-	// Auto-import configuration if specified in settings.
 	try {
 		await autoImportSettings(outputChannel, {
 			providerSettingsManager: provider.providerSettingsManager,
 			contextProxy: provider.contextProxy,
 			customModesManager: provider.customModesManager,
 		})
+		logger.debug("Auto-import settings completed")
 	} catch (error) {
-		outputChannel.appendLine(
-			`[AutoImport] Error during auto-import: ${error instanceof Error ? error.message : String(error)}`,
-		)
+		logger.error("Auto-import settings failed", error)
 	}
 
 	registerCommands({ context, outputChannel, provider })
+	logger.info("Commands registered successfully")
 
 	/**
 	 * We use the text document content provider API to show the left side for diff
@@ -170,26 +176,24 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	registerCodeActions(context)
 	registerTerminalActions(context)
+	logger.debug("Code actions and terminal actions registered")
 
-	// Allows other extensions to activate once Roo is ready.
 	vscode.commands.executeCommand(`${Package.name}.activationCompleted`)
+	logger.debug("Activation completed command executed")
 
-	// Implements the `RooCodeAPI` interface.
 	const socketPath = process.env.ROO_CODE_IPC_SOCKET_PATH
 	const enableLogging = typeof socketPath === "string"
 
-	// Watch the core files and automatically reload the extension host.
 	if (process.env.NODE_ENV === "development") {
 		const watchPaths = [
 			{ path: context.extensionPath, pattern: "**/*.ts" },
 			{ path: path.join(context.extensionPath, "../packages/types"), pattern: "**/*.ts" },
 		]
 
-		console.log(
-			`♻️♻️♻️ Core auto-reloading: Watching for changes in ${watchPaths.map(({ path }) => path).join(", ")}`,
+		logger.debug(
+			`Core auto-reloading: Watching for changes in ${watchPaths.map(({ path }) => path).join(", ")}`,
 		)
 
-		// Create a debounced reload function to prevent excessive reloads
 		let reloadTimeout: NodeJS.Timeout | undefined
 		const DEBOUNCE_DELAY = 1_000
 
@@ -198,10 +202,10 @@ export async function activate(context: vscode.ExtensionContext) {
 				clearTimeout(reloadTimeout)
 			}
 
-			console.log(`♻️ ${uri.fsPath} changed; scheduling reload...`)
+			logger.debug(`File changed: ${uri.fsPath}, scheduling reload...`)
 
 			reloadTimeout = setTimeout(() => {
-				console.log(`♻️ Reloading host after debounce delay...`)
+				logger.debug("Reloading host after debounce delay...")
 				vscode.commands.executeCommand("workbench.action.reloadWindow")
 			}, DEBOUNCE_DELAY)
 		}
@@ -210,7 +214,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			const relPattern = new vscode.RelativePattern(vscode.Uri.file(watchPath), pattern)
 			const watcher = vscode.workspace.createFileSystemWatcher(relPattern, false, false, false)
 
-			// Listen to all change types to ensure symlinked file updates trigger reloads.
 			watcher.onDidChange(debouncedReload)
 			watcher.onDidCreate(debouncedReload)
 			watcher.onDidDelete(debouncedReload)
@@ -218,7 +221,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			context.subscriptions.push(watcher)
 		})
 
-		// Clean up the timeout on deactivation
 		context.subscriptions.push({
 			dispose: () => {
 				if (reloadTimeout) {
@@ -228,16 +230,41 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	}
 
-	// Initialize background model cache refresh
 	initializeModelCacheRefresh()
+	logger.debug("Background model cache refresh initialized")
+
+	logger.info(`Activation completed. Total subscriptions: ${context.subscriptions.length}`)
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }
 
 // This method is called when your extension is deactivated.
 export async function deactivate() {
-	outputChannel.appendLine(`${Package.name} extension deactivated`)
+	logger.info(`${Package.name} extension deactivated`)
 
-	await McpServerManager.cleanup(extensionContext)
+	try {
+		await McpServerManager.cleanup(extensionContext)
+		logger.debug("McpServerManager cleanup completed")
+	} catch (error) {
+		logger.error("McpServerManager cleanup failed", error)
+	}
+
 	TerminalRegistry.cleanup()
+	logger.debug("TerminalRegistry cleanup completed")
+
+	const { ClineProvider } = await import("./core/webview/ClineProvider")
+	const activeInstances = ClineProvider.getActiveInstances()
+	logger.debug(`Disposing ${activeInstances.size} ClineProvider instances`)
+
+	for (const provider of activeInstances) {
+		if (typeof provider.dispose === "function") {
+			try {
+				await provider.dispose()
+			} catch (error) {
+				logger.error("Error disposing provider", error)
+			}
+		}
+	}
+
+	logger.debug("Extension deactivation completed")
 }
