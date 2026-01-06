@@ -104,4 +104,11 @@ export class RooProtectedController {
 	static getProtectedPatterns(): readonly string[] {
 		return RooProtectedController.PROTECTED_PATTERNS
 	}
+
+	/**
+	 * Dispose of resources (no-op for this class as it doesn't hold external resources)
+	 */
+	dispose(): void {
+		// No resources to clean up
+	}
 }

@@ -225,6 +225,15 @@ export class BrowserSession {
 	}
 
 	/**
+	 * Disposes of the browser session and cleans up resources
+	 */
+	dispose(): void {
+		this.closeBrowser().catch(error => {
+			console.error("Error closing browser during disposal:", error)
+		})
+	}
+
+	/**
 	 * Resets all browser state variables
 	 */
 	private resetBrowserState(): void {

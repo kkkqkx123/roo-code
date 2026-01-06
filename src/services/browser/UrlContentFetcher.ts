@@ -84,6 +84,12 @@ export class UrlContentFetcher {
 		this.page = undefined
 	}
 
+	dispose(): void {
+		this.closeBrowser().catch(error => {
+			console.error("Error closing browser during disposal:", error)
+		})
+	}
+
 	// must make sure to call launchBrowser before and closeBrowser after using this
 	async urlToMarkdown(url: string): Promise<string> {
 		if (!this.browser || !this.page) {

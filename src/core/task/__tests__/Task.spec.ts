@@ -121,6 +121,15 @@ vi.mock("vscode", () => {
 			uriScheme: "vscode",
 			language: "en",
 		},
+		extensions: {
+			all: [],
+			getExtension: vi.fn().mockReturnValue({
+				packageJSON: {
+					version: "1.0.0",
+				},
+				extensionUri: { fsPath: "/mock/extension/path" },
+			}),
+		},
 		EventEmitter: vi.fn().mockImplementation(() => mockEventEmitter),
 		Disposable: {
 			from: vi.fn(),
