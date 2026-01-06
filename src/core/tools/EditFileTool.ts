@@ -366,7 +366,7 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 			isOutsideWorkspace,
 		}
 
-		await task.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
+		await task.ask("tool", JSON.stringify(sharedMessageProps), undefined, block.partial).catch(() => {})
 	}
 }
 

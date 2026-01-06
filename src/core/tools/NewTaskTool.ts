@@ -152,7 +152,7 @@ export class NewTaskTool extends BaseTool<"new_task"> {
 			todos: this.removeClosingTag("todos", todos, block.partial),
 		})
 
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

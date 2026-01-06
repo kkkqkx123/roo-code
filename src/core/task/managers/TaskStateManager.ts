@@ -4,7 +4,6 @@ import { resolveToolProtocol } from "../../../utils/resolveToolProtocol"
 import { defaultModeSlug } from "../../../shared/modes"
 import type { ClineProvider } from "../../webview/ClineProvider"
 import type { ProviderSettings } from "@roo-code/types"
-import { getModelInfo } from "../../../shared/modelInfo"
 
 export interface TaskStateOptions {
 	taskId: string
@@ -18,6 +17,7 @@ export interface TaskStateOptions {
 	historyItem?: any
 	initialTodos?: TodoItem[]
 	initialStatus?: "active" | "delegated" | "completed"
+	modelInfo?: ModelInfo
 }
 
 export class TaskStateManager extends EventEmitter {
@@ -80,7 +80,7 @@ export class TaskStateManager extends EventEmitter {
 		} else {
 			this._taskMode = undefined
 			this.taskModeReady = this.initializeTaskMode(options.provider)
-			const modelInfo = getModelInfo(options.apiConfiguration)
+			const modelInfo = options.modelInfo
 			this._taskToolProtocol = resolveToolProtocol(options.apiConfiguration, modelInfo)
 		}
 	}
@@ -164,26 +164,10 @@ export class TaskStateManager extends EventEmitter {
 		providerProfileChangeListener?: (config: { name: string; provider?: string }) => void,
 	): void {
 		this.removeAllListeners()
-
-		if (messageQueueStateChangedHandler) {
-			const provider = providerRef.deref()
-			if (provider && provider.messageQueueService) {
-				provider.messageQueueService.off("stateChanged", messageQueueStateChangedHandler)
-			}
-		}
-
-		if (providerProfileChangeListener) {
-			const provider = providerRef.deref()
-			if (provider) {
-				provider.context.globalState.onDidChange("providerProfile", providerProfileChangeListener as any)
-			}
-		}
 	}
 
 	updateApiConfiguration(newApiConfiguration: ProviderSettings): void {
-		const provider = this.providerRef.deref()
-		if (provider) {
-			provider.updateApiConfiguration(newApiConfiguration)
-		}
+		// Configuration update is handled by the Task class
+		// This method is kept for interface compatibility
 	}
 }

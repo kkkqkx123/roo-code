@@ -58,6 +58,7 @@ import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 
 // shared
 import { findLastIndex } from "../../shared/array"
+import type { ToolResponse } from "../../shared/tools"
 import { combineApiRequests } from "../../shared/combineApiRequests"
 import { combineCommandSequences } from "../../shared/combineCommandSequences"
 import { t } from "../../i18n"
@@ -298,10 +299,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	// Tool Usage Cache
 	private toolUsageSnapshot?: ToolUsage
 
-	// Token Usage Throttling - Debounced emit function
-	private readonly TOKEN_USAGE_EMIT_INTERVAL_MS = 2000 // 2 seconds
-	private debouncedEmitTokenUsage: ReturnType<typeof debounce>
-
 	// Cloud Sync Tracking
 	private cloudSyncedMessageTimestamps: Set<number> = new Set()
 
@@ -480,9 +477,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.usageTracker = new UsageTracker({
 			emitTokenUsage: (tokenUsage, toolUsage) => {
-				this.emit(RooCodeEventName.TaskTokenUsage, this.taskId, tokenUsage, toolUsage)
+				this.emit(RooCodeEventName.TaskTokenUsageUpdated, this.taskId, tokenUsage, toolUsage)
 			},
-			emitIntervalMs: this.TOKEN_USAGE_EMIT_INTERVAL_MS,
 		})
 
 		this.apiRequestManager = new ApiRequestManager({
@@ -538,14 +534,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		if (initialTodos && initialTodos.length > 0) {
 			this.todoList = initialTodos
 		}
-
-		this.debouncedEmitTokenUsage = debounce(
-			(tokenUsage: TokenUsage, toolUsage: ToolUsage) => {
-				this.usageTracker.emitTokenUsage(tokenUsage, toolUsage)
-			},
-			this.TOKEN_USAGE_EMIT_INTERVAL_MS,
-			{ leading: true, trailing: true, maxWait: this.TOKEN_USAGE_EMIT_INTERVAL_MS },
-		)
 
 		onCreated?.(this)
 
@@ -637,11 +625,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public async flushPendingToolResultsToHistory(): Promise<void> {
-		return this.taskMessageManager.flushPendingToolResultsToHistory(this.apiConversationHistory, this.userMessageContent)
+		return this.taskMessageManager.flushPendingToolResultsToHistory()
 	}
 
 	private async saveApiConversationHistory() {
-		return this.taskMessageManager.saveApiConversationHistory(this.apiConversationHistory)
+		return this.taskMessageManager.saveApiConversationHistory()
 	}
 
 	// Cline Messages - delegated to message manager
@@ -654,9 +642,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public async overwriteClineMessages(newMessages: ClineMessage[]) {
+		await this.taskMessageManager.overwriteClineMessages(newMessages, this.providerRef, this.cloudSyncedMessageTimestamps)
 		this.clineMessages = newMessages
-		restoreTodoListForTask(this)
-		await this.saveClineMessages()
 		this.cloudSyncedMessageTimestamps.clear()
 		for (const msg of newMessages) {
 			if (msg.partial !== true) {
@@ -670,11 +657,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	private async saveClineMessages() {
-		return this.taskMessageManager.saveClineMessages(this.clineMessages)
+		return this.taskMessageManager.saveClineMessages()
 	}
 
 	private findMessageByTimestamp(ts: number): ClineMessage | undefined {
-		return this.taskMessageManager.findMessageByTimestamp(this.clineMessages, ts)
+		return this.taskMessageManager.findMessageByTimestamp(ts)
 	}
 
 	// User interactions - delegated to user interaction manager
@@ -692,11 +679,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public approveAsk({ text, images }: { text?: string; images?: string[] } = {}) {
-		return this.userInteractionManager.approveAsk(text, images)
+		return this.userInteractionManager.approveAsk({ text, images })
 	}
 
 	public denyAsk({ text, images }: { text?: string; images?: string[] } = {}) {
-		return this.userInteractionManager.denyAsk(text, images)
+		return this.userInteractionManager.denyAsk({ text, images })
 	}
 
 	handleWebviewAskResponse(askResponse: ClineAskResponse, text?: string, images?: string[]) {
@@ -717,7 +704,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.userInteractionManager.say(type, text, images, partial, checkpoint, progressStatus, options, contextCondense, contextTruncation)
 	}
 
-	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string) {
+	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string): Promise<ToolResponse> {
 		return this.userInteractionManager.sayAndCreateMissingParamError(toolName, paramName, relPath)
 	}
 
@@ -929,7 +916,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			initialStatus: "delegated",
 		})
 
-		this.emit(RooCodeEventName.TaskCreated, subtask)
+		this.emit(RooCodeEventName.TaskSpawned, subtask.taskId)
 
 		await subtask.startTask(message, undefined)
 
@@ -956,7 +943,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					(block) => block.type === "text" && typeof block.text === "string",
 				)
 				if (textBlocks.length > 0) {
-					const lastTextBlock = textBlocks[textBlocks.length - 1]
+					const lastTextBlock = textBlocks[textBlocks.length - 1] as Anthropic.Messages.TextBlockParam
 					if (lastTextBlock.text.includes("Task delegated to subtask")) {
 						this.apiConversationHistory.splice(lastUserMsgIndex, 1)
 						await this.saveApiConversationHistory()
@@ -983,13 +970,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			throw new Error("Provider state not available")
 		}
 
-		const { mode, apiConfiguration, providerProfile } = state
+		const { mode, apiConfiguration } = state
 
 		if (mode) {
 			this._taskMode = mode
 		}
 
-		if (providerProfile && apiConfiguration) {
+		if (apiConfiguration) {
 			this.apiConfiguration = apiConfiguration
 			this.api = buildApiHandler(apiConfiguration)
 		}
@@ -997,7 +984,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		await this.recursivelyMakeClineRequests(
 			[
 				{ type: "text", text: text },
-				...images.map((image) => ({ type: "image", source: { type: "base64", media_type: "image/png", data: image } })),
+				...images.map((image) => ({ type: "image", source: { type: "base64", media_type: "image/png", data: image } } as Anthropic.Messages.ImageBlockParam)),
 			],
 			false,
 		)
@@ -1018,9 +1005,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.api = buildApiHandler(newApiConfiguration)
 	}
 
-	public async processQueuedMessages(): void {
+	public async processQueuedMessages(): Promise<void> {
 		if (!this.messageQueueService.isEmpty()) {
-			const queued = this.messageQueueService.dequeue()
+			const queued = this.messageQueueService.dequeueMessage()
 			if (queued) {
 				setTimeout(() => {
 					this.submitUserMessage(queued.text, queued.images)
@@ -1188,46 +1175,69 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		const mcpEnabled = state?.mcpEnabled ?? true
 
 		if (mcpEnabled) {
-			const mcpHub = provider.mcpHub
+			const mcpHub = provider.getMcpHub()
 			if (!mcpHub) {
 				throw new Error("MCP Hub not available")
 			}
 
 			const mcpServers = mcpHub.getServers()
-			const mcpTools = mcpHub.getTools()
+			const mcpTools = mcpServers.flatMap((server) => server.tools ?? [])
 
-			return SYSTEM_PROMPT({
-				mode: await this.getTaskMode(),
-				customInstructions: state?.customInstructions,
-				apiConfiguration: this.apiConfiguration,
-				environmentDetails: await getEnvironmentDetails(this.cwd),
-				mcpServers,
-				mcpTools,
-				diffStrategy: this.diffStrategy,
-				alwaysAllowReadOnly: state?.alwaysAllowReadOnly ?? false,
-				supportsComputerUse: this.api.getModel().info.supportsComputerUse ?? false,
-			})
+			return SYSTEM_PROMPT(
+				provider.context,
+				this.cwd,
+				state?.browserToolEnabled ?? true,
+				mcpHub,
+				this.diffStrategy,
+				state?.browserViewportSize ?? "900x600",
+				await this.getTaskMode(),
+				state?.customModePrompts,
+				undefined,
+				state?.customInstructions,
+				this.diffEnabled,
+				state?.experiments,
+				state?.enableMcpServerCreation,
+				state?.language,
+				this.rooIgnoreController?.getInstructions(),
+				state?.maxReadFileLine !== -1,
+				{
+					maxConcurrentFileReads: state?.maxConcurrentFileReads ?? 5,
+					todoListEnabled: this.apiConfiguration?.todoListEnabled ?? true,
+					browserToolEnabled: state?.browserToolEnabled ?? true,
+					useAgentRules: vscode.workspace.getConfiguration(Package.name).get<boolean>("useAgentRules") ?? true,
+					newTaskRequireTodos: vscode.workspace.getConfiguration(Package.name).get<boolean>("newTaskRequireTodos") ?? false,
+				},
+				this.todoList ?? [],
+				getModelId(this.apiConfiguration),
+			)
 		}
 
-		return SYSTEM_PROMPT({
-			mode: await this.getTaskMode(),
-			customInstructions: state?.customInstructions,
-			apiConfiguration: this.apiConfiguration,
-			environmentDetails: await getEnvironmentDetails(this.cwd),
-			mcpServers: [],
-			mcpTools: [],
-			diffStrategy: this.diffStrategy,
-			alwaysAllowReadOnly: state?.alwaysAllowReadOnly ?? false,
-			supportsComputerUse: this.api.getModel().info.supportsComputerUse ?? false,
-		})
-	}
-
-	private getCurrentProfileId(state: any): string {
-		return (
-			state?.providerProfile?.id ||
-			state?.apiConfiguration?.apiProvider ||
-			this.apiConfiguration?.apiProvider ||
-			"default"
+		return SYSTEM_PROMPT(
+			provider.context,
+			this.cwd,
+			state?.browserToolEnabled ?? true,
+			undefined,
+			this.diffStrategy,
+			state?.browserViewportSize ?? "900x600",
+			await this.getTaskMode(),
+			state?.customModePrompts,
+			undefined,
+			state?.customInstructions,
+			this.diffEnabled,
+			state?.experiments,
+			state?.enableMcpServerCreation,
+			state?.language,
+			this.rooIgnoreController?.getInstructions(),
+			state?.maxReadFileLine !== -1,
+			{
+				maxConcurrentFileReads: state?.maxConcurrentFileReads ?? 5,
+				todoListEnabled: this.apiConfiguration?.todoListEnabled ?? true,
+				browserToolEnabled: state?.browserToolEnabled ?? true,
+				useAgentRules: vscode.workspace.getConfiguration(Package.name).get<boolean>("useAgentRules") ?? true,
+				newTaskRequireTodos: vscode.workspace.getConfiguration(Package.name).get<boolean>("newTaskRequireTodos") ?? false,
+			},
+			this.todoList ?? [],
+			getModelId(this.apiConfiguration),
 		)
 	}
 
@@ -1331,12 +1341,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		await provider?.postMessageToWebview({ type: "condenseTaskContextResponse", text: this.taskId })
 	}
 
-	public async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
-		yield* this.apiRequestManager.attemptApiRequest(retryAttempt)
+	public async *attemptApiRequest(): ApiStream {
+		yield* this.apiRequestManager.attemptApiRequest()
 	}
 
 	private async backoffAndAnnounce(retryAttempt: number, error: any): Promise<void> {
 		return this.apiRequestManager.backoffAndAnnounce(retryAttempt, error)
+	}
+
+	private getCurrentProfileId(state: any): string {
+		return (
+			state?.listApiConfigMeta?.find((profile: any) => profile.name === state?.currentApiConfigName)?.id ??
+			"default"
+		)
 	}
 
 	private buildCleanConversationHistory(
@@ -1441,9 +1458,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		provider.postMessageToWebview({
 			type: "browserSessionUpdate",
-			browserSession: {
-				isActive: this.browserSession.isActive,
-			},
+			isBrowserSessionActive: this.browserSession.isSessionActive(),
 		})
 	}
 

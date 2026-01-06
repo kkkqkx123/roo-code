@@ -144,7 +144,7 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 			} else {
 				if (!task.diffViewProvider.isEditing) {
 					const partialMessage = JSON.stringify(sharedMessageProps)
-					await task.ask("tool", partialMessage, true).catch(() => {})
+					await task.ask("tool", partialMessage, undefined, true).catch(() => {})
 					await task.diffViewProvider.open(relPath)
 				}
 
@@ -246,7 +246,7 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		}
 
 		const partialMessage = JSON.stringify(sharedMessageProps)
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 
 		if (newContent) {
 			if (!task.diffViewProvider.isEditing) {

@@ -91,7 +91,7 @@ export class ListFilesTool extends BaseTool<"list_files"> {
 		}
 
 		const partialMessage = JSON.stringify({ ...sharedMessageProps, content: "" } satisfies ClineSayTool)
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

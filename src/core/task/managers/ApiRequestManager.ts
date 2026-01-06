@@ -81,16 +81,18 @@ export class ApiRequestManager {
 		this.cwd = options.cwd
 	}
 
-	async attemptApiRequest(): Promise<ApiStream> {
+	public async *attemptApiRequest(): ApiStream {
 		const systemPrompt = await this.getSystemPrompt()
 		const messages = this.messageManager.getApiConversationHistory()
 
-		return this.api.createMessage(systemPrompt, messages, {
+		const stream = await this.api.createMessage(systemPrompt, messages, {
 			taskId: this.stateManager.taskId,
 			mode: this.stateManager.taskMode,
 			suppressPreviousResponseId: this.stateManager.skipPrevResponseIdOnce,
 			toolProtocol: this.stateManager.taskToolProtocol,
 		})
+
+		yield* stream
 	}
 
 	async getSystemPrompt(): Promise<string> {

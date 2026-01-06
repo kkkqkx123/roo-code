@@ -10,7 +10,6 @@ export interface UsageTrackerOptions {
 }
 
 export class UsageTracker {
-	private emitTokenUsage: (tokenUsage: TokenUsage, toolUsage: ToolUsage) => void
 	private debouncedEmitTokenUsage: ReturnType<typeof debounce>
 
 	tokenUsage: TokenUsage = {
@@ -28,7 +27,6 @@ export class UsageTracker {
 	private tokenUsageSnapshotAt?: number
 
 	constructor(options: UsageTrackerOptions) {
-		this.emitTokenUsage = options.emitTokenUsage
 		const emitIntervalMs = options.emitIntervalMs ?? 2000
 
 		this.debouncedEmitTokenUsage = debounce(
@@ -37,7 +35,7 @@ export class UsageTracker {
 				const toolChanged = hasToolUsageChanged(toolUsage, this.toolUsageSnapshot)
 
 				if (tokenChanged || toolChanged) {
-					this.emitTokenUsage(tokenUsage, toolUsage)
+					options.emitTokenUsage(tokenUsage, toolUsage)
 					this.tokenUsageSnapshot = tokenUsage
 					this.toolUsageSnapshot = toolUsage
 				}
@@ -71,7 +69,7 @@ export class UsageTracker {
 		this.debouncedEmitTokenUsage(this.tokenUsage, this.toolUsage)
 	}
 
-	emitFinalUpdate(): void {
+	emitFinalTokenUsageUpdate(): void {
 		this.debouncedEmitTokenUsage.flush()
 	}
 

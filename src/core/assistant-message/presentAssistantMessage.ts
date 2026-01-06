@@ -190,9 +190,8 @@ export async function presentAssistantMessage(cline: Task) {
 				const { response, text, images } = await cline.ask(
 					type,
 					partialMessage,
+					undefined,
 					false,
-					progressStatus,
-					isProtected || false,
 				)
 
 				if (response !== "yesButtonClicked") {
@@ -581,9 +580,8 @@ export async function presentAssistantMessage(cline: Task) {
 				const { response, text, images } = await cline.ask(
 					type,
 					partialMessage,
+					undefined,
 					false,
-					progressStatus,
-					isProtected || false,
 				)
 
 				if (response !== "yesButtonClicked") {

@@ -122,7 +122,7 @@ export async function applyDiffTool(
 			path: getReadablePath(cline.cwd, filePath),
 		}
 		const partialMessage = JSON.stringify(sharedMessageProps)
-		await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+		await cline.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 		return
 	}
 
@@ -355,7 +355,7 @@ Original error: ${errorMessage}`
 					batchDiffs,
 					isProtected: hasProtectedFiles,
 				} satisfies ClineSayTool)
-				await cline.ask("tool", partialMessage, true).catch(() => {})
+				await cline.ask("tool", partialMessage, undefined, true).catch(() => {})
 			}
 
 			// Final approval message (non-partial)
@@ -365,7 +365,7 @@ Original error: ${errorMessage}`
 				isProtected: hasProtectedFiles,
 			} satisfies ClineSayTool)
 
-			const { response, text, images } = await cline.ask("tool", completeMessage, false)
+			const { response, text, images } = await cline.ask("tool", completeMessage, undefined, false)
 
 			// Process batch response
 			if (response === "yesButtonClicked") {
@@ -566,7 +566,7 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 								diff: diffItems.map((item) => item.content).join("\n\n"),
 							}
 							// Send a complete message (partial: false) to update the UI and stop the spinner
-							await cline.ask("tool", JSON.stringify(sharedMessageProps), false).catch(() => {})
+							await cline.ask("tool", JSON.stringify(sharedMessageProps), undefined, false).catch(() => {})
 						}
 					}
 					continue

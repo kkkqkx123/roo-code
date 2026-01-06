@@ -93,13 +93,13 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 			arguments: this.removeClosingTag("arguments", params.arguments, block.partial),
 		} satisfies ClineAskUseMcpServer)
 
-		await task.ask("use_mcp_server", partialMessage, true).catch(() => {})
+		await task.ask("use_mcp_server", partialMessage, undefined, true).catch(() => {})
 	}
 
 	private async validateParams(
 		task: Task,
 		params: UseMcpToolParams,
-		pushToolResult: (content: string) => void,
+		pushToolResult: (content: string | Array<any>) => void,
 	): Promise<ValidationResult> {
 		if (!params.server_name) {
 			task.consecutiveMistakeCount++
@@ -154,7 +154,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 		task: Task,
 		serverName: string,
 		toolName: string,
-		pushToolResult: (content: string) => void,
+		pushToolResult: (content: string | Array<any>) => void,
 	): Promise<{ isValid: boolean; availableTools?: string[] }> {
 		try {
 			// Get the MCP hub to access server information

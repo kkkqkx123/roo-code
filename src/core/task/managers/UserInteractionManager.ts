@@ -1,4 +1,5 @@
 import type { ClineMessage, ClineAsk, ToolName, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@roo-code/types"
+import type { ToolResponse } from "../../../shared/tools"
 import { isIdleAsk, isInteractiveAsk, isResumableAsk } from "@roo-code/types"
 import { formatResponse } from "../../prompts/responses"
 import { t } from "../../../i18n"
@@ -217,9 +218,12 @@ export class UserInteractionManager {
 		return sayMessage
 	}
 
-	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string): Promise<void> {
+	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string): Promise<ToolResponse> {
 		const message = t("common:errors.missing_param", { toolName, paramName, relPath })
 		await this.say("error", message)
+		return formatResponse.toolError(
+			formatResponse.missingToolParameterError(paramName, this.stateManager.taskToolProtocol ?? "xml"),
+		)
 	}
 
 	handleWebviewAskResponse(askResponse: ClineAskResponse, text?: string, images?: string[]): void {

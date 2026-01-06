@@ -87,7 +87,7 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			reason: this.removeClosingTag("reason", reason, block.partial),
 		})
 
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

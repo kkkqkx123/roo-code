@@ -59,7 +59,7 @@ export async function simpleReadFileTool(
 			...sharedMessageProps,
 			content: undefined,
 		} satisfies ClineSayTool)
-		await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+		await cline.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 		return
 	}
 
@@ -105,7 +105,7 @@ export async function simpleReadFileTool(
 			reason: lineSnippet,
 		} satisfies ClineSayTool)
 
-		const { response, text, images } = await cline.ask("tool", completeMessage, false)
+		const { response, text, images } = await cline.ask("tool", completeMessage, undefined, false)
 
 		if (response !== "yesButtonClicked") {
 			// Handle denial

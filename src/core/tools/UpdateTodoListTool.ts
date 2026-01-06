@@ -108,7 +108,7 @@ export class UpdateTodoListTool extends BaseTool<"update_todo_list"> {
 			tool: "updateTodoList",
 			todos: todos,
 		})
-		await task.ask("tool", approvalMsg, block.partial).catch(() => {})
+		await task.ask("tool", approvalMsg, undefined, block.partial).catch(() => {})
 	}
 }
 

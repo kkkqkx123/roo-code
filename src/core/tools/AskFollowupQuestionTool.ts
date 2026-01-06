@@ -83,7 +83,7 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 			}
 
 			task.consecutiveMistakeCount = 0
-			const { text, images } = await task.ask("followup", JSON.stringify(follow_up_json), false)
+			const { text, images } = await task.ask("followup", JSON.stringify(follow_up_json), undefined, false)
 			await task.say("user_feedback", text ?? "", images)
 			pushToolResult(formatResponse.toolResult(`<answer>\n${text}\n</answer>`, images))
 		} catch (error) {
@@ -98,7 +98,7 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 		// During partial streaming, only show the question to avoid displaying raw JSON
 		// The full JSON with suggestions will be sent when the tool call is complete (!block.partial)
 		await task
-			.ask("followup", this.removeClosingTag("question", question, block.partial), block.partial)
+			.ask("followup", this.removeClosingTag("question", question, block.partial), undefined, block.partial)
 			.catch(() => {})
 	}
 }

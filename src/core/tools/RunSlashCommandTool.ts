@@ -117,7 +117,7 @@ export class RunSlashCommandTool extends BaseTool<"run_slash_command"> {
 			args: this.removeClosingTag("args", args, block.partial),
 		})
 
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

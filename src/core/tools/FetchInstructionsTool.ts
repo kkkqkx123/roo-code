@@ -72,7 +72,7 @@ export class FetchInstructionsTool extends BaseTool<"fetch_instructions"> {
 		const sharedMessageProps: ClineSayTool = { tool: "fetchInstructions", content: taskParam }
 
 		const partialMessage = JSON.stringify({ ...sharedMessageProps, content: undefined } satisfies ClineSayTool)
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

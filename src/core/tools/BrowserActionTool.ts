@@ -42,7 +42,7 @@ export async function browserActionTool(
 	try {
 		if (block.partial) {
 			if (action === "launch") {
-				await cline.ask("browser_action_launch", removeClosingTag("url", url), block.partial).catch(() => {})
+				await cline.ask("browser_action_launch", removeClosingTag("url", url), undefined, block.partial).catch(() => {})
 			} else {
 				await cline.say(
 					"browser_action",

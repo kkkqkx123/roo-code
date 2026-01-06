@@ -720,7 +720,7 @@ describe("Cline", () => {
 				]
 
 				// Trigger API request
-				const iterator = cline.attemptApiRequest(0)
+				const iterator = cline.attemptApiRequest()
 				await iterator.next()
 
 				// Calculate expected delay for first retry
@@ -841,7 +841,7 @@ describe("Cline", () => {
 				]
 
 				// Trigger API request
-				const iterator = cline.attemptApiRequest(0)
+				const iterator = cline.attemptApiRequest()
 				await iterator.next()
 
 				// Verify delay is only applied for the countdown
@@ -1028,7 +1028,7 @@ describe("Cline", () => {
 				vi.spyOn(parent.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the parent task
-				const parentIterator = parent.attemptApiRequest(0)
+				const parentIterator = parent.attemptApiRequest()
 				await parentIterator.next()
 
 				// Verify no delay was applied for the first request
@@ -1064,7 +1064,7 @@ describe("Cline", () => {
 				vi.spyOn(child.api, "createMessage").mockReturnValue(childMockStream)
 
 				// Make an API request with the child task
-				const childIterator = child.attemptApiRequest(0)
+				const childIterator = child.attemptApiRequest()
 				await childIterator.next()
 
 				// Verify rate limiting was applied
@@ -1101,7 +1101,7 @@ describe("Cline", () => {
 				vi.spyOn(parent.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the parent task
-				const parentIterator = parent.attemptApiRequest(0)
+				const parentIterator = parent.attemptApiRequest()
 				await parentIterator.next()
 
 				// Simulate time passing (more than rate limit)
@@ -1122,7 +1122,7 @@ describe("Cline", () => {
 				vi.spyOn(child.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the child task
-				const childIterator = child.attemptApiRequest(0)
+				const childIterator = child.attemptApiRequest()
 				await childIterator.next()
 
 				// Verify no rate limiting was applied
@@ -1161,7 +1161,7 @@ describe("Cline", () => {
 				vi.spyOn(parent.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the parent task
-				const parentIterator = parent.attemptApiRequest(0)
+				const parentIterator = parent.attemptApiRequest()
 				await parentIterator.next()
 
 				// Create first subtask
@@ -1177,7 +1177,7 @@ describe("Cline", () => {
 				vi.spyOn(child1.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the first child task
-				const child1Iterator = child1.attemptApiRequest(0)
+				const child1Iterator = child1.attemptApiRequest()
 				await child1Iterator.next()
 
 				// Verify rate limiting was applied
@@ -1200,7 +1200,7 @@ describe("Cline", () => {
 				vi.spyOn(child2.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the second child task
-				const child2Iterator = child2.attemptApiRequest(0)
+				const child2Iterator = child2.attemptApiRequest()
 				await child2Iterator.next()
 
 				// Verify rate limiting was applied again
@@ -1242,7 +1242,7 @@ describe("Cline", () => {
 				vi.spyOn(parent.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the parent task
-				const parentIterator = parent.attemptApiRequest(0)
+				const parentIterator = parent.attemptApiRequest()
 				await parentIterator.next()
 
 				// Create a subtask
@@ -1258,7 +1258,7 @@ describe("Cline", () => {
 				vi.spyOn(child.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request with the child task
-				const childIterator = child.attemptApiRequest(0)
+				const childIterator = child.attemptApiRequest()
 				await childIterator.next()
 
 				// Verify no delay was applied
@@ -1294,7 +1294,7 @@ describe("Cline", () => {
 				vi.spyOn(task.api, "createMessage").mockReturnValue(mockStream)
 
 				// Make an API request
-				const iterator = task.attemptApiRequest(0)
+				const iterator = task.attemptApiRequest()
 				await iterator.next()
 
 				// Access the private static property via reflection for testing

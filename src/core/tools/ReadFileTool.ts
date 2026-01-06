@@ -221,7 +221,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				})
 
 				const completeMessage = JSON.stringify({ tool: "readFile", batchFiles } satisfies ClineSayTool)
-				const { response, text, images } = await task.ask("tool", completeMessage, false)
+				const { response, text, images } = await task.ask("tool", completeMessage, undefined, false)
 
 				if (response === "yesButtonClicked") {
 					if (text) await task.say("user_feedback", text, images)
@@ -305,7 +305,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					reason: lineSnippet,
 				} satisfies ClineSayTool)
 
-				const { response, text, images } = await task.ask("tool", completeMessage, false)
+				const { response, text, images } = await task.ask("tool", completeMessage, undefined, false)
 
 				if (response !== "yesButtonClicked") {
 					if (text) await task.say("user_feedback", text, images)
@@ -796,7 +796,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			...sharedMessageProps,
 			content: undefined,
 		} satisfies ClineSayTool)
-		await task.ask("tool", partialMessage, block.partial).catch(() => {})
+		await task.ask("tool", partialMessage, undefined, block.partial).catch(() => {})
 	}
 }
 

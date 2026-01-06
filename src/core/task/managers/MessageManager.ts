@@ -34,7 +34,7 @@ export class MessageManager {
 		return readTaskMessages({ taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
-	async addToApiConversationHistory(message: ApiMessage, reasoning?: string): Promise<void> {
+	async addToApiConversationHistory(message: ApiMessage, reasoning?: string, api?: any): Promise<void> {
 		const messageWithTs = {
 			...message,
 			ts: Date.now(),
@@ -80,12 +80,12 @@ export class MessageManager {
 		await this.saveApiConversationHistory()
 	}
 
-	async addToClineMessages(message: ClineMessage): Promise<void> {
+	async addToClineMessages(message: ClineMessage, providerRef?: WeakRef<ClineProvider>, cloudSyncedMessageTimestamps?: Set<number>): Promise<void> {
 		this.clineMessages.push(message)
 		await this.saveClineMessages()
 	}
 
-	async overwriteClineMessages(newMessages: ClineMessage[]): Promise<void> {
+	async overwriteClineMessages(newMessages: ClineMessage[], providerRef?: WeakRef<ClineProvider>, cloudSyncedMessageTimestamps?: Set<number>): Promise<void> {
 		this.clineMessages = newMessages
 		restoreTodoListForTask(this.stateManager as any)
 
@@ -98,23 +98,35 @@ export class MessageManager {
 		await this.saveClineMessages()
 	}
 
-	async updateClineMessage(message: ClineMessage): Promise<void> {
-		const index = this.findMessageByTimestamp(message.ts)
+	async updateClineMessage(message: ClineMessage, providerRef?: WeakRef<ClineProvider>): Promise<void> {
+		const index = this.findMessageIndexByTimestamp(message.ts)
 		if (index !== -1) {
 			this.clineMessages[index] = message
 			await this.saveClineMessages()
 		}
 	}
 
-	private async saveApiConversationHistory(): Promise<void> {
+	async saveApiConversationHistory(): Promise<void> {
 		await saveApiMessages({ messages: this.apiConversationHistory, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
-	private async saveClineMessages(): Promise<void> {
+	async saveClineMessages(messages?: ClineMessage[]): Promise<void> {
+		if (messages) {
+			this.clineMessages = messages
+		}
 		await saveTaskMessages({ messages: this.clineMessages, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
-	findMessageByTimestamp(ts: number): number {
+	findMessageByTimestamp(ts: number): ClineMessage | undefined {
+		for (let i = this.clineMessages.length - 1; i >= 0; i--) {
+			if (this.clineMessages[i].ts === ts) {
+				return this.clineMessages[i]
+			}
+		}
+		return undefined
+	}
+
+	findMessageIndexByTimestamp(ts: number): number {
 		for (let i = this.clineMessages.length - 1; i >= 0; i--) {
 			if (this.clineMessages[i].ts === ts) {
 				return i

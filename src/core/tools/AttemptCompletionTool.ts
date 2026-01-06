@@ -138,7 +138,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 				}
 			}
 
-			const { response, text, images } = await task.ask("completion_result", "", false)
+			const { response, text, images } = await task.ask("completion_result", "", undefined, false)
 
 			if (response === "yesButtonClicked") {
 				return
@@ -192,7 +192,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 		if (command) {
 			if (lastMessage && lastMessage.ask === "command") {
 				await task
-					.ask("command", this.removeClosingTag("command", command, block.partial), block.partial)
+					.ask("command", this.removeClosingTag("command", command, block.partial), undefined, block.partial)
 					.catch(() => {})
 			} else {
 				await task.say(
@@ -208,7 +208,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 				task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage)
 
 				await task
-					.ask("command", this.removeClosingTag("command", command, block.partial), block.partial)
+					.ask("command", this.removeClosingTag("command", command, block.partial), undefined, block.partial)
 					.catch(() => {})
 			}
 		} else {

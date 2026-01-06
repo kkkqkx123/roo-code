@@ -290,7 +290,7 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			return
 		}
 
-		await task.ask("tool", JSON.stringify(sharedMessageProps), block.partial, toolProgressStatus).catch(() => {})
+		await task.ask("tool", JSON.stringify(sharedMessageProps), undefined, block.partial).catch(() => {})
 	}
 }
 
