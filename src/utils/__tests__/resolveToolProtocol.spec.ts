@@ -65,7 +65,7 @@ describe("resolveToolProtocol", () => {
 	describe("Precedence Level 2: Model Default", () => {
 		it("should use model defaultToolProtocol when no profile setting", () => {
 			const settings: ProviderSettings = {
-				apiProvider: "roo",
+				apiProvider: "human-relay",
 			}
 			const modelInfo: ModelInfo = {
 				maxTokens: 4096,
@@ -80,7 +80,7 @@ describe("resolveToolProtocol", () => {
 
 		it("should override model capability when model default is present", () => {
 			const settings: ProviderSettings = {
-				apiProvider: "roo",
+				apiProvider: "human-relay",
 			}
 			const modelInfo: ModelInfo = {
 				maxTokens: 4096,
@@ -161,7 +161,7 @@ describe("resolveToolProtocol", () => {
 			// Set up a scenario with all levels defined
 			const settings: ProviderSettings = {
 				toolProtocol: "native", // Level 1: User profile setting
-				apiProvider: "roo",
+				apiProvider: "human-relay",
 			}
 
 			const modelInfo: ModelInfo = {
@@ -288,7 +288,7 @@ describe("resolveToolProtocol", () => {
 
 		it("should fall back to XML when model doesn't support native", () => {
 			const settings: ProviderSettings = {
-				apiProvider: "roo",
+				apiProvider: "human-relay",
 			}
 			const modelInfo: ModelInfo = {
 				maxTokens: 4096,
@@ -363,7 +363,7 @@ describe("resolveToolProtocol", () => {
 
 		it("should use model default when available", () => {
 			const settings: ProviderSettings = {
-				apiProvider: "roo",
+				apiProvider: "human-relay",
 			}
 			const modelInfo: ModelInfo = {
 				maxTokens: 8192,

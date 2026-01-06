@@ -59,39 +59,8 @@ export class ProfileValidator {
 				return profile.openAiModelId
 			case "anthropic":
 			case "openai-native":
-			case "bedrock":
-			case "vertex":
 			case "gemini":
-			case "mistral":
-			case "deepseek":
-			case "xai":
-			case "groq":
-			case "sambanova":
-			case "chutes":
-			case "fireworks":
-			case "featherless":
-				return profile.apiModelId
-			case "litellm":
-				return profile.litellmModelId
-			case "unbound":
-				return profile.unboundModelId
-			case "lmstudio":
-				return profile.lmStudioModelId
-			case "vscode-lm":
-				// We probably need something more flexible for this one, if we need to really support it here.
-				return profile.vsCodeLmModelSelector?.id
-			case "openrouter":
-				return profile.openRouterModelId
-			case "ollama":
-				return profile.ollamaModelId
-			case "requesty":
-				return profile.requestyModelId
-			case "io-intelligence":
-				return profile.ioIntelligenceModelId
-			case "deepinfra":
-				return profile.deepInfraModelId
 			case "human-relay":
-			case "fake-ai":
 			default:
 				return undefined
 		}

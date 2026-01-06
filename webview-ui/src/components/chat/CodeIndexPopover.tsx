@@ -720,33 +720,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												updateSetting("codebaseIndexEmbedderProvider", value)
 												// Clear model selection when switching providers
 												updateSetting("codebaseIndexEmbedderModelId", "")
-
-												// Auto-populate Region and Profile when switching to Bedrock
-												// if the main API provider is also configured for Bedrock
-												if (
-													value === "bedrock" &&
-													apiConfiguration?.apiProvider === "bedrock"
-												) {
-													// Only populate if currently empty
-													if (
-														!currentSettings.codebaseIndexBedrockRegion &&
-														apiConfiguration.awsRegion
-													) {
-														updateSetting(
-															"codebaseIndexBedrockRegion",
-															apiConfiguration.awsRegion,
-														)
-													}
-													if (
-														!currentSettings.codebaseIndexBedrockProfile &&
-														apiConfiguration.awsProfile
-													) {
-														updateSetting(
-															"codebaseIndexBedrockProfile",
-															apiConfiguration.awsProfile,
-														)
-													}
-												}
 											}}>
 											<SelectTrigger className="w-full">
 												<SelectValue />
@@ -766,9 +739,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												</SelectItem>
 												<SelectItem value="mistral">
 													{t("settings:codeIndex.mistralProvider")}
-												</SelectItem>
-												<SelectItem value="vercel-ai-gateway">
-													{t("settings:codeIndex.vercelAiGatewayProvider")}
 												</SelectItem>
 												<SelectItem value="bedrock">
 													{t("settings:codeIndex.bedrockProvider")}

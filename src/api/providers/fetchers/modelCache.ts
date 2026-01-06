@@ -171,11 +171,9 @@ export async function initializeModelCacheRefresh(): Promise<void> {
 	// Wait for extension to fully activate before refreshing
 	setTimeout(async () => {
 		// Providers that work without API keys
-		const publicProviders: Array<{ provider: RouterName; options: GetModelsOptions }> = [
-			{ provider: "openrouter", options: { provider: "openrouter" } },
-			{ provider: "vercel-ai-gateway", options: { provider: "vercel-ai-gateway" } },
-			{ provider: "chutes", options: { provider: "chutes" } },
-		]
+		// Note: Cloud and telemetry services have been removed
+		// Model cache refresh is disabled for removed providers
+		const publicProviders: Array<{ provider: RouterName; options: GetModelsOptions }> = []
 
 		// Refresh each provider in background (fire and forget)
 		for (const { options } of publicProviders) {

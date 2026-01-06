@@ -8,6 +8,7 @@ import { getUri } from "./getUri"
 import { webviewMessageHandler } from "./webviewMessageHandler"
 import { MarketplaceManager } from "../../services/marketplace"
 import { ClineProvider } from "./ClineProvider"
+import { createLogger } from "../../utils/logger"
 
 export class WebviewCoordinator {
 	private view?: vscode.WebviewView | vscode.WebviewPanel
@@ -17,48 +18,55 @@ export class WebviewCoordinator {
 	private outputChannel: vscode.OutputChannel
 	private provider: ClineProvider
 	private marketplaceManager?: MarketplaceManager
+	private logger: ReturnType<typeof createLogger>
 
 	constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel, provider: ClineProvider, marketplaceManager?: MarketplaceManager) {
 		this.context = context
 		this.outputChannel = outputChannel
 		this.provider = provider
 		this.marketplaceManager = marketplaceManager
+		this.logger = createLogger(outputChannel, "WebviewCoordinator")
 	}
 
 	/**
 	 * Resolves the webview view and sets up the webview
 	 */
 	public async resolveWebviewView(webviewView: vscode.WebviewView | vscode.WebviewPanel): Promise<void> {
+		this.logger.info("Resolving webview view...")
 		this.view = webviewView
 
-		// Clear any existing webview resources before setting up new ones
 		this.clearWebviewResources()
+		this.logger.debug("Cleared existing webview resources")
 
-		// Set webview options
 		webviewView.webview.options = {
-			// Allow scripts in the webview
 			enableScripts: true,
-			// Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
 			localResourceRoots: [
 				vscode.Uri.joinPath(this.context.extensionUri, "out"),
 				vscode.Uri.joinPath(this.context.extensionUri, "webview-ui/build"),
 			],
-			// Enable forms for input handling
 			enableForms: true,
 		}
+		this.logger.debug("Webview options configured")
 
-		// Set the HTML content that will fill the webview view
-		if (this.context.extensionMode === vscode.ExtensionMode.Development) {
-			webviewView.webview.html = await this.getHMRHtmlContent(webviewView.webview)
-		} else {
-			webviewView.webview.html = await this.getHtmlContent(webviewView.webview)
+		try {
+			if (this.context.extensionMode === vscode.ExtensionMode.Development) {
+				this.logger.info("Using development mode with HMR")
+				webviewView.webview.html = await this.getHMRHtmlContent(webviewView.webview)
+			} else {
+				this.logger.info("Using production mode")
+				webviewView.webview.html = await this.getHtmlContent(webviewView.webview)
+			}
+			this.logger.info("HTML content set successfully")
+		} catch (error) {
+			this.logger.error("Failed to set HTML content", error)
+			throw error
 		}
 
-		// Set up message listener
 		this.setWebviewMessageListener(webviewView.webview)
+		this.logger.debug("Message listener set up")
 
-		// Mark view as launched
 		this.isViewLaunched = true
+		this.logger.info("Webview view resolved successfully")
 	}
 
 	/**
@@ -109,10 +117,6 @@ export class WebviewCoordinator {
 
 		// Get the OpenRouter base URL from configuration
 		const state = await this.provider.getStateToPostToWebview()
-		const openRouterBaseUrl = state.apiConfiguration.openRouterBaseUrl || "https://openrouter.ai"
-		// Extract the domain for CSP
-		const openRouterDomain = openRouterBaseUrl.match(/^(https?:\/\/[^\/]+)/)?.[1] || "https://openrouter.ai"
-
 		const stylesUri = getUri(webview, this.context.extensionUri, ["webview-ui", "build", "assets", "index.css"])
 		const codiconsUri = getUri(webview, this.context.extensionUri, ["assets", "codicons", "codicon.css"])
 		const materialIconsUri = getUri(webview, this.context.extensionUri, ["assets", "vscode-material-icons", "icons"])
@@ -138,9 +142,7 @@ export class WebviewCoordinator {
 			`style-src ${webview.cspSource} 'unsafe-inline' https://* http://${localServerUrl} http://0.0.0.0:${localPort}`,
 			`img-src ${webview.cspSource} https://storage.googleapis.com https://img.clerk.com data:`,
 			`media-src ${webview.cspSource}`,
-			`script-src 'unsafe-eval' ${webview.cspSource} https://* https://*.posthog.com http://${localServerUrl} http://0.0.0.0:${localPort} 'nonce-${nonce}'`,
-			`connect-src ${webview.cspSource} ${openRouterDomain} https://* https://*.posthog.com ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`,
-		]
+			`script-src 'unsafe-eval' ${webview.cspSource} https://* https://*.posthog.com http://${localServerUrl} http://0.0.0.0:${localPort} 'nonce-${nonce}'`,		]
 
 		return /*html*/ `
 			<!DOCTYPE html>

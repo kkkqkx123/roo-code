@@ -27,8 +27,6 @@ import {
 	DEFAULT_MODES,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	getModelId,
-	requestyDefaultModelId,
-	openRouterDefaultModelId,
 } from "@roo-code/types"
 
 import { Package } from "../../shared/package"
@@ -48,7 +46,6 @@ import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { MarketplaceManager } from "../../services/marketplace"
 import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckpointService"
 import { CodeIndexManager } from "../../services/code-index/manager"
-import { MdmService } from "../../services/mdm/MdmService"
 
 import { getWorkspacePath } from "../../utils/path"
 import { OrganizationAllowListViolationError } from "../../utils/errors"
@@ -65,6 +62,7 @@ import { TaskManager } from "../task/TaskManager"
 import { WebviewCoordinator } from "./WebviewCoordinator"
 import { ProviderCoordinator } from "../providers/ProviderCoordinator"
 import { StateCoordinator } from "../state/StateCoordinator"
+import { createLogger } from "../../utils/logger"
 
 /**
  * Refactored ClineProvider that delegates responsibilities to specialized coordinators
@@ -83,7 +81,7 @@ export class ClineProvider
 	private outputChannel: vscode.OutputChannel
 	private renderContext: "sidebar" | "editor"
 	public readonly contextProxy: ContextProxy
-	private mdmService?: MdmService
+	private logger: ReturnType<typeof createLogger>
 	
 	// Webview related
 	private webviewDisposables: vscode.Disposable[] = []
@@ -124,7 +122,6 @@ export class ClineProvider
 		outputChannel: vscode.OutputChannel,
 		renderContext: "sidebar" | "editor" = "sidebar",
 		contextProxy: ContextProxy,
-		mdmService?: MdmService,
 	) {
 		super()
 		
@@ -132,13 +129,19 @@ export class ClineProvider
 		this.outputChannel = outputChannel
 		this.renderContext = renderContext
 		this.contextProxy = contextProxy
-		this.mdmService = mdmService
+		
+		this.logger = createLogger(outputChannel, `ClineProvider(${renderContext})`)
+		this.logger.info(`Initializing ClineProvider in ${renderContext} mode`)
 		
 		this.currentWorkspacePath = getWorkspacePath()
+		this.logger.debug(`Workspace path: ${this.currentWorkspacePath}`)
+		
 		ClineProvider.activeInstances.add(this)
+		this.logger.debug(`Added to active instances (total: ${ClineProvider.activeInstances.size})`)
 		
 		// Initialize task creation callback
 		this.taskCreationCallback = (instance: Task) => {
+			this.logger.debug(`Task created: ${instance.taskId}`)
 			this.emit(RooCodeEventName.TaskCreated, instance)
 
 			// Create named listener functions so we can remove them later.
@@ -210,8 +213,11 @@ export class ClineProvider
 	 * Initializes the coordinator instances
 	 */
 	private initializeCoordinators(): void {
+		this.logger.info("Initializing coordinators...")
+		
 		// Initialize StateCoordinator first (without TaskManager to avoid circular dependency)
 		this.stateCoordinator = new StateCoordinator(this.contextProxy, this.mcpHub)
+		this.logger.debug("StateCoordinator initialized")
 		
 		// Initialize TaskManager with task creation callback
 		this.taskManager = new TaskManager(
@@ -220,46 +226,65 @@ export class ClineProvider
 			async () => (await this.stateCoordinator.getState()).apiConfiguration,
 			() => this.stateCoordinator.getState(),
 		)
+		this.logger.debug("TaskManager initialized")
 		
 		// Set TaskManager in StateCoordinator to enable isBrowserSessionActive check
 		this.stateCoordinator.setTaskManager(this.taskManager)
+		this.logger.debug("TaskManager set in StateCoordinator")
 		
 		// Initialize ProviderCoordinator
 		this.providerCoordinator = new ProviderCoordinator(this.context, this.contextProxy)
+		this.logger.debug("ProviderCoordinator initialized")
 		
 		// Set up coordinator event forwarding
 		this.taskManager.on(RooCodeEventName.TaskCreated, (task) => {
 			this.emit(RooCodeEventName.TaskCreated, task)
 		})
+		this.logger.debug("Coordinator event forwarding set up")
+		
+		this.logger.info("Coordinators initialized successfully")
 	}
 
 	/**
 	 * Initializes service instances
 	 */
 	private initializeServices(): void {
+		this.logger.info("Initializing services...")
+		
 		this._workspaceTracker = new WorkspaceTracker(this)
+		this.logger.debug("WorkspaceTracker initialized")
+		
 		this._providerSettingsManager = new ProviderSettingsManager(this.context)
+		this.logger.debug("ProviderSettingsManager initialized")
+		
 		this._customModesManager = new CustomModesManager(this.context, async () => {
 			await this.postStateToWebview()
 		})
+		this.logger.debug("CustomModesManager initialized")
 		
 		this.marketplaceManager = new MarketplaceManager(this.context, this._customModesManager)
+		this.logger.debug("MarketplaceManager initialized")
 		
 		// Initialize WebviewCoordinator with provider and marketplaceManager
 		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this, this.marketplaceManager)
+		this.logger.debug("WebviewCoordinator initialized")
 		
 		// Initialize MCP Hub
 		McpServerManager.getInstance(this.context, this)
 			.then((hub) => {
 				this.mcpHub = hub
 				this.mcpHub.registerClient()
+				this.logger.info("MCP Hub initialized and client registered")
 			})
 			.catch((error) => {
-				this.log(`Failed to initialize MCP Hub: ${error}`)
+				this.logger.error("Failed to initialize MCP Hub", error)
 			})
 		
 		// Set codebase index models
 		this.stateCoordinator.updateGlobalState("codebaseIndexModels", EMBEDDING_MODEL_PROFILES)
+		this.logger.debug("Codebase index models set")
+		
+		this.logger.info("Services initialized successfully")
 	}
 
 	/**
@@ -293,10 +318,18 @@ export class ClineProvider
 	 * Resolves the webview view
 	 */
 	public async resolveWebviewView(webviewView: vscode.WebviewView | vscode.WebviewPanel): Promise<void> {
-		await this.webviewCoordinator.resolveWebviewView(webviewView)
-		
-		// Post initial state to webview
-		await this.postStateToWebview()
+		this.logger.info("Resolving webview view...")
+		try {
+			await this.webviewCoordinator.resolveWebviewView(webviewView)
+			this.logger.debug("WebviewCoordinator resolved webview view")
+			
+			// Post initial state to webview
+			await this.postStateToWebview()
+			this.logger.info("Initial state posted to webview")
+		} catch (error) {
+			this.logger.error("Failed to resolve webview view", error)
+			throw error
+		}
 	}
 
 	/**
@@ -442,7 +475,10 @@ export class ClineProvider
 	 * activating the previous one (resuming the parent task).
 	 */
 	async removeClineFromStack() {
+		this.logger.debug("Removing Cline from stack...")
+		
 		if (this.clineStack.length === 0) {
+			this.logger.warn("Cline stack is empty, nothing to remove")
 			return
 		}
 
@@ -450,16 +486,16 @@ export class ClineProvider
 		let task = this.clineStack.pop()
 
 		if (task) {
+			this.logger.debug(`Removing task ${task.taskId} from stack`)
 			task.emit(RooCodeEventName.TaskUnfocused)
 
 			try {
 				// Abort the running task and set isAbandoned to true so
 				// all running promises will exit as well.
 				await task.abortTask(true)
+				this.logger.debug(`Task ${task.taskId} aborted successfully`)
 			} catch (e) {
-				this.log(
-					`[ClineProvider#removeClineFromStack] abortTask() failed ${task.taskId}.${task.instanceId}: ${e.message}`,
-				)
+				this.logger.error(`Failed to abort task ${task.taskId}`, e)
 			}
 
 			// Remove event listeners before clearing the reference.
@@ -468,11 +504,13 @@ export class ClineProvider
 			if (cleanupFunctions) {
 				cleanupFunctions.forEach((cleanup) => cleanup())
 				this.taskEventListeners.delete(task)
+				this.logger.debug(`Removed event listeners for task ${task.taskId}`)
 			}
 
 			// Make sure no reference kept, once promises end it will be
 			// garbage collected.
 			task = undefined
+			this.logger.debug("Cline removed from stack successfully")
 		}
 	}
 
@@ -687,22 +725,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Handles OpenRouter callback
-	 */
-	public async handleOpenRouterCallback(code: string): Promise<void> {
-		await this.providerCoordinator.handleOpenRouterCallback(code)
-		await this.postStateToWebview()
-	}
-
-	/**
-	 * Handles Requesty callback
-	 */
-	public async handleRequestyCallback(code: string, baseUrl: string | null): Promise<void> {
-		await this.providerCoordinator.handleRequestyCallback(code, baseUrl)
-		await this.postStateToWebview()
-	}
-
-	/**
 	 * Refreshes workspace
 	 */
 	public async refreshWorkspace(): Promise<void> {
@@ -722,9 +744,12 @@ export class ClineProvider
 	 * Handles mode switch
 	 */
 	public async handleModeSwitch(newMode: string): Promise<void> {
+		this.logger.info(`Switching to mode: ${newMode}`)
+		
 		const task = this.taskManager.getCurrentTask()
 
 		if (task) {
+			this.logger.debug(`Task ${task.taskId} is active, updating mode`)
 			task.emit(RooCodeEventName.TaskModeSwitched, task.taskId, newMode)
 
 			try {
@@ -734,13 +759,12 @@ export class ClineProvider
 				if (taskHistoryItem) {
 					taskHistoryItem.mode = newMode
 					await this.updateTaskHistory(taskHistoryItem)
+					this.logger.debug(`Updated task history for ${task.taskId}`)
 				}
 
 				;(task as any)._taskMode = newMode
 			} catch (error) {
-				this.log(
-					`Failed to persist mode switch for task ${task.taskId}: ${error instanceof Error ? error.message : String(error)}`,
-				)
+				this.logger.error(`Failed to persist mode switch for task ${task.taskId}`, error)
 				throw error
 			}
 		}
@@ -759,15 +783,18 @@ export class ClineProvider
 
 			if (profile?.name) {
 				await this.activateProviderProfile({ name: profile.name })
+				this.logger.debug(`Activated provider profile: ${profile.name}`)
 			}
 		} else {
 			const currentApiConfigName = this.contextProxy.getValues().currentApiConfigName
 			if (currentApiConfigName) {
 				await this._providerSettingsManager.setModeConfig(newMode, currentApiConfigName)
+				this.logger.debug(`Set mode config for ${newMode} to ${currentApiConfigName}`)
 			}
 		}
 
 		await this.postStateToWebview()
+		this.logger.info(`Mode switch completed: ${newMode}`)
 	}
 
 	/**
@@ -797,11 +824,13 @@ export class ClineProvider
 			apiConversationHistoryIndex: number
 		},
 	): void {
+		this.logger.debug(`Setting pending edit operation: ${operationId}`)
+		
 		this.clearPendingEditOperation(operationId)
 
 		const timeoutId = setTimeout(() => {
 			this.clearPendingEditOperation(operationId)
-			this.log(`[setPendingEditOperation] Automatically cleared stale pending operation: ${operationId}`)
+			this.logger.warn(`Automatically cleared stale pending operation: ${operationId}`)
 		}, 300000)
 
 		this.pendingOperations.set(operationId, {
@@ -810,7 +839,7 @@ export class ClineProvider
 			createdAt: Date.now(),
 		})
 
-		this.log(`[setPendingEditOperation] Set pending operation: ${operationId}`)
+		this.logger.debug(`Pending operation set: ${operationId}`)
 	}
 
 	/**
@@ -821,7 +850,7 @@ export class ClineProvider
 		if (operation) {
 			clearTimeout(operation.timeoutId)
 			this.pendingOperations.delete(operationId)
-			this.log(`[clearPendingEditOperation] Cleared pending operation: ${operationId}`)
+			this.logger.debug(`Cleared pending operation: ${operationId}`)
 			return true
 		}
 		return false
@@ -888,7 +917,7 @@ export class ClineProvider
 	 * Logs a message
 	 */
 	public log(message: string): void {
-		this.outputChannel.appendLine(message)
+		this.logger.info(message)
 	}
 
 	/**
@@ -903,17 +932,6 @@ export class ClineProvider
 	 */
 	public getMcpHub(): McpHub | undefined {
 		return this.mcpHub
-	}
-
-	/**
-	 * Checks MDM compliance
-	 */
-	public checkMdmCompliance(): boolean {
-		if (!this.mdmService) {
-			return true // No MDM service, allow operation
-		}
-		const compliance = this.mdmService.isCompliant()
-		return compliance.compliant
 	}
 
 	/**
@@ -1093,39 +1111,62 @@ export class ClineProvider
 	 * Disposes the provider and all its resources
 	 */
 	public async dispose(): Promise<void> {
-		this.log("Disposing ClineProvider...")
+		this.logger.info("Disposing ClineProvider...")
 
-		// Dispose coordinators
-		await this.taskManager.dispose()
-		this.webviewCoordinator.dispose()
-		this.providerCoordinator.dispose()
-		this.stateCoordinator.dispose()
+		try {
+			// Dispose coordinators
+			await this.taskManager.dispose()
+			this.logger.debug("TaskManager disposed")
+			
+			this.webviewCoordinator.dispose()
+			this.logger.debug("WebviewCoordinator disposed")
+			
+			this.providerCoordinator.dispose()
+			this.logger.debug("ProviderCoordinator disposed")
+			
+			this.stateCoordinator.dispose()
+			this.logger.debug("StateCoordinator disposed")
 
-		// Dispose services
-		this._workspaceTracker?.dispose()
-		if (this.mcpHub) {
-			await this.mcpHub.unregisterClient()
-		}
-		this.marketplaceManager.cleanup()
-		this.customModesManager.dispose()
-
-		// Clear disposables
-		while (this.disposables.length) {
-			const x = this.disposables.pop()
-			if (x) {
-				x.dispose()
+			// Dispose services
+			this._workspaceTracker?.dispose()
+			this.logger.debug("WorkspaceTracker disposed")
+			
+			if (this.mcpHub) {
+				await this.mcpHub.unregisterClient()
+				this.logger.debug("MCP Hub unregistered")
 			}
-		}
+			
+			this.marketplaceManager.cleanup()
+			this.logger.debug("MarketplaceManager cleaned up")
+			
+			this.customModesManager.dispose()
+			this.logger.debug("CustomModesManager disposed")
 
-		// Remove event listeners
-		this.removeAllListeners()
-		
-		// Remove from active instances
-		ClineProvider.activeInstances.delete(this)
-		
-		// Unregister from MCP server manager
-		McpServerManager.unregisterProvider(this as any)
-		
-		this.log("ClineProvider disposed")
+			// Clear disposables
+			while (this.disposables.length) {
+				const x = this.disposables.pop()
+				if (x) {
+					x.dispose()
+				}
+			}
+			this.logger.debug("All disposables cleared")
+
+			// Remove event listeners
+			this.removeAllListeners()
+			this.logger.debug("All event listeners removed")
+			
+			// Remove from active instances
+			ClineProvider.activeInstances.delete(this)
+			this.logger.debug("Removed from active instances")
+			
+			// Unregister from MCP server manager
+			McpServerManager.unregisterProvider(this as any)
+			this.logger.debug("Unregistered from MCP server manager")
+			
+			this.logger.info("ClineProvider disposed successfully")
+		} catch (error) {
+			this.logger.error("Error during ClineProvider disposal", error)
+			throw error
+		}
 	}
 }

@@ -14,14 +14,12 @@ import { registerHumanRelayCallback, unregisterHumanRelayCallback, handleHumanRe
 import { handleNewTask } from "./handleTask"
 import { CodeIndexManager } from "../services/code-index/manager"
 import { importSettingsWithFeedback } from "../core/config/importExport"
-import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
-
-const logger = createLogger(vscode.window.createOutputChannel(Package.outputChannel), "Commands")
 
 export function getVisibleProviderOrLog(outputChannel: vscode.OutputChannel): ClineProvider | undefined {
 	const visibleProvider = ClineProvider.getVisibleInstance()
 	if (!visibleProvider) {
+		const logger = createLogger(outputChannel, "Commands")
 		logger.warn("Cannot find any visible Roo Code instances.")
 		return undefined
 	}
@@ -63,7 +61,8 @@ export type RegisterCommandOptions = {
 }
 
 export const registerCommands = (options: RegisterCommandOptions) => {
-	const { context } = options
+	const { context, outputChannel } = options
+	const logger = createLogger(outputChannel, "Commands")
 	logger.info("Starting command registration...")
 
 	const commandsMap = getCommandsMap(options)
@@ -83,15 +82,7 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 }
 
 const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOptions): Record<CommandId, any> => ({
-	activationCompleted: () => {},
-	cloudButtonClicked: () => {
-		const visibleProvider = getVisibleProviderOrLog(outputChannel)
-
-		if (!visibleProvider) {
-			return
-		}
-
-	},
+	activationCompleted: () => { },
 	plusButtonClicked: async () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 
@@ -135,7 +126,7 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		if (!visibleProvider) return
 		visibleProvider.postMessageToWebview({ type: "action", action: "marketplaceButtonClicked" })
 	},
-	showHumanRelayDialog: (params: { requestId: string; promptText: string }) => {
+	showHumanRelayDialog: (params: { requestId: string; promptText: string} ) => {
 		const panel = getPanel()
 
 		if (panel) {
@@ -167,10 +158,11 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 				customModesManager: visibleProvider.customModesManager,
 				provider: visibleProvider,
 			},
-			filePath,
+			filePath
 		)
 	},
 	focusInput: async () => {
+		const logger = createLogger(outputChannel, "Commands")
 		try {
 			await focusPanel(tabPanel, sidebarPanel)
 
@@ -182,6 +174,7 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		}
 	},
 	focusPanel: async () => {
+		const logger = createLogger(outputChannel, "Commands")
 		try {
 			await focusPanel(tabPanel, sidebarPanel)
 		} catch (error) {
@@ -219,16 +212,7 @@ export const openClineInNewTab = async ({ context, outputChannel }: Omit<Registe
 	const contextProxy = await ContextProxy.getInstance(context)
 	const codeIndexManager = CodeIndexManager.getInstance(context)
 
-	// Get the existing MDM service instance to ensure consistent policy enforcement
-	let mdmService: MdmService | undefined
-	try {
-		mdmService = MdmService.getInstance()
-	} catch (error) {
-		// MDM service not initialized, which is fine - extension can work without it
-		mdmService = undefined
-	}
-
-	const tabProvider = new ClineProvider(context, outputChannel, "editor", contextProxy, mdmService)
+	const tabProvider = new ClineProvider(context, outputChannel, "editor", contextProxy)
 	const lastCol = Math.max(...vscode.window.visibleTextEditors.map((editor) => editor.viewColumn || 0))
 
 	// Check if there are any visible text editors, otherwise open a new group

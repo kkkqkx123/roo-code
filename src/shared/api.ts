@@ -1,11 +1,7 @@
 import {
 	type ModelInfo,
 	type ProviderSettings,
-	type DynamicProvider,
-	type LocalProvider,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
-	isDynamicProvider,
-	isLocalProvider,
 } from "@roo-code/types"
 
 // ApiHandlerOptions
@@ -25,28 +21,11 @@ export type ApiHandlerOptions = Omit<ProviderSettings, "apiProvider"> & {
 	ollamaNumCtx?: number
 }
 
-// RouterName
-
-export type RouterName = DynamicProvider | LocalProvider
-
-export const isRouterName = (value: string): value is RouterName => isDynamicProvider(value) || isLocalProvider(value)
-
-export function toRouterName(value?: string): RouterName {
-	if (value && isRouterName(value)) {
-		return value
-	}
-
-	throw new Error(`Invalid router name: ${value}`)
-}
 
 // RouterModels
-
 export type ModelRecord = Record<string, ModelInfo>
 
-export type RouterModels = Record<RouterName, ModelRecord>
-
 // Reasoning
-
 export const shouldUseReasoningBudget = ({
 	model,
 	settings,

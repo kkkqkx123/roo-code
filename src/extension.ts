@@ -4,16 +4,14 @@ import * as path from "path"
 
 // Load environment variables from .env file
 try {
-	// Specify path to .env file in the project root directory
-	const envPath = path.join(__dirname, "..", ".env")
+	const envPath = path.join(__dirname, "..", "..", ".env")
 	dotenvx.config({ path: envPath })
 } catch (e) {
-	// Silently handle environment loading errors
 	console.warn("Failed to load environment variables:", e)
 }
 
 import "./utils/path" // Necessary to have access to String.prototype.toPosix.
-import { createOutputChannelLogger, createDualLogger } from "./utils/outputChannelLogger"
+import { createOutputChannelLogger } from "./utils/outputChannelLogger"
 import { createLogger, LogLevel } from "./utils/logger"
 
 import { Package } from "./shared/package"
@@ -25,7 +23,6 @@ import { TerminalRegistry } from "./integrations/terminal/TerminalRegistry"
 import { claudeCodeOAuthManager } from "./integrations/claude-code/oauth"
 import { McpServerManager } from "./services/mcp/McpServerManager"
 import { CodeIndexManager } from "./services/code-index/manager"
-import { MdmService } from "./services/mdm/MdmService"
 import { migrateSettings } from "./utils/migrateSettings"
 import { autoImportSettings } from "./utils/autoImportSettings"
 import { API } from "./extension/api"
@@ -70,11 +67,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger.error("Failed to migrate settings", error)
 	}
 
-	const cloudLogger = createDualLogger(createOutputChannelLogger(outputChannel))
-
-	const mdmService = await MdmService.createInstance(cloudLogger)
-	logger.info(`MDM service initialized: ${mdmService ? "success" : "failed"}`)
-
 	initializeI18n(context.globalState.get("language") ?? formatLanguage(vscode.env.language))
 	logger.info(
 		`i18n initialized with language: ${context.globalState.get("language") || formatLanguage(vscode.env.language)}`,
@@ -115,7 +107,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 	logger.info(`CodeIndexManager initialized for ${codeIndexManagers.length} workspace folders`)
 
-	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService)
+	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy)
 	logger.info("ClineProvider created with renderContext: sidebar")
 
 	context.subscriptions.push(
