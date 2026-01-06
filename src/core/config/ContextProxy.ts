@@ -72,21 +72,9 @@ export class ContextProxy {
 					)
 				}
 			}),
-			...GLOBAL_SECRET_KEYS.map(async (key) => {
-				try {
-					this.secretCache[key] = await this.originalContext.secrets.get(key)
-				} catch (error) {
-					logger.error(
-						`Error loading global secret ${key}: ${error instanceof Error ? error.message : String(error)}`,
-					)
-				}
-			}),
 		]
 
 		await Promise.all(promises)
-
-		// Migration: Check for old nested image generation settings and migrate them
-		await this.migrateImageGenerationSettings()
 
 		// Migration: Sanitize invalid/removed API providers
 		await this.migrateInvalidApiProvider()
@@ -111,48 +99,6 @@ export class ContextProxy {
 		} catch (error) {
 			logger.error(
 				`Error during invalid API provider migration: ${error instanceof Error ? error.message : String(error)}`,
-			)
-		}
-	}
-
-	/**
-	 * Migrates old nested openRouterImageGenerationSettings to the new flattened structure
-	 */
-	private async migrateImageGenerationSettings() {
-		try {
-			// Check if there's an old nested structure
-			const oldNestedSettings = this.originalContext.globalState.get<any>("openRouterImageGenerationSettings")
-
-			if (oldNestedSettings && typeof oldNestedSettings === "object") {
-				logger.info("Migrating old nested image generation settings to flattened structure")
-
-				// Migrate the API key if it exists and we don't already have one
-				if (oldNestedSettings.openRouterApiKey && !this.secretCache.openRouterImageApiKey) {
-					await this.originalContext.secrets.store(
-						"openRouterImageApiKey",
-						oldNestedSettings.openRouterApiKey,
-					)
-					this.secretCache.openRouterImageApiKey = oldNestedSettings.openRouterApiKey
-					logger.info("Migrated openRouterImageApiKey to secrets")
-				}
-
-				// Migrate the selected model if it exists and we don't already have one
-				if (oldNestedSettings.selectedModel && !this.stateCache.openRouterImageGenerationSelectedModel) {
-					await this.originalContext.globalState.update(
-						"openRouterImageGenerationSelectedModel",
-						oldNestedSettings.selectedModel,
-					)
-					this.stateCache.openRouterImageGenerationSelectedModel = oldNestedSettings.selectedModel
-					logger.info("Migrated openRouterImageGenerationSelectedModel to global state")
-				}
-
-				// Clean up the old nested structure
-				await this.originalContext.globalState.update("openRouterImageGenerationSettings", undefined)
-				logger.info("Removed old nested openRouterImageGenerationSettings")
-			}
-		} catch (error) {
-			logger.error(
-				`Error during image generation settings migration: ${error instanceof Error ? error.message : String(error)}`,
 			)
 		}
 	}
@@ -242,15 +188,6 @@ export class ContextProxy {
 				} catch (error) {
 					logger.error(
 						`Error refreshing secret ${key}: ${error instanceof Error ? error.message : String(error)}`,
-					)
-				}
-			}),
-			...GLOBAL_SECRET_KEYS.map(async (key) => {
-				try {
-					this.secretCache[key] = await this.originalContext.secrets.get(key)
-				} catch (error) {
-					logger.error(
-						`Error refreshing global secret ${key}: ${error instanceof Error ? error.message : String(error)}`,
 					)
 				}
 			}),
@@ -386,7 +323,7 @@ export class ContextProxy {
 	}
 
 	public async setValues(values: RooCodeSettings) {
-		const entries = Object.entries(values) as [RooCodeSettingsKey, unknown][]
+		const entries = Object.entries(values) as [RooCodeSettingsKey, RooCodeSettings[RooCodeSettingsKey]][]
 		await Promise.all(entries.map(([key, value]) => this.setValue(key, value)))
 	}
 

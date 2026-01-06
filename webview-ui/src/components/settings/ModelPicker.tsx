@@ -26,18 +26,7 @@ import { useEscapeKey } from "@src/hooks/useEscapeKey"
 import { ModelInfoView } from "./ModelInfoView"
 import { ApiErrorMessage } from "./ApiErrorMessage"
 
-type ModelIdKey = keyof Pick<
-	ProviderSettings,
-	| "openRouterModelId"
-	| "unboundModelId"
-	| "requestyModelId"
-	| "openAiModelId"
-	| "litellmModelId"
-	| "deepInfraModelId"
-	| "ioIntelligenceModelId"
-	| "vercelAiGatewayModelId"
-	| "apiModelId"
->
+type ModelIdKey = keyof Pick<ProviderSettings, "openAiModelId" | "apiModelId">
 
 interface ModelPickerProps {
 	defaultModelId: string

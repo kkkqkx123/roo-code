@@ -93,11 +93,11 @@ describe("ContextProxy", () => {
 	describe("getGlobalState", () => {
 		it("should return value from cache when it exists", async () => {
 			// Manually set a value in the cache
-			await proxy.updateGlobalState("apiProvider", "deepseek")
+			await proxy.updateGlobalState("apiProvider", "anthropic")
 
 			// Should return the cached value
 			const result = proxy.getGlobalState("apiProvider")
-			expect(result).toBe("deepseek")
+			expect(result).toBe("anthropic")
 
 			// Original context should be called once during updateGlobalState (+1 for migration check)
 			expect(mockGlobalState.get).toHaveBeenCalledTimes(GLOBAL_STATE_KEYS.length + 1) // From initialization + migration check
@@ -105,8 +105,8 @@ describe("ContextProxy", () => {
 
 		it("should handle default values correctly", async () => {
 			// No value in cache
-			const result = proxy.getGlobalState("apiProvider", "deepseek")
-			expect(result).toBe("deepseek")
+			const result = proxy.getGlobalState("apiProvider", "anthropic")
+			expect(result).toBe("anthropic")
 		})
 
 		it("should bypass cache for pass-through state keys", async () => {
@@ -147,14 +147,14 @@ describe("ContextProxy", () => {
 
 	describe("updateGlobalState", () => {
 		it("should update state directly in original context", async () => {
-			await proxy.updateGlobalState("apiProvider", "deepseek")
+			await proxy.updateGlobalState("apiProvider", "anthropic")
 
 			// Should have called original context
-			expect(mockGlobalState.update).toHaveBeenCalledWith("apiProvider", "deepseek")
+			expect(mockGlobalState.update).toHaveBeenCalledWith("apiProvider", "anthropic")
 
 			// Should have stored the value in cache
 			const storedValue = await proxy.getGlobalState("apiProvider")
-			expect(storedValue).toBe("deepseek")
+			expect(storedValue).toBe("anthropic")
 		})
 
 		it("should bypass cache for pass-through state keys", async () => {

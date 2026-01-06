@@ -14,10 +14,7 @@ import {
 } from "@roo-code/types"
 
 import type { ModelRecord } from "@roo/api"
-
-import { useOpenRouterModelProviders } from "./useOpenRouterModelProviders"
-import { useLmStudioModels } from "./useLmStudioModels"
-import { useOllamaModels } from "./useOllamaModels"
+import { useMemo } from "react"
 
 /**
  * Helper to get a validated model ID for dynamic providers.
@@ -37,9 +34,6 @@ function getSelectedModel({
 }: {
 	provider: ProviderName
 	apiConfiguration: ProviderSettings
-	openRouterModelProviders: Record<string, ModelInfo>
-	lmStudioModels: ModelRecord | undefined
-	ollamaModels: ModelRecord | undefined
 }): { id: string; info: ModelInfo | undefined } {
 	// the `undefined` case are used to show the invalid selection to prevent
 	// users from seeing the default model if their selection is invalid
@@ -121,4 +115,12 @@ function getSelectedModel({
 			return { id, info: baseInfo }
 		}
 	}
+}
+
+export function useSelectedModel(apiConfiguration?: ProviderSettings) {
+	return useMemo(() => {
+		const provider = apiConfiguration?.apiProvider || "anthropic"
+		const { id, info } = getSelectedModel({ provider, apiConfiguration: apiConfiguration || {} })
+		return { provider, id, info }
+	}, [apiConfiguration])
 }

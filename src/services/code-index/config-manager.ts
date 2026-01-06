@@ -18,8 +18,6 @@ export class CodeIndexConfigManager {
 	private ollamaOptions?: { ollamaBaseUrl?: string }
 	private openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 	private geminiOptions?: { apiKey: string }
-	private mistralOptions?: { apiKey: string }
-	private vercelAiGatewayOptions?: { apiKey: string }
 	private bedrockOptions?: { region: string; profile?: string }
 	private qdrantUrl?: string = "http://localhost:6333"
 	private qdrantApiKey?: string
@@ -80,8 +78,6 @@ export class CodeIndexConfigManager {
 		const openAiCompatibleBaseUrl = codebaseIndexConfig.codebaseIndexOpenAiCompatibleBaseUrl ?? ""
 		const openAiCompatibleApiKey = this.contextProxy?.getSecret("codebaseIndexOpenAiCompatibleApiKey") ?? ""
 		const geminiApiKey = this.contextProxy?.getSecret("codebaseIndexGeminiApiKey") ?? ""
-		const mistralApiKey = this.contextProxy?.getSecret("codebaseIndexMistralApiKey") ?? ""
-		const vercelAiGatewayApiKey = this.contextProxy?.getSecret("codebaseIndexVercelAiGatewayApiKey") ?? ""
 		const bedrockRegion = codebaseIndexConfig.codebaseIndexBedrockRegion ?? "us-east-1"
 		const bedrockProfile = codebaseIndexConfig.codebaseIndexBedrockProfile ?? ""
 		const vectorStorageConfig = codebaseIndexConfig.codebaseIndexVectorStorageConfig
@@ -138,8 +134,6 @@ export class CodeIndexConfigManager {
 				: undefined
 
 		this.geminiOptions = geminiApiKey ? { apiKey: geminiApiKey } : undefined
-		this.mistralOptions = mistralApiKey ? { apiKey: mistralApiKey } : undefined
-		this.vercelAiGatewayOptions = vercelAiGatewayApiKey ? { apiKey: vercelAiGatewayApiKey } : undefined
 		this.bedrockOptions = bedrockRegion
 			? { region: bedrockRegion, profile: bedrockProfile || undefined }
 			: undefined
@@ -159,8 +153,6 @@ export class CodeIndexConfigManager {
 			ollamaOptions?: { ollamaBaseUrl?: string }
 			openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 			geminiOptions?: { apiKey: string }
-			mistralOptions?: { apiKey: string }
-			vercelAiGatewayOptions?: { apiKey: string }
 			bedrockOptions?: { region: string; profile?: string }
 			qdrantUrl?: string
 			qdrantApiKey?: string
@@ -180,8 +172,6 @@ export class CodeIndexConfigManager {
 			openAiCompatibleBaseUrl: this.openAiCompatibleOptions?.baseUrl ?? "",
 			openAiCompatibleApiKey: this.openAiCompatibleOptions?.apiKey ?? "",
 			geminiApiKey: this.geminiOptions?.apiKey ?? "",
-			mistralApiKey: this.mistralOptions?.apiKey ?? "",
-			vercelAiGatewayApiKey: this.vercelAiGatewayOptions?.apiKey ?? "",
 			bedrockRegion: this.bedrockOptions?.region ?? "",
 			bedrockProfile: this.bedrockOptions?.profile ?? "",
 			qdrantUrl: this.qdrantUrl ?? "",
@@ -207,8 +197,6 @@ export class CodeIndexConfigManager {
 				ollamaOptions: this.ollamaOptions,
 				openAiCompatibleOptions: this.openAiCompatibleOptions,
 				geminiOptions: this.geminiOptions,
-				mistralOptions: this.mistralOptions,
-				vercelAiGatewayOptions: this.vercelAiGatewayOptions,
 				bedrockOptions: this.bedrockOptions,
 				qdrantUrl: this.qdrantUrl,
 				qdrantApiKey: this.qdrantApiKey,
@@ -239,16 +227,6 @@ export class CodeIndexConfigManager {
 			return isConfigured
 		} else if (this.embedderProvider === "gemini") {
 			const apiKey = this.geminiOptions?.apiKey
-			const qdrantUrl = this.qdrantUrl
-			const isConfigured = !!(apiKey && qdrantUrl)
-			return isConfigured
-		} else if (this.embedderProvider === "mistral") {
-			const apiKey = this.mistralOptions?.apiKey
-			const qdrantUrl = this.qdrantUrl
-			const isConfigured = !!(apiKey && qdrantUrl)
-			return isConfigured
-		} else if (this.embedderProvider === "vercel-ai-gateway") {
-			const apiKey = this.vercelAiGatewayOptions?.apiKey
 			const qdrantUrl = this.qdrantUrl
 			const isConfigured = !!(apiKey && qdrantUrl)
 			return isConfigured
@@ -291,8 +269,6 @@ export class CodeIndexConfigManager {
 		const prevOpenAiCompatibleApiKey = prev?.openAiCompatibleApiKey ?? ""
 		const prevModelDimension = prev?.modelDimension
 		const prevGeminiApiKey = prev?.geminiApiKey ?? ""
-		const prevMistralApiKey = prev?.mistralApiKey ?? ""
-		const prevVercelAiGatewayApiKey = prev?.vercelAiGatewayApiKey ?? ""
 		const prevBedrockRegion = prev?.bedrockRegion ?? ""
 		const prevBedrockProfile = prev?.bedrockProfile ?? ""
 		const prevQdrantUrl = prev?.qdrantUrl ?? ""
@@ -331,8 +307,6 @@ export class CodeIndexConfigManager {
 		const currentOpenAiCompatibleApiKey = this.openAiCompatibleOptions?.apiKey ?? ""
 		const currentModelDimension = this.modelDimension
 		const currentGeminiApiKey = this.geminiOptions?.apiKey ?? ""
-		const currentMistralApiKey = this.mistralOptions?.apiKey ?? ""
-		const currentVercelAiGatewayApiKey = this.vercelAiGatewayOptions?.apiKey ?? ""
 		const currentBedrockRegion = this.bedrockOptions?.region ?? ""
 		const currentBedrockProfile = this.bedrockOptions?.profile ?? ""
 		const currentQdrantUrl = this.qdrantUrl ?? ""
@@ -354,14 +328,6 @@ export class CodeIndexConfigManager {
 		}
 
 		if (prevGeminiApiKey !== currentGeminiApiKey) {
-			return true
-		}
-
-		if (prevMistralApiKey !== currentMistralApiKey) {
-			return true
-		}
-
-		if (prevVercelAiGatewayApiKey !== currentVercelAiGatewayApiKey) {
 			return true
 		}
 
@@ -425,8 +391,6 @@ export class CodeIndexConfigManager {
 			ollamaOptions: this.ollamaOptions,
 			openAiCompatibleOptions: this.openAiCompatibleOptions,
 			geminiOptions: this.geminiOptions,
-			mistralOptions: this.mistralOptions,
-			vercelAiGatewayOptions: this.vercelAiGatewayOptions,
 			bedrockOptions: this.bedrockOptions,
 			qdrantUrl: this.qdrantUrl,
 			qdrantApiKey: this.qdrantApiKey,

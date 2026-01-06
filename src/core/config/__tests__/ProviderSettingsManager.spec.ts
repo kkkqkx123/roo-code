@@ -432,9 +432,9 @@ describe("ProviderSettingsManager", () => {
 			)
 
 			const newConfig: ProviderSettings = {
-				apiProvider: "vertex",
+				apiProvider: "gemini",
 				apiModelId: "gemini-2.5-flash-preview-05-20",
-				vertexKeyFile: "test-key-file",
+				geminiApiKey: "test-key-file",
 			}
 
 			await providerSettingsManager.saveConfig("test", newConfig)
@@ -482,12 +482,8 @@ describe("ProviderSettingsManager", () => {
 				apiProvider: "anthropic",
 				apiKey: "test-key",
 			}
-			const newConfigWithExtra: ProviderSettings = {
-				...newConfig,
-				openRouterApiKey: "another-key",
-			}
 
-			await providerSettingsManager.saveConfig("test", newConfigWithExtra)
+			await providerSettingsManager.saveConfig("test", newConfig)
 
 			// Get the actual stored config to check the generated ID
 			const storedConfig = JSON.parse(mockSecrets.store.mock.calls[mockSecrets.store.mock.calls.length - 1][1])
@@ -1008,7 +1004,7 @@ describe("ProviderSettingsManager", () => {
 				apiConfigs: {
 					default: { id: "default-id" },
 					"conflict-name": { id: "local-id-1", apiProvider: "openai" as const },
-					"conflict-name_local": { id: "local-id-2", apiProvider: "vertex" as const },
+					"conflict-name_local": { id: "local-id-2", apiProvider: "gemini" as const },
 				},
 				cloudProfileIds: [],
 			}
@@ -1112,7 +1108,7 @@ describe("ProviderSettingsManager", () => {
 					default: { id: "default-id" },
 					"keep-cloud": { id: "cloud-id-1", apiProvider: "anthropic" as const, apiKey: "secret1" },
 					"delete-cloud": { id: "cloud-id-2", apiProvider: "openai" as const },
-					"rename-me": { id: "local-id", apiProvider: "vertex" as const },
+					"rename-me": { id: "local-id", apiProvider: "gemini" as const },
 				},
 				cloudProfileIds: ["cloud-id-1", "cloud-id-2"],
 			}
@@ -1134,7 +1130,7 @@ describe("ProviderSettingsManager", () => {
 				// new profile
 				"new-cloud": {
 					id: "cloud-id-4",
-					apiProvider: "vertex" as const,
+					apiProvider: "gemini" as const,
 				},
 			}
 

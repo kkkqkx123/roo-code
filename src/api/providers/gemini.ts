@@ -28,10 +28,6 @@ import { handleProviderError } from "./utils/error-handler"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { BaseProvider } from "./base-provider"
 
-type GeminiHandlerOptions = ApiHandlerOptions & {
-	isVertex?: boolean
-}
-
 export class GeminiHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
 
@@ -40,34 +36,14 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	private lastResponseId?: string
 	private readonly providerName = "Gemini"
 
-	constructor({ isVertex, ...options }: GeminiHandlerOptions) {
+	constructor({ ...options }: ApiHandlerOptions) {
 		super()
 
 		this.options = options
 
-		const project = this.options.vertexProjectId ?? "not-provided"
-		const location = this.options.vertexRegion ?? "not-provided"
 		const apiKey = this.options.geminiApiKey ?? "not-provided"
 
-		this.client = this.options.vertexJsonCredentials
-			? new GoogleGenAI({
-					vertexai: true,
-					project,
-					location,
-					googleAuthOptions: {
-						credentials: safeJsonParse<JWTInput>(this.options.vertexJsonCredentials, undefined),
-					},
-				})
-			: this.options.vertexKeyFile
-				? new GoogleGenAI({
-						vertexai: true,
-						project,
-						location,
-						googleAuthOptions: { keyFile: this.options.vertexKeyFile },
-					})
-				: isVertex
-					? new GoogleGenAI({ vertexai: true, project, location })
-					: new GoogleGenAI({ apiKey })
+		this.client = new GoogleGenAI({ apiKey })
 	}
 
 	async *createMessage(

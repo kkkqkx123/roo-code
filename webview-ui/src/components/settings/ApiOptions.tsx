@@ -173,7 +173,6 @@ const ApiOptions = ({
 	useEffect(() => {
 		const apiValidationResult = validateApiConfigurationExcludingModelErrors(
 			apiConfiguration,
-			undefined,
 			organizationAllowList,
 		)
 		setErrorMessage(apiValidationResult)
@@ -264,7 +263,7 @@ const ApiOptions = ({
 	)
 
 	const modelValidationError = useMemo(() => {
-		return getModelValidationError(apiConfiguration, undefined, organizationAllowList)
+		return getModelValidationError(apiConfiguration, organizationAllowList)
 	}, [apiConfiguration, organizationAllowList])
 
 	const docs = useMemo(() => {

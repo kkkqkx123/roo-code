@@ -20,11 +20,7 @@ type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	apiConfiguration?: any
 	setApiConfigurationField?: any
 	imageGenerationProvider?: ImageGenerationProvider
-	openRouterImageApiKey?: string
-	openRouterImageGenerationSelectedModel?: string
 	setImageGenerationProvider?: (provider: ImageGenerationProvider) => void
-	setOpenRouterImageApiKey?: (apiKey: string) => void
-	setImageGenerationSelectedModel?: (model: string) => void
 }
 
 export const ExperimentalSettings = ({
@@ -33,11 +29,7 @@ export const ExperimentalSettings = ({
 	apiConfiguration,
 	setApiConfigurationField,
 	imageGenerationProvider,
-	openRouterImageApiKey,
-	openRouterImageGenerationSelectedModel,
 	setImageGenerationProvider,
-	setOpenRouterImageApiKey,
-	setImageGenerationSelectedModel,
 	className,
 	...props
 }: ExperimentalSettingsProps) => {
@@ -72,9 +64,7 @@ export const ExperimentalSettings = ({
 						}
 						if (
 							config[0] === "IMAGE_GENERATION" &&
-							setImageGenerationProvider &&
-							setOpenRouterImageApiKey &&
-							setImageGenerationSelectedModel
+							setImageGenerationProvider
 						) {
 							return (
 								<ImageGenerationSettings
@@ -84,11 +74,8 @@ export const ExperimentalSettings = ({
 										setExperimentEnabled(EXPERIMENT_IDS.IMAGE_GENERATION, enabled)
 									}
 									imageGenerationProvider={imageGenerationProvider}
-									openRouterImageApiKey={openRouterImageApiKey}
-									openRouterImageGenerationSelectedModel={openRouterImageGenerationSelectedModel}
 									setImageGenerationProvider={setImageGenerationProvider}
-									setOpenRouterImageApiKey={setOpenRouterImageApiKey}
-									setImageGenerationSelectedModel={setImageGenerationSelectedModel}
+									setImageGenerationSelectedModel={() => {}}
 								/>
 							)
 						}

@@ -561,7 +561,7 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 				"claude-3-5-sonnet-20241022",
 			)
 			expect(getModelId({ apiProvider: "openai", openAiModelId: "gpt-4-turbo" })).toBe("gpt-4-turbo")
-			expect(getModelId({ apiProvider: "gemini", geminiModelId: "gemini-2.0-flash-exp" })).toBe(
+			expect(getModelId({ apiProvider: "gemini", apiModelId: "gemini-2.0-flash-exp" })).toBe(
 				"gemini-2.0-flash-exp",
 			)
 		})

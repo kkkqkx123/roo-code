@@ -1414,31 +1414,18 @@ describe("Cline", () => {
 				// Should use anthropic protocol even with non-claude model
 				expect(anthropicTask.apiConfiguration.apiProvider).toBe("anthropic")
 
-				// Test with OpenRouter provider and Claude model
-				const openrouterClaudeConfig = {
-					apiProvider: "openrouter" as const,
-					openRouterModelId: "anthropic/claude-3-opus",
+				// Test with OpenAI provider
+				const openaiConfig = {
+					apiProvider: "openai" as const,
+					openAiModelId: "gpt-4",
 				}
-				const openrouterClaudeTask = new Task({
+				const openaiTask = new Task({
 					provider: mockProvider,
-					apiConfiguration: openrouterClaudeConfig,
+					apiConfiguration: openaiConfig,
 					task: "test task",
 					startTask: false,
 				})
-				expect(openrouterClaudeTask.apiConfiguration.apiProvider).toBe("openrouter")
-
-				// Test with OpenRouter provider and non-Claude model
-				const openrouterGptConfig = {
-					apiProvider: "openrouter" as const,
-					openRouterModelId: "openai/gpt-4",
-				}
-				const openrouterGptTask = new Task({
-					provider: mockProvider,
-					apiConfiguration: openrouterGptConfig,
-					task: "test task",
-					startTask: false,
-				})
-				expect(openrouterGptTask.apiConfiguration.apiProvider).toBe("openrouter")
+				expect(openaiTask.apiConfiguration.apiProvider).toBe("openai")
 
 				// Test with various Claude model formats
 				const claudeModelFormats = [

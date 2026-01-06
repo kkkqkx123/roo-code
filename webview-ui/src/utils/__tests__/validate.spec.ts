@@ -1,7 +1,5 @@
 import type { ProviderSettings, OrganizationAllowList } from "@roo-code/types"
 
-import { RouterModels } from "@roo/api"
-
 // Mock i18next to return translation keys with interpolated values
 vi.mock("i18next", () => ({
 	default: {
@@ -21,38 +19,6 @@ vi.mock("i18next", () => ({
 import { getModelValidationError, validateApiConfigurationExcludingModelErrors, validateBedrockArn } from "../validate"
 
 describe("Model Validation Functions", () => {
-	const mockRouterModels: RouterModels = {
-		openrouter: {
-			"valid-model": {
-				maxTokens: 8192,
-				contextWindow: 200000,
-				supportsImages: true,
-				supportsPromptCache: false,
-				inputPrice: 3.0,
-				outputPrice: 15.0,
-			},
-			"another-valid-model": {
-				maxTokens: 4096,
-				contextWindow: 100000,
-				supportsImages: false,
-				supportsPromptCache: false,
-				inputPrice: 1.0,
-				outputPrice: 5.0,
-			},
-		},
-		requesty: {},
-		unbound: {},
-		litellm: {},
-		ollama: {},
-		lmstudio: {},
-		deepinfra: {},
-		"io-intelligence": {},
-		"vercel-ai-gateway": {},
-		huggingface: {},
-		roo: {},
-		chutes: {},
-	}
-
 	const allowAllOrganization: OrganizationAllowList = {
 		allowAll: true,
 		providers: {},
@@ -61,7 +27,7 @@ describe("Model Validation Functions", () => {
 	const restrictiveOrganization: OrganizationAllowList = {
 		allowAll: false,
 		providers: {
-			openrouter: {
+			anthropic: {
 				allowAll: false,
 				models: ["valid-model"],
 			},
@@ -69,33 +35,33 @@ describe("Model Validation Functions", () => {
 	}
 
 	describe("getModelValidationError", () => {
-		it("returns undefined for valid OpenRouter model", () => {
+		it("returns undefined for valid Anthropic model", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "valid-model",
+				apiProvider: "anthropic",
+				apiModelId: "valid-model",
 			}
 
-			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			const result = getModelValidationError(config, allowAllOrganization)
 			expect(result).toBeUndefined()
 		})
 
-		it("returns error for invalid OpenRouter model", () => {
+		it("returns error for invalid Anthropic model", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "invalid-model",
+				apiProvider: "anthropic",
+				apiModelId: "invalid-model",
 			}
 
-			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			const result = getModelValidationError(config, allowAllOrganization)
 			expect(result).toContain("settings:validation.modelAvailability")
 		})
 
 		it("returns error for model not allowed by organization", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "another-valid-model",
+				apiProvider: "anthropic",
+				apiModelId: "another-valid-model",
 			}
 
-			const result = getModelValidationError(config, mockRouterModels, restrictiveOrganization)
+			const result = getModelValidationError(config, restrictiveOrganization)
 			expect(result).toContain("model")
 		})
 
@@ -105,27 +71,26 @@ describe("Model Validation Functions", () => {
 				openAiModelId: "gpt-4",
 			}
 
-			const result = getModelValidationError(config, undefined, allowAllOrganization)
+			const result = getModelValidationError(config, allowAllOrganization)
 			expect(result).toBeUndefined()
 		})
 
 		it("handles empty model IDs gracefully", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "",
+				apiProvider: "anthropic",
+				apiModelId: "",
 			}
 
-			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			const result = getModelValidationError(config, allowAllOrganization)
 			expect(result).toBe("settings:validation.modelId")
 		})
 
 		it("handles undefined model IDs gracefully", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				// openRouterModelId is undefined
+				apiProvider: "anthropic",
 			}
 
-			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			const result = getModelValidationError(config, allowAllOrganization)
 			expect(result).toBe("settings:validation.modelId")
 		})
 	})
@@ -133,50 +98,48 @@ describe("Model Validation Functions", () => {
 	describe("validateApiConfigurationExcludingModelErrors", () => {
 		it("returns undefined when configuration is valid", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterApiKey: "valid-key",
-				openRouterModelId: "valid-model",
+				apiProvider: "anthropic",
+				apiKey: "valid-key",
+				apiModelId: "valid-model",
 			}
 
-			const result = validateApiConfigurationExcludingModelErrors(config, mockRouterModels, allowAllOrganization)
+			const result = validateApiConfigurationExcludingModelErrors(config, allowAllOrganization)
 			expect(result).toBeUndefined()
 		})
 
 		it("returns error for missing API key", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "valid-model",
-				// Missing openRouterApiKey
+				apiProvider: "anthropic",
+				apiModelId: "valid-model",
 			}
 
-			const result = validateApiConfigurationExcludingModelErrors(config, mockRouterModels, allowAllOrganization)
+			const result = validateApiConfigurationExcludingModelErrors(config, allowAllOrganization)
 			expect(result).toBe("settings:validation.apiKey")
 		})
 
 		it("excludes model-specific errors", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterApiKey: "valid-key",
-				openRouterModelId: "invalid-model", // This should be ignored
+				apiProvider: "anthropic",
+				apiKey: "valid-key",
+				apiModelId: "invalid-model",
 			}
 
-			const result = validateApiConfigurationExcludingModelErrors(config, mockRouterModels, allowAllOrganization)
-			expect(result).toBeUndefined() // Should not return model validation error
+			const result = validateApiConfigurationExcludingModelErrors(config, allowAllOrganization)
+			expect(result).toBeUndefined()
 		})
 
 		it("excludes model-specific organization errors", () => {
 			const config: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterApiKey: "valid-key",
-				openRouterModelId: "another-valid-model", // Not allowed by restrictive org
+				apiProvider: "anthropic",
+				apiKey: "valid-key",
+				apiModelId: "another-valid-model",
 			}
 
 			const result = validateApiConfigurationExcludingModelErrors(
 				config,
-				mockRouterModels,
 				restrictiveOrganization,
 			)
-			expect(result).toBeUndefined() // Should exclude model-specific org errors
+			expect(result).toBeUndefined()
 		})
 	})
 })

@@ -202,8 +202,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		maxDiagnosticMessages,
 		includeTaskHistoryInEnhance,
 		imageGenerationProvider,
-		openRouterImageApiKey,
-		openRouterImageGenerationSelectedModel,
 		reasoningBlockCollapsed,
 		enterBehavior,
 		includeCurrentTime,
@@ -290,26 +288,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 			}
 
 			return { ...prevState, imageGenerationProvider: provider }
-		})
-	}, [])
-
-	const setOpenRouterImageApiKey = useCallback((apiKey: string) => {
-		setCachedState((prevState) => {
-			if (prevState.openRouterImageApiKey !== apiKey) {
-				setChangeDetected(true)
-			}
-
-			return { ...prevState, openRouterImageApiKey: apiKey }
-		})
-	}, [])
-
-	const setImageGenerationSelectedModel = useCallback((model: string) => {
-		setCachedState((prevState) => {
-			if (prevState.openRouterImageGenerationSelectedModel !== model) {
-				setChangeDetected(true)
-			}
-
-			return { ...prevState, openRouterImageGenerationSelectedModel: model }
 		})
 	}, [])
 
@@ -401,8 +379,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					maxGitStatusFiles: maxGitStatusFiles ?? 0,
 					profileThresholds,
 					imageGenerationProvider,
-					openRouterImageApiKey,
-					openRouterImageGenerationSelectedModel,
 					experiments,
 					customSupportPrompts,
 				},
@@ -825,13 +801,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							apiConfiguration={apiConfiguration}
 							setApiConfigurationField={setApiConfigurationField}
 							imageGenerationProvider={imageGenerationProvider}
-							openRouterImageApiKey={openRouterImageApiKey as string | undefined}
-							openRouterImageGenerationSelectedModel={
-								openRouterImageGenerationSelectedModel as string | undefined
-							}
 							setImageGenerationProvider={setImageGenerationProvider}
-							setOpenRouterImageApiKey={setOpenRouterImageApiKey}
-							setImageGenerationSelectedModel={setImageGenerationSelectedModel}
 						/>
 					)}
 

@@ -48,10 +48,6 @@ import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
 import { VectorStorageSettings } from "@src/components/settings/VectorStorageSettings"
 import { VectorStorageAdvancedSettings } from "@src/components/settings/VectorStorageAdvancedSettings"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
-import {
-	useOpenRouterModelProviders,
-	OPENROUTER_DEFAULT_PROVIDER_NAME,
-} from "@src/components/ui/hooks/useOpenRouterModelProviders"
 
 // Default URLs for providers
 const DEFAULT_QDRANT_URL = "http://localhost:6333"
@@ -91,8 +87,6 @@ interface LocalCodeIndexSettings {
 	codebaseIndexGeminiApiKey?: string
 	codebaseIndexMistralApiKey?: string
 	codebaseIndexVercelAiGatewayApiKey?: string
-	codebaseIndexOpenRouterApiKey?: string
-	codebaseIndexOpenRouterSpecificProvider?: string
 }
 
 // Validation schema for codebase index settings
@@ -178,16 +172,6 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
 			})
 
-		case "openrouter":
-			return baseSchema.extend({
-				codebaseIndexOpenRouterApiKey: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.openRouterApiKeyRequired")),
-				codebaseIndexEmbedderModelId: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
-			})
-
 		default:
 			return baseSchema
 	}
@@ -236,8 +220,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexGeminiApiKey: "",
 		codebaseIndexMistralApiKey: "",
 		codebaseIndexVercelAiGatewayApiKey: "",
-		codebaseIndexOpenRouterApiKey: "",
-		codebaseIndexOpenRouterSpecificProvider: "",
 	})
 
 	// Initial settings state - stores the settings when popover opens
@@ -277,9 +259,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				codebaseIndexGeminiApiKey: "",
 				codebaseIndexMistralApiKey: "",
 				codebaseIndexVercelAiGatewayApiKey: "",
-				codebaseIndexOpenRouterApiKey: "",
-				codebaseIndexOpenRouterSpecificProvider:
-					codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider || "",
 			}
 			setInitialSettings(settings)
 			setCurrentSettings(settings)
@@ -393,14 +372,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 						prev.codebaseIndexVercelAiGatewayApiKey === SECRET_PLACEHOLDER
 					) {
 						updated.codebaseIndexVercelAiGatewayApiKey = secretStatus.hasVercelAiGatewayApiKey
-							? SECRET_PLACEHOLDER
-							: ""
-					}
-					if (
-						!prev.codebaseIndexOpenRouterApiKey ||
-						prev.codebaseIndexOpenRouterApiKey === SECRET_PLACEHOLDER
-					) {
-						updated.codebaseIndexOpenRouterApiKey = secretStatus.hasOpenRouterApiKey
 							? SECRET_PLACEHOLDER
 							: ""
 					}
@@ -597,18 +568,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 	}
 
 	// Fetch OpenRouter model providers for embedding model
-	const { data: openRouterEmbeddingProviders } = useOpenRouterModelProviders(
-		currentSettings.codebaseIndexEmbedderProvider === "openrouter"
-			? currentSettings.codebaseIndexEmbedderModelId
-			: undefined,
-		undefined,
-		{
-			enabled:
-				currentSettings.codebaseIndexEmbedderProvider === "openrouter" &&
-				!!currentSettings.codebaseIndexEmbedderModelId,
-		},
-	)
-
 	const portalContainer = useRooPortal("roo-portal")
 
 	return (
@@ -1298,120 +1257,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													</p>
 												)}
 											</div>
-										</>
-									)}
-
-									{currentSettings.codebaseIndexEmbedderProvider === "openrouter" && (
-										<>
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.openRouterApiKeyLabel")}
-												</label>
-												<VSCodeTextField
-													type="password"
-													value={currentSettings.codebaseIndexOpenRouterApiKey || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexOpenRouterApiKey", e.target.value)
-													}
-													placeholder={t("settings:codeIndex.openRouterApiKeyPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexOpenRouterApiKey,
-													})}
-												/>
-												{formErrors.codebaseIndexOpenRouterApiKey && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexOpenRouterApiKey}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelLabel")}
-												</label>
-												<VSCodeDropdown
-													value={currentSettings.codebaseIndexEmbedderModelId}
-													onChange={(e: any) =>
-														updateSetting("codebaseIndexEmbedderModelId", e.target.value)
-													}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderModelId,
-													})}>
-													<VSCodeOption value="" className="p-2">
-														{t("settings:codeIndex.selectModel")}
-													</VSCodeOption>
-													{getAvailableModels().map((modelId) => {
-														const model =
-															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
-															]?.[modelId]
-														return (
-															<VSCodeOption key={modelId} value={modelId} className="p-2">
-																{modelId}{" "}
-																{model
-																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
-																		})
-																	: ""}
-															</VSCodeOption>
-														)
-													})}
-												</VSCodeDropdown>
-												{formErrors.codebaseIndexEmbedderModelId && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-
-											{/* Provider Routing for OpenRouter */}
-											{openRouterEmbeddingProviders &&
-												Object.keys(openRouterEmbeddingProviders).length > 0 && (
-													<div className="space-y-2">
-														<label className="text-sm font-medium">
-															<a
-																href="https://openrouter.ai/docs/features/provider-routing"
-																target="_blank"
-																rel="noopener noreferrer"
-																className="flex items-center gap-1 hover:underline">
-																{t("settings:codeIndex.openRouterProviderRoutingLabel")}
-																<span className="codicon codicon-link-external text-xs" />
-															</a>
-														</label>
-														<Select
-															value={
-																currentSettings.codebaseIndexOpenRouterSpecificProvider ||
-																OPENROUTER_DEFAULT_PROVIDER_NAME
-															}
-															onValueChange={(value) =>
-																updateSetting(
-																	"codebaseIndexOpenRouterSpecificProvider",
-																	value,
-																)
-															}>
-															<SelectTrigger className="w-full">
-																<SelectValue />
-															</SelectTrigger>
-															<SelectContent>
-																<SelectItem value={OPENROUTER_DEFAULT_PROVIDER_NAME}>
-																	{OPENROUTER_DEFAULT_PROVIDER_NAME}
-																</SelectItem>
-																{Object.entries(openRouterEmbeddingProviders).map(
-																	([value, { label }]) => (
-																		<SelectItem key={value} value={value}>
-																			{label}
-																		</SelectItem>
-																	),
-																)}
-															</SelectContent>
-														</Select>
-														<p className="text-xs text-vscode-descriptionForeground mt-1 mb-0">
-															{t(
-																"settings:codeIndex.openRouterProviderRoutingDescription",
-															)}
-														</p>
-													</div>
-												)}
 										</>
 									)}
 
