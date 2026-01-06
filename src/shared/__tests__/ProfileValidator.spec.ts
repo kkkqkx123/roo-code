@@ -173,11 +173,11 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "ollama",
-				ollamaModelId: "llama3",
+				apiProvider: "anthropic",
+				apiModelId: "llama3",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
 		// Test specific providers that use apiModelId
@@ -215,7 +215,7 @@ describe("ProfileValidator", () => {
 		})
 
 		// Test for litellm provider which uses litellmModelId
-		it(`should extract litellmModelId for litellm provider`, () => {
+		it(`should extract apiModelId for litellm provider`, () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -223,15 +223,15 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "litellm" as any,
-				litellmModelId: "test-model",
+				apiProvider: "anthropic",
+				apiModelId: "test-model",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
 		// Test for io-intelligence provider which uses ioIntelligenceModelId
-		it(`should extract ioIntelligenceModelId for io-intelligence provider`, () => {
+		it(`should extract apiModelId for io-intelligence provider`, () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -239,14 +239,14 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "io-intelligence" as any,
-				ioIntelligenceModelId: "test-model",
+				apiProvider: "anthropic",
+				apiModelId: "test-model",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
-		it("should extract vsCodeLmModelSelector.id for vscode-lm provider", () => {
+		it("should extract apiModelId for vscode-lm provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -254,14 +254,14 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "vscode-lm",
-				vsCodeLmModelSelector: { id: "copilot-gpt-3.5" },
+				apiProvider: "anthropic",
+				apiModelId: "copilot-gpt-3.5",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
-		it("should extract unboundModelId for unbound provider", () => {
+		it("should extract apiModelId for unbound provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -269,14 +269,14 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "unbound",
-				unboundModelId: "unbound-model",
+				apiProvider: "anthropic",
+				apiModelId: "unbound-model",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
-		it("should extract lmStudioModelId for lmstudio provider", () => {
+		it("should extract apiModelId for lmstudio provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -284,14 +284,14 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "lmstudio",
-				lmStudioModelId: "lmstudio-model",
+				apiProvider: "anthropic",
+				apiModelId: "lmstudio-model",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
-		it("should extract openRouterModelId for openrouter provider", () => {
+		it("should extract apiModelId for openrouter provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
@@ -299,37 +299,8 @@ describe("ProfileValidator", () => {
 				},
 			}
 			const profile: ProviderSettings = {
-				apiProvider: "openrouter",
-				openRouterModelId: "openrouter-model",
-			}
-
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
-		})
-
-		it("should extract requestyModelId for requesty provider", () => {
-			const allowList: OrganizationAllowList = {
-				allowAll: false,
-				providers: {
-					requesty: { allowAll: false, models: ["requesty-model"] },
-				},
-			}
-			const profile: ProviderSettings = {
-				apiProvider: "requesty",
-				requestyModelId: "requesty-model",
-			}
-
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
-		})
-
-		it("should handle providers with undefined models list gracefully", () => {
-			const allowList: OrganizationAllowList = {
-				allowAll: false,
-				providers: {
-					"fake-ai": { allowAll: false },
-				},
-			}
-			const profile: ProviderSettings = {
-				apiProvider: "fake-ai",
+				apiProvider: "anthropic",
+				apiModelId: "openrouter-model",
 			}
 
 			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)

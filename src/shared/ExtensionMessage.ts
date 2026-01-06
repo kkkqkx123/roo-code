@@ -17,7 +17,7 @@ import { GitCommit } from "../utils/git"
 
 import { McpServer } from "./mcp"
 import { Mode } from "./modes"
-import { ModelRecord, RouterModels } from "./api"
+import { ModelRecord } from "./api"
 
 // Command interface for frontend/backend communication
 export interface Command {
@@ -72,7 +72,6 @@ export interface ExtensionMessage {
 		| "enhancedPrompt"
 		| "commitSearchResults"
 		| "listApiConfig"
-		| "routerModels"
 		| "openAiModels"
 		| "ollamaModels"
 		| "lmStudioModels"
@@ -154,7 +153,6 @@ export interface ExtensionMessage {
 		path?: string
 	}>
 	clineMessage?: ClineMessage
-	routerModels?: RouterModels
 	openAiModels?: string[]
 	ollamaModels?: ModelRecord
 	lmStudioModels?: ModelRecord

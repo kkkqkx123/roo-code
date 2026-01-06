@@ -24,7 +24,7 @@ describe("checkExistKey", () => {
 	it("should return true when multiple keys are defined", () => {
 		const config: ProviderSettings = {
 			apiKey: "test-key",
-			openRouterApiKey: "openrouter-key",
+			openAiApiKey: "openai-key",
 		}
 		expect(checkExistKey(config)).toBe(true)
 	})
@@ -42,20 +42,9 @@ describe("checkExistKey", () => {
 	it("should return false when all key fields are undefined", () => {
 		const config: ProviderSettings = {
 			apiKey: undefined,
-			openRouterApiKey: undefined,
-			awsRegion: undefined,
-			vertexProjectId: undefined,
 			openAiApiKey: undefined,
-			ollamaModelId: undefined,
-			lmStudioModelId: undefined,
 			geminiApiKey: undefined,
 			openAiNativeApiKey: undefined,
-			deepSeekApiKey: undefined,
-			moonshotApiKey: undefined,
-			mistralApiKey: undefined,
-			vsCodeLmModelSelector: undefined,
-			requestyApiKey: undefined,
-			unboundApiKey: undefined,
 		}
 		expect(checkExistKey(config)).toBe(false)
 	})

@@ -36,9 +36,8 @@ import {
 	NATIVE_TOOL_DEFAULTS,
 } from "@roo-code/types"
 
-import type { ModelRecord, RouterModels } from "@roo/api"
+import type { ModelRecord } from "@roo/api"
 
-import { useRouterModels } from "./useRouterModels"
 import { useOpenRouterModelProviders } from "./useOpenRouterModelProviders"
 import { useLmStudioModels } from "./useLmStudioModels"
 import { useOllamaModels } from "./useOllamaModels"
