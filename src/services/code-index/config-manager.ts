@@ -15,13 +15,12 @@ export class CodeIndexConfigManager {
 	private modelId?: string
 	private modelDimension?: number
 	private openAiOptions?: ApiHandlerOptions
-	private ollamaOptions?: ApiHandlerOptions
+	private ollamaOptions?: { ollamaBaseUrl?: string }
 	private openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 	private geminiOptions?: { apiKey: string }
 	private mistralOptions?: { apiKey: string }
 	private vercelAiGatewayOptions?: { apiKey: string }
 	private bedrockOptions?: { region: string; profile?: string }
-	private openRouterOptions?: { apiKey: string; specificProvider?: string }
 	private qdrantUrl?: string = "http://localhost:6333"
 	private qdrantApiKey?: string
 	private searchMinScore?: number
@@ -85,8 +84,6 @@ export class CodeIndexConfigManager {
 		const vercelAiGatewayApiKey = this.contextProxy?.getSecret("codebaseIndexVercelAiGatewayApiKey") ?? ""
 		const bedrockRegion = codebaseIndexConfig.codebaseIndexBedrockRegion ?? "us-east-1"
 		const bedrockProfile = codebaseIndexConfig.codebaseIndexBedrockProfile ?? ""
-		const openRouterApiKey = this.contextProxy?.getSecret("codebaseIndexOpenRouterApiKey") ?? ""
-		const openRouterSpecificProvider = codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider ?? ""
 		const vectorStorageConfig = codebaseIndexConfig.codebaseIndexVectorStorageConfig
 		const requireIndexingConfirmation = codebaseIndexConfig.codebaseIndexRequireIndexingConfirmation ?? true
 
@@ -143,10 +140,6 @@ export class CodeIndexConfigManager {
 		this.geminiOptions = geminiApiKey ? { apiKey: geminiApiKey } : undefined
 		this.mistralOptions = mistralApiKey ? { apiKey: mistralApiKey } : undefined
 		this.vercelAiGatewayOptions = vercelAiGatewayApiKey ? { apiKey: vercelAiGatewayApiKey } : undefined
-		this.openRouterOptions = openRouterApiKey
-			? { apiKey: openRouterApiKey, specificProvider: openRouterSpecificProvider || undefined }
-			: undefined
-		// Set bedrockOptions if region is provided (profile is optional)
 		this.bedrockOptions = bedrockRegion
 			? { region: bedrockRegion, profile: bedrockProfile || undefined }
 			: undefined
@@ -163,13 +156,12 @@ export class CodeIndexConfigManager {
 			modelId?: string
 			modelDimension?: number
 			openAiOptions?: ApiHandlerOptions
-			ollamaOptions?: ApiHandlerOptions
+			ollamaOptions?: { ollamaBaseUrl?: string }
 			openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 			geminiOptions?: { apiKey: string }
 			mistralOptions?: { apiKey: string }
 			vercelAiGatewayOptions?: { apiKey: string }
 			bedrockOptions?: { region: string; profile?: string }
-			openRouterOptions?: { apiKey: string }
 			qdrantUrl?: string
 			qdrantApiKey?: string
 			searchMinScore?: number
@@ -192,8 +184,6 @@ export class CodeIndexConfigManager {
 			vercelAiGatewayApiKey: this.vercelAiGatewayOptions?.apiKey ?? "",
 			bedrockRegion: this.bedrockOptions?.region ?? "",
 			bedrockProfile: this.bedrockOptions?.profile ?? "",
-			openRouterApiKey: this.openRouterOptions?.apiKey ?? "",
-			openRouterSpecificProvider: this.openRouterOptions?.specificProvider ?? "",
 			qdrantUrl: this.qdrantUrl ?? "",
 			qdrantApiKey: this.qdrantApiKey ?? "",
 		}
@@ -220,7 +210,6 @@ export class CodeIndexConfigManager {
 				mistralOptions: this.mistralOptions,
 				vercelAiGatewayOptions: this.vercelAiGatewayOptions,
 				bedrockOptions: this.bedrockOptions,
-				openRouterOptions: this.openRouterOptions,
 				qdrantUrl: this.qdrantUrl,
 				qdrantApiKey: this.qdrantApiKey,
 				searchMinScore: this.currentSearchMinScore,
@@ -269,11 +258,6 @@ export class CodeIndexConfigManager {
 			const qdrantUrl = this.qdrantUrl
 			const isConfigured = !!(region && qdrantUrl)
 			return isConfigured
-		} else if (this.embedderProvider === "openrouter") {
-			const apiKey = this.openRouterOptions?.apiKey
-			const qdrantUrl = this.qdrantUrl
-			const isConfigured = !!(apiKey && qdrantUrl)
-			return isConfigured
 		}
 		return false // Should not happen if embedderProvider is always set correctly
 	}
@@ -311,8 +295,6 @@ export class CodeIndexConfigManager {
 		const prevVercelAiGatewayApiKey = prev?.vercelAiGatewayApiKey ?? ""
 		const prevBedrockRegion = prev?.bedrockRegion ?? ""
 		const prevBedrockProfile = prev?.bedrockProfile ?? ""
-		const prevOpenRouterApiKey = prev?.openRouterApiKey ?? ""
-		const prevOpenRouterSpecificProvider = prev?.openRouterSpecificProvider ?? ""
 		const prevQdrantUrl = prev?.qdrantUrl ?? ""
 		const prevQdrantApiKey = prev?.qdrantApiKey ?? ""
 
@@ -353,8 +335,6 @@ export class CodeIndexConfigManager {
 		const currentVercelAiGatewayApiKey = this.vercelAiGatewayOptions?.apiKey ?? ""
 		const currentBedrockRegion = this.bedrockOptions?.region ?? ""
 		const currentBedrockProfile = this.bedrockOptions?.profile ?? ""
-		const currentOpenRouterApiKey = this.openRouterOptions?.apiKey ?? ""
-		const currentOpenRouterSpecificProvider = this.openRouterOptions?.specificProvider ?? ""
 		const currentQdrantUrl = this.qdrantUrl ?? ""
 		const currentQdrantApiKey = this.qdrantApiKey ?? ""
 
@@ -386,15 +366,6 @@ export class CodeIndexConfigManager {
 		}
 
 		if (prevBedrockRegion !== currentBedrockRegion || prevBedrockProfile !== currentBedrockProfile) {
-			return true
-		}
-
-		if (prevOpenRouterApiKey !== currentOpenRouterApiKey) {
-			return true
-		}
-
-		// OpenRouter specific provider change
-		if (prevOpenRouterSpecificProvider !== currentOpenRouterSpecificProvider) {
 			return true
 		}
 
@@ -457,7 +428,6 @@ export class CodeIndexConfigManager {
 			mistralOptions: this.mistralOptions,
 			vercelAiGatewayOptions: this.vercelAiGatewayOptions,
 			bedrockOptions: this.bedrockOptions,
-			openRouterOptions: this.openRouterOptions,
 			qdrantUrl: this.qdrantUrl,
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,

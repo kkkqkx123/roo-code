@@ -97,10 +97,10 @@ describe("enhancePrompt", () => {
 	})
 
 	it("uses appropriate model based on provider", async () => {
-		const openRouterConfig: ProviderSettings = {
-			apiProvider: "openrouter",
-			openRouterApiKey: "test-key",
-			openRouterModelId: "test-model",
+		const geminiConfig: ProviderSettings = {
+			apiProvider: "gemini",
+			geminiApiKey: "test-key",
+			apiModelId: "test-model",
 			enableReasoningEffort: false,
 		}
 
@@ -118,9 +118,9 @@ describe("enhancePrompt", () => {
 			}),
 		} as unknown as SingleCompletionHandler)
 
-		const result = await singleCompletionHandler(openRouterConfig, "Test prompt")
+		const result = await singleCompletionHandler(geminiConfig, "Test prompt")
 
-		expect(buildApiHandler).toHaveBeenCalledWith(openRouterConfig)
+		expect(buildApiHandler).toHaveBeenCalledWith(geminiConfig)
 		expect(result).toBe("Enhanced prompt")
 	})
 

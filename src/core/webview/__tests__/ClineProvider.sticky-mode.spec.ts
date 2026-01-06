@@ -263,7 +263,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create a mock task
 			const mockTask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
 			// Get the actual taskId from the mock
@@ -354,7 +354,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create a mock task with history
 			const mockTask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
 			// Get the actual taskId from the mock
@@ -474,7 +474,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create a mock task
 			const mockTask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
 			// Get the actual taskId from the mock
@@ -527,7 +527,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create parent task
 			const parentTask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
 			// Get the actual taskId from the mock
@@ -576,7 +576,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create a subtask (simulating new_task tool behavior)
 			const subtask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 				parentTask: parentTask,
 			})
 			const subtaskId = (subtask as any).taskId || "subtask-id"
@@ -612,7 +612,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Create a mock task that throws on save
 			const mockTask = new Task({
 				provider,
-				apiConfiguration: { apiProvider: "openrouter" },
+				apiConfiguration: { apiProvider: "anthropic" },
 			})
 			vi.spyOn(mockTask as any, "saveClineMessages").mockRejectedValue(new Error("Save failed"))
 

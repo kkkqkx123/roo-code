@@ -4,6 +4,9 @@ import {
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 } from "@roo-code/types"
 
+// ModelRecord - A record of model IDs to their model info
+export type ModelRecord = Record<string, ModelInfo>
+
 // ApiHandlerOptions
 // Extend ProviderSettings (minus apiProvider) with handler-specific toggles.
 export type ApiHandlerOptions = Omit<ProviderSettings, "apiProvider"> & {

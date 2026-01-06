@@ -119,13 +119,12 @@ export interface CodeIndexConfig {
 	modelId?: string
 	modelDimension?: number
 	openAiOptions?: ApiHandlerOptions
-	ollamaOptions?: ApiHandlerOptions
+	ollamaOptions?: { ollamaBaseUrl?: string }
 	openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 	geminiOptions?: { apiKey: string }
 	mistralOptions?: { apiKey: string }
 	vercelAiGatewayOptions?: { apiKey: string }
 	bedrockOptions?: { region: string; profile?: string }
-	openRouterOptions?: { apiKey: string; specificProvider?: string }
 	qdrantUrl?: string
 	qdrantApiKey?: string
 	searchMinScore?: number
@@ -152,8 +151,6 @@ export type PreviousConfigSnapshot = {
 	vercelAiGatewayApiKey?: string
 	bedrockRegion?: string
 	bedrockProfile?: string
-	openRouterApiKey?: string
-	openRouterSpecificProvider?: string
 	qdrantUrl?: string
 	qdrantApiKey?: string
 }

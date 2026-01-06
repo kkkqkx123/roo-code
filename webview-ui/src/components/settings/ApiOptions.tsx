@@ -20,13 +20,8 @@ import {
 import { vscode } from "@src/utils/vscode"
 import { validateApiConfigurationExcludingModelErrors, getModelValidationError } from "@src/utils/validate"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { useRouterModels } from "@src/components/ui/hooks/useRouterModels"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
-import {
-	useOpenRouterModelProviders,
-	OPENROUTER_DEFAULT_PROVIDER_NAME,
-} from "@src/components/ui/hooks/useOpenRouterModelProviders"
 import { filterProviders, filterModels } from "./utils/organizationFilters"
 import {
 	Select,
@@ -138,9 +133,6 @@ const ApiOptions = ({
 		info: selectedModelInfo,
 	} = useSelectedModel(apiConfiguration)
 
-	const { data: routerModels, refetch: refetchRouterModels } = useRouterModels()
-
-
 	// Update `apiModelId` whenever `selectedModelId` changes.
 	useEffect(() => {
 		if (selectedModelId && apiConfiguration.apiModelId !== selectedModelId) {
@@ -181,11 +173,11 @@ const ApiOptions = ({
 	useEffect(() => {
 		const apiValidationResult = validateApiConfigurationExcludingModelErrors(
 			apiConfiguration,
-			routerModels,
+			undefined,
 			organizationAllowList,
 		)
 		setErrorMessage(apiValidationResult)
-	}, [apiConfiguration, routerModels, organizationAllowList, setErrorMessage])
+	}, [apiConfiguration, organizationAllowList, setErrorMessage])
 
 	const selectedProviderModels = useMemo(() => {
 		const models = MODELS_BY_PROVIDER[selectedProvider]
@@ -272,8 +264,8 @@ const ApiOptions = ({
 	)
 
 	const modelValidationError = useMemo(() => {
-		return getModelValidationError(apiConfiguration, routerModels, organizationAllowList)
-	}, [apiConfiguration, routerModels, organizationAllowList])
+		return getModelValidationError(apiConfiguration, undefined, organizationAllowList)
+	}, [apiConfiguration, organizationAllowList])
 
 	const docs = useMemo(() => {
 		const provider = PROVIDERS.find(({ value }) => value === selectedProvider)
@@ -346,12 +338,6 @@ const ApiOptions = ({
 			if (rooIndex > 0) {
 				const [rooOption] = options.splice(rooIndex, 1)
 				options.unshift(rooOption)
-			}
-		} else {
-			const openRouterIndex = options.findIndex((opt) => opt.value === "openrouter")
-			if (openRouterIndex > 0) {
-				const [openRouterOption] = options.splice(openRouterIndex, 1)
-				options.unshift(openRouterOption)
 			}
 		}
 

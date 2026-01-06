@@ -199,8 +199,6 @@ export function getDefaultModelId(provider: EmbedderProvider): string {
 
 		case "bedrock":
 			return "amazon.titan-embed-text-v2:0"
-		case "openrouter":
-			return "openai/text-embedding-3-large"
 
 		default:
 			// Fallback for unknown providers

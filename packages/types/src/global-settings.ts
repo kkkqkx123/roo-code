@@ -58,9 +58,7 @@ export const globalSettingsSchema = z.object({
 	dismissedUpsells: z.array(z.string()).optional(),
 
 	// Image generation settings (experimental) - flattened for simplicity
-	imageGenerationProvider: z.enum(["openrouter", "roo"]).optional(),
-	openRouterImageApiKey: z.string().optional(),
-	openRouterImageGenerationSelectedModel: z.string().optional(),
+	imageGenerationProvider: z.enum(["roo"]).optional(),
 
 	condensingApiConfigId: z.string().optional(),
 	customCondensingPrompt: z.string().optional(),
@@ -212,49 +210,17 @@ export type RooCodeSettings = GlobalSettings & ProviderSettings
  */
 export const SECRET_STATE_KEYS = [
 	"apiKey",
-	"openRouterApiKey",
-	"awsAccessKey",
-	"awsApiKey",
-	"awsSecretKey",
-	"awsSessionToken",
 	"openAiApiKey",
-	"ollamaApiKey",
 	"geminiApiKey",
 	"openAiNativeApiKey",
-	"cerebrasApiKey",
-	"deepSeekApiKey",
-	"doubaoApiKey",
-	"moonshotApiKey",
-	"mistralApiKey",
-	"minimaxApiKey",
-	"unboundApiKey",
-	"requestyApiKey",
-	"xaiApiKey",
-	"groqApiKey",
-	"chutesApiKey",
-	"litellmApiKey",
-	"deepInfraApiKey",
 	"codeIndexOpenAiKey",
 	"codeIndexQdrantApiKey",
 	"codebaseIndexOpenAiCompatibleApiKey",
 	"codebaseIndexGeminiApiKey",
-	"codebaseIndexMistralApiKey",
-	"codebaseIndexVercelAiGatewayApiKey",
-	"codebaseIndexOpenRouterApiKey",
-	"huggingFaceApiKey",
-	"sambaNovaApiKey",
-	"zaiApiKey",
-	"fireworksApiKey",
-	"featherlessApiKey",
-	"ioIntelligenceApiKey",
-	"vercelAiGatewayApiKey",
-	"basetenApiKey",
 ] as const
 
 // Global secrets that are part of GlobalSettings (not ProviderSettings)
-export const GLOBAL_SECRET_KEYS = [
-	"openRouterImageApiKey", // For image generation
-] as const
+export const GLOBAL_SECRET_KEYS = [] as const
 
 // Type for the actual secret storage keys
 type ProviderSecretKey = (typeof SECRET_STATE_KEYS)[number]

@@ -158,7 +158,6 @@ export const codebaseIndexConfigSchema = z.object({
 			"mistral",
 			"vercel-ai-gateway",
 			"bedrock",
-			"openrouter",
 		])
 		.optional(),
 	codebaseIndexEmbedderBaseUrl: z.string().optional(),
@@ -178,8 +177,6 @@ export const codebaseIndexConfigSchema = z.object({
 	// Bedrock specific fields
 	codebaseIndexBedrockRegion: z.string().optional(),
 	codebaseIndexBedrockProfile: z.string().optional(),
-	// OpenRouter specific fields
-	codebaseIndexOpenRouterSpecificProvider: z.string().optional(),
 	// Indexing confirmation requirement
 	codebaseIndexRequireIndexingConfirmation: z.boolean().optional(),
 })
@@ -197,7 +194,6 @@ export const codebaseIndexModelsSchema = z.object({
 	gemini: z.record(z.string(), z.object({ dimension: z.number() })).optional(),
 	mistral: z.record(z.string(), z.object({ dimension: z.number() })).optional(),
 	"vercel-ai-gateway": z.record(z.string(), z.object({ dimension: z.number() })).optional(),
-	openrouter: z.record(z.string(), z.object({ dimension: z.number() })).optional(),
 	bedrock: z.record(z.string(), z.object({ dimension: z.number() })).optional(),
 })
 
@@ -216,7 +212,6 @@ export const codebaseIndexProviderSchema = z.object({
 	codebaseIndexGeminiApiKey: z.string().optional(),
 	codebaseIndexMistralApiKey: z.string().optional(),
 	codebaseIndexVercelAiGatewayApiKey: z.string().optional(),
-	codebaseIndexOpenRouterApiKey: z.string().optional(),
 })
 
 export type CodebaseIndexProvider = z.infer<typeof codebaseIndexProviderSchema>

@@ -73,7 +73,7 @@ export type ToolProtocol = (typeof TOOL_PROTOCOL)[keyof typeof TOOL_PROTOCOL]
 /**
  * Default model info properties for native tool support.
  * Used to merge with cached model info that may lack these fields.
- * Router providers (Requesty, Unbound, LiteLLM) assume all models support native tools.
+ * Router providers (LiteLLM) assume all models support native tools.
  */
 export const NATIVE_TOOL_DEFAULTS = {
 	supportsNativeTools: true,

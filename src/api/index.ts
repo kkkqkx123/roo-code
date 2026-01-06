@@ -89,7 +89,7 @@ export interface ApiHandler {
 export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 	const { apiProvider, ...options } = configuration
 
-	const anthropicStyleProviders: ProviderName[] = ["anthropic", "claude-code", "bedrock", "minimax"]
+	const anthropicStyleProviders: ProviderName[] = ["anthropic", "claude-code"]
 
 	switch (apiProvider) {
 		case "anthropic":

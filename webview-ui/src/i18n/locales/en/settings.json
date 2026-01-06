@@ -101,11 +101,6 @@
 		"bedrockProfileLabel": "AWS Profile",
 		"bedrockProfilePlaceholder": "default",
 		"bedrockProfileDescription": "AWS profile name from ~/.aws/credentials (required).",
-		"openRouterProvider": "OpenRouter",
-		"openRouterApiKeyLabel": "OpenRouter API Key",
-		"openRouterApiKeyPlaceholder": "Enter your OpenRouter API key",
-		"openRouterProviderRoutingLabel": "OpenRouter Provider Routing",
-		"openRouterProviderRoutingDescription": "OpenRouter routes requests to the best available providers for your embedding model. By default, requests are load balanced across the top providers to maximize uptime. However, you can choose a specific provider to use for this model.",
 		"openaiCompatibleProvider": "OpenAI Compatible",
 		"openAiKeyLabel": "OpenAI API Key",
 		"openAiKeyPlaceholder": "Enter your OpenAI API key",
@@ -174,7 +169,6 @@
 			"vercelAiGatewayApiKeyRequired": "Vercel AI Gateway API key is required",
 			"bedrockRegionRequired": "AWS region is required",
 			"bedrockProfileRequired": "AWS profile is required",
-			"openRouterApiKeyRequired": "OpenRouter API key is required",
 			"ollamaBaseUrlRequired": "Ollama base URL is required",
 			"baseUrlRequired": "Base URL is required",
 			"modelDimensionMinValue": "Model dimension must be greater than 0"
@@ -309,8 +303,6 @@
 		"vscodeLmDescription": " The VS Code Language Model API allows you to run models provided by other VS Code extensions (including but not limited to GitHub Copilot). The easiest way to get started is to install the Copilot and Copilot Chat extensions from the VS Code Marketplace.",
 		"awsCustomArnUse": "Enter a valid Amazon Bedrock ARN for the model you want to use. Format examples:",
 		"awsCustomArnDesc": "Make sure the region in the ARN matches your selected AWS Region above.",
-		"openRouterApiKey": "OpenRouter API Key",
-		"getOpenRouterApiKey": "Get OpenRouter API Key",
 		"vercelAiGatewayApiKey": "Vercel AI Gateway API Key",
 		"getVercelAiGatewayApiKey": "Get Vercel AI Gateway API Key",
 		"apiKeyStorageNotice": "API keys are stored securely in VSCode's Secret Storage",
@@ -322,7 +314,6 @@
 		"headerName": "Header name",
 		"headerValue": "Header value",
 		"noCustomHeaders": "No custom headers defined. Click the + button to add one.",
-		"requestyApiKey": "Requesty API Key",
 		"refreshModels": {
 			"label": "Refresh Models",
 			"hint": "Please reopen the settings to see the latest models.",
@@ -330,10 +321,6 @@
 			"success": "Models list refreshed successfully!",
 			"error": "Failed to refresh models list. Please try again."
 		},
-		"getRequestyApiKey": "Create new Requesty API Key",
-		"getRequestyBaseUrl": "Base URL",
-		"requestyUseCustomBaseUrl": "Use custom base URL",
-		"openRouterTransformsText": "Compress prompts and message chains to the context size (<a>OpenRouter Transforms</a>)",
 		"anthropicApiKey": "Anthropic API Key",
 		"getAnthropicApiKey": "Get Anthropic API Key",
 		"anthropicUseAuthToken": "Pass Anthropic API Key as Authorization header instead of X-Api-Key",
@@ -469,10 +456,6 @@
 			"description": "Ollama allows you to run models locally on your computer. For instructions on how to get started, see their quickstart guide.",
 			"warning": "Note: Roo Code uses complex prompts and works best with Claude models. Less capable models may not work as expected."
 		},
-		"unboundApiKey": "Unbound API Key",
-		"getUnboundApiKey": "Get Unbound API Key",
-		"unboundRefreshModelsSuccess": "Models list updated! You can now select from the latest models.",
-		"unboundInvalidApiKey": "Invalid API key. Please check your API key and try again.",
 		"humanRelay": {
 			"description": "No API key is required, but the user needs to help copy and paste the information to the web chat AI.",
 			"instructions": "During use, a dialog box will pop up and the current message will be copied to the clipboard automatically. You need to paste these to web versions of AI (such as ChatGPT or Claude), then copy the AI's reply back to the dialog box and click the confirm button."
@@ -480,13 +463,6 @@
 		"roo": {
 			"authenticatedMessage": "Securely authenticated through your Roo Code Cloud account.",
 			"connectButton": "Connect to Roo Code Cloud"
-		},
-		"openRouter": {
-			"providerRouting": {
-				"title": "OpenRouter Provider Routing",
-				"description": "OpenRouter routes requests to the best available providers for your model. By default, requests are load balanced across the top providers to maximize uptime. However, you can choose a specific provider to use for this model.",
-				"learnMore": "Learn more about provider routing"
-			}
 		},
 		"customModel": {
 			"capabilities": "Configure the capabilities and pricing for your custom OpenAI-compatible model. Be careful when specifying the model capabilities, as they can affect how Roo Code performs.",
@@ -849,12 +825,9 @@
 			"description": "When enabled, Roo can generate images from text prompts using image generation models.",
 			"providerLabel": "Provider",
 			"providerDescription": "Select which provider to use for image generation.",
-			"openRouterApiKeyLabel": "OpenRouter API Key",
-			"openRouterApiKeyPlaceholder": "Enter your OpenRouter API key",
 			"getApiKeyText": "Get your API key from",
 			"modelSelectionLabel": "Image Generation Model",
 			"modelSelectionDescription": "Select the model to use for image generation",
-			"warningMissingKey": "⚠️ OpenRouter API key is required for OpenRouter image generation. Please configure it above.",
 			"successConfigured": "✓ Image generation is configured and ready to use"
 		},
 		"RUN_SLASH_COMMAND": {

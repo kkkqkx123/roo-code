@@ -50,8 +50,6 @@ import { getOpenAiModels } from "../../api/providers/openai"
 import { openMention } from "../mentions"
 import { getWorkspacePath } from "../../utils/path"
 import { Mode, defaultModeSlug } from "../../shared/modes"
-import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
-import { GetModelsOptions } from "../../shared/api"
 import { generateSystemPrompt } from "./generateSystemPrompt"
 import { getCommand } from "../../utils/commands"
 
@@ -524,7 +522,7 @@ export const webviewMessageHandler = async (
 						const commands = value ?? []
 
 						newValue = Array.isArray(commands)
-							? commands.filter((cmd) => typeof cmd === "string" && cmd.trim().length > 0)
+							? commands.filter((cmd): cmd is string => typeof cmd === "string" && cmd.trim().length > 0)
 							: []
 
 						await vscode.workspace
@@ -534,7 +532,7 @@ export const webviewMessageHandler = async (
 						const commands = value ?? []
 
 						newValue = Array.isArray(commands)
-							? commands.filter((cmd) => typeof cmd === "string" && cmd.trim().length > 0)
+							? commands.filter((cmd): cmd is string => typeof cmd === "string" && cmd.trim().length > 0)
 							: []
 
 						await vscode.workspace
@@ -721,100 +719,6 @@ export const webviewMessageHandler = async (
 			break
 		case "resetState":
 			await provider.resetState()
-			break
-		case "requestOllamaModels": {
-			// Specific handler for Ollama models only.
-			const { apiConfiguration: ollamaApiConfig } = await provider.getState()
-			try {
-				const ollamaOptions = {
-					provider: "ollama" as const,
-					baseUrl: ollamaApiConfig.ollamaBaseUrl,
-					apiKey: ollamaApiConfig.ollamaApiKey,
-				}
-				// Flush cache and refresh to ensure fresh models.
-				await flushModels(ollamaOptions, true)
-
-				const ollamaModels = await getModels(ollamaOptions)
-
-				if (Object.keys(ollamaModels).length > 0) {
-					provider.postMessageToWebview({ type: "ollamaModels", ollamaModels: ollamaModels })
-				}
-			} catch (error) {
-				// Silently fail - user hasn't configured Ollama yet
-				console.debug("Ollama models fetch failed:", error)
-			}
-			break
-		}
-		case "requestLmStudioModels": {
-			// Specific handler for LM Studio models only.
-			const { apiConfiguration: lmStudioApiConfig } = await provider.getState()
-			try {
-				const lmStudioOptions = {
-					provider: "lmstudio" as const,
-					baseUrl: lmStudioApiConfig.lmStudioBaseUrl,
-				}
-				// Flush cache and refresh to ensure fresh models.
-				await flushModels(lmStudioOptions, true)
-
-				const lmStudioModels = await getModels(lmStudioOptions)
-
-				if (Object.keys(lmStudioModels).length > 0) {
-					provider.postMessageToWebview({
-						type: "lmStudioModels",
-						lmStudioModels: lmStudioModels,
-					})
-				}
-			} catch (error) {
-				// Silently fail - user hasn't configured LM Studio yet.
-				console.debug("LM Studio models fetch failed:", error)
-			}
-			break
-		}
-		case "requestRooModels": {
-			// Specific handler for Roo models only - flushes cache to ensure fresh auth token is used
-			try {
-				const rooOptions = {
-					provider: "roo" as const,
-					baseUrl: process.env.ROO_CODE_PROVIDER_URL ?? "https://api.roocode.com/proxy",
-					apiKey: undefined,
-				}
-				// Flush cache and refresh to ensure fresh models with current auth state
-				await flushModels(rooOptions, true)
-
-				const rooModels = await getModels(rooOptions)
-
-				// Always send a response, even if no models are returned
-				provider.postMessageToWebview({
-					type: "singleRouterModelFetchResponse",
-					success: true,
-					values: { provider: "roo", models: rooModels },
-				})
-			} catch (error) {
-				// Send error response
-				const errorMessage = error instanceof Error ? error.message : String(error)
-				provider.postMessageToWebview({
-					type: "singleRouterModelFetchResponse",
-					success: false,
-					error: errorMessage,
-					values: { provider: "roo" },
-				})
-			}
-			break
-		}
-		case "requestRooCreditBalance":
-			// Credit balance functionality removed
-			break
-		case "requestOpenAiModels":
-			if (message?.values?.baseUrl && message?.values?.apiKey) {
-				const openAiModels = await getOpenAiModels(
-					message?.values?.baseUrl,
-					message?.values?.apiKey,
-					message?.values?.openAiHeaders,
-				)
-
-				provider.postMessageToWebview({ type: "openAiModels", openAiModels })
-			}
-
 			break
 		case "openImage":
 			openImage(message.text!, { values: message.values })
@@ -2020,12 +1924,6 @@ export const webviewMessageHandler = async (
 					await provider.contextProxy.storeSecret(
 						"codebaseIndexVercelAiGatewayApiKey",
 						settings.codebaseIndexVercelAiGatewayApiKey,
-					)
-				}
-				if (settings.codebaseIndexOpenRouterApiKey !== undefined) {
-					await provider.contextProxy.storeSecret(
-						"codebaseIndexOpenRouterApiKey",
-						settings.codebaseIndexOpenRouterApiKey,
 					)
 				}
 

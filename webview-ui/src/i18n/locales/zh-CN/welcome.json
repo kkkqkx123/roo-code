@@ -4,13 +4,6 @@
 	"notice": "请先配置大语言模型API提供商",
 	"start": "开始吧！",
 	"routers": {
-		"requesty": {
-			"description": "智能调度多个大语言模型",
-			"incentive": "$1 免费额度"
-		},
-		"openrouter": {
-			"description": "统一了大语言模型的接口"
-		},
 		"roo": {
 			"description": "最优秀的免费模型助你开始",
 			"incentive": "免费试用 Roo"

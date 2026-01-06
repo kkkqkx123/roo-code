@@ -447,7 +447,7 @@ describe("ClineProvider", () => {
 		defaultTaskOptions = {
 			provider,
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 			},
 		}
 
@@ -506,7 +506,7 @@ describe("ClineProvider", () => {
 
 		// Verify Content Security Policy contains the necessary PostHog domains
 		expect(mockWebviewView.webview.html).toContain(
-			"connect-src vscode-webview://test-csp-source https://openrouter.ai https://api.requesty.ai https://ph.roocode.com",
+			"connect-src vscode-webview://test-csp-source https://ph.roocode.com",
 		)
 
 		// Extract the script-src directive section and verify required security elements
@@ -528,7 +528,7 @@ describe("ClineProvider", () => {
 			taskHistory: [],
 			shouldShowAnnouncement: false,
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 			},
 			customInstructions: undefined,
 			alwaysAllowReadOnly: false,
@@ -572,8 +572,6 @@ describe("ClineProvider", () => {
 			profileThresholds: {},
 			hasOpenedModeSelector: false,
 			diagnosticsEnabled: true,
-			openRouterImageApiKey: undefined,
-			openRouterImageGenerationSelectedModel: undefined,
 			remoteControlEnabled: false,
 			taskSyncEnabled: false,
 			featureRoomoteControlEnabled: false,
@@ -1346,7 +1344,7 @@ describe("ClineProvider", () => {
 			// Test with mcpEnabled: true
 			vi.spyOn(provider, "getState").mockResolvedValueOnce({
 				apiConfiguration: {
-					apiProvider: "openrouter" as const,
+					apiProvider: "anthropic" as const,
 				},
 				mcpEnabled: true,
 				enableMcpServerCreation: false,
@@ -1371,7 +1369,7 @@ describe("ClineProvider", () => {
 			// Test with mcpEnabled: false
 			vi.spyOn(provider, "getState").mockResolvedValueOnce({
 				apiConfiguration: {
-					apiProvider: "openrouter" as const,
+					apiProvider: "anthropic" as const,
 				},
 				mcpEnabled: false,
 				enableMcpServerCreation: false,
@@ -1408,7 +1406,7 @@ describe("ClineProvider", () => {
 			// Mock getState to return custom instructions for code mode
 			vi.spyOn(provider, "getState").mockResolvedValue({
 				apiConfiguration: {
-					apiProvider: "openrouter" as const,
+					apiProvider: "anthropic" as const,
 				},
 				customModePrompts: {
 					code: { customInstructions: "Code mode specific instructions" },
@@ -1437,7 +1435,7 @@ describe("ClineProvider", () => {
 			// Mock getState to return diffEnabled: true
 			vi.spyOn(provider, "getState").mockResolvedValue({
 				apiConfiguration: {
-					apiProvider: "openrouter",
+					apiProvider: "anthropic",
 					apiModelId: "test-model",
 				},
 				customModePrompts: {},
@@ -1539,7 +1537,7 @@ describe("ClineProvider", () => {
 			// Test 1: Browser tools enabled with compatible model and mode
 			vi.spyOn(provider, "getState").mockResolvedValueOnce({
 				apiConfiguration: {
-					apiProvider: "openrouter",
+					apiProvider: "anthropic",
 				},
 				browserToolEnabled: true,
 				mode: "code", // code mode includes browser tool group
@@ -2386,346 +2384,6 @@ describe.skip("ContextProxy integration", () => {
 	});
 })
 
-describe("ClineProvider - Router Models", () => {
-	let provider: ClineProvider
-	let mockContext: vscode.ExtensionContext
-	let mockOutputChannel: vscode.OutputChannel
-	let mockWebviewView: vscode.WebviewView
-	let mockPostMessage: any
-
-	beforeEach(() => {
-		vi.clearAllMocks()
-
-		const globalState: Record<string, string | undefined> = {}
-		const secrets: Record<string, string | undefined> = {}
-
-		mockContext = {
-			extensionPath: "/test/path",
-			extensionUri: {} as vscode.Uri,
-			globalState: {
-				get: vi.fn().mockImplementation((key: string) => globalState[key]),
-				update: vi
-					.fn()
-					.mockImplementation((key: string, value: string | undefined) => (globalState[key] = value)),
-				keys: vi.fn().mockImplementation(() => Object.keys(globalState)),
-			},
-			secrets: {
-				get: vi.fn().mockImplementation((key: string) => secrets[key]),
-				store: vi.fn().mockImplementation((key: string, value: string | undefined) => (secrets[key] = value)),
-				delete: vi.fn().mockImplementation((key: string) => delete secrets[key]),
-			},
-			subscriptions: [],
-			extension: {
-				packageJSON: { version: "1.0.0" },
-			},
-			globalStorageUri: {
-				fsPath: "/test/storage/path",
-			},
-		} as unknown as vscode.ExtensionContext
-
-		mockOutputChannel = {
-			appendLine: vi.fn(),
-			clear: vi.fn(),
-			dispose: vi.fn(),
-		} as unknown as vscode.OutputChannel
-
-		mockPostMessage = vi.fn()
-		mockWebviewView = {
-			webview: {
-				postMessage: mockPostMessage,
-				html: "",
-				options: {},
-				onDidReceiveMessage: vi.fn(),
-				asWebviewUri: vi.fn(),
-			},
-			visible: true,
-			onDidDispose: vi.fn().mockImplementation((callback) => {
-				callback()
-				return { dispose: vi.fn() }
-			}),
-			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
-		} as unknown as vscode.WebviewView
-
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
-	})
-
-	test("handles requestRouterModels with successful responses", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		// Mock getState to return API configuration
-		vi.spyOn(provider, "getState").mockResolvedValue({
-			apiConfiguration: {
-				openRouterApiKey: "openrouter-key",
-				requestyApiKey: "requesty-key",
-				unboundApiKey: "unbound-key",
-				litellmApiKey: "litellm-key",
-				litellmBaseUrl: "http://localhost:4000",
-			},
-		} as any)
-
-		const mockModels = {
-			"model-1": {
-				maxTokens: 4096,
-				contextWindow: 8192,
-				description: "Test model 1",
-				supportsPromptCache: false,
-			},
-			"model-2": {
-				maxTokens: 8192,
-				contextWindow: 16384,
-				description: "Test model 2",
-				supportsPromptCache: false,
-			},
-		}
-
-		const { getModels } = await import("../../../api/providers/fetchers/modelCache")
-		vi.mocked(getModels).mockResolvedValue(mockModels)
-
-		await messageHandler({ type: "requestRouterModels" })
-
-		// Verify getModels was called for each provider with correct options
-		expect(getModels).toHaveBeenCalledWith({ provider: "openrouter" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "requesty", apiKey: "requesty-key" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "unbound", apiKey: "unbound-key" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "deepinfra" })
-		expect(getModels).toHaveBeenCalledWith(
-			expect.objectContaining({
-				provider: "roo",
-				baseUrl: expect.any(String),
-			}),
-		)
-		expect(getModels).toHaveBeenCalledWith({
-			provider: "litellm",
-			apiKey: "litellm-key",
-			baseUrl: "http://localhost:4000",
-		})
-		expect(getModels).toHaveBeenCalledWith({ provider: "chutes" })
-
-		// Verify response was sent
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "routerModels",
-			routerModels: {
-				deepinfra: mockModels,
-				openrouter: mockModels,
-				requesty: mockModels,
-				unbound: mockModels,
-				roo: mockModels,
-				chutes: mockModels,
-				litellm: mockModels,
-				ollama: {},
-				lmstudio: {},
-				"vercel-ai-gateway": mockModels,
-				huggingface: {},
-				"io-intelligence": {},
-			},
-			values: undefined,
-		})
-	})
-
-	test("handles requestRouterModels with individual provider failures", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		vi.spyOn(provider, "getState").mockResolvedValue({
-			apiConfiguration: {
-				openRouterApiKey: "openrouter-key",
-				requestyApiKey: "requesty-key",
-				unboundApiKey: "unbound-key",
-				litellmApiKey: "litellm-key",
-				litellmBaseUrl: "http://localhost:4000",
-			},
-		} as any)
-
-		const mockModels = {
-			"model-1": { maxTokens: 4096, contextWindow: 8192, description: "Test model", supportsPromptCache: false },
-		}
-		const { getModels } = await import("../../../api/providers/fetchers/modelCache")
-
-		// Mock some providers to succeed and others to fail
-		vi.mocked(getModels)
-			.mockResolvedValueOnce(mockModels) // openrouter success
-			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty fail
-			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound fail
-			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway success
-			.mockResolvedValueOnce(mockModels) // deepinfra success
-			.mockResolvedValueOnce(mockModels) // roo success
-			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes fail
-			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm fail
-
-		await messageHandler({ type: "requestRouterModels" })
-
-		// Verify main response includes successful providers and empty objects for failed ones
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "routerModels",
-			routerModels: {
-				deepinfra: mockModels,
-				openrouter: mockModels,
-				requesty: {},
-				unbound: {},
-				roo: mockModels,
-				chutes: {},
-				ollama: {},
-				lmstudio: {},
-				litellm: {},
-				"vercel-ai-gateway": mockModels,
-				huggingface: {},
-				"io-intelligence": {},
-			},
-			values: undefined,
-		})
-
-		// Verify error messages were sent for failed providers
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Requesty API error",
-			values: { provider: "requesty" },
-		})
-
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Unbound API error",
-			values: { provider: "unbound" },
-		})
-
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Unbound API error",
-			values: { provider: "unbound" },
-		})
-
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Chutes API error",
-			values: { provider: "chutes" },
-		})
-
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "LiteLLM connection failed",
-			values: { provider: "litellm" },
-		})
-	})
-
-	test("handles requestRouterModels with LiteLLM values from message", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		// Mock state without LiteLLM config
-		vi.spyOn(provider, "getState").mockResolvedValue({
-			apiConfiguration: {
-				openRouterApiKey: "openrouter-key",
-				requestyApiKey: "requesty-key",
-				unboundApiKey: "unbound-key",
-				// No litellm config
-			},
-		} as any)
-
-		const mockModels = {
-			"model-1": { maxTokens: 4096, contextWindow: 8192, description: "Test model", supportsPromptCache: false },
-		}
-		const { getModels } = await import("../../../api/providers/fetchers/modelCache")
-		vi.mocked(getModels).mockResolvedValue(mockModels)
-
-		await messageHandler({
-			type: "requestRouterModels",
-			values: {
-				litellmApiKey: "message-litellm-key",
-				litellmBaseUrl: "http://message-url:4000",
-			},
-		})
-
-		// Verify LiteLLM was called with values from message
-		expect(getModels).toHaveBeenCalledWith({
-			provider: "litellm",
-			apiKey: "message-litellm-key",
-			baseUrl: "http://message-url:4000",
-		})
-	})
-
-	test("skips LiteLLM when neither config nor message values are provided", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		vi.spyOn(provider, "getState").mockResolvedValue({
-			apiConfiguration: {
-				openRouterApiKey: "openrouter-key",
-				requestyApiKey: "requesty-key",
-				unboundApiKey: "unbound-key",
-				// No litellm config
-			},
-		} as any)
-
-		const mockModels = {
-			"model-1": { maxTokens: 4096, contextWindow: 8192, description: "Test model", supportsPromptCache: false },
-		}
-		const { getModels } = await import("../../../api/providers/fetchers/modelCache")
-		vi.mocked(getModels).mockResolvedValue(mockModels)
-
-		await messageHandler({ type: "requestRouterModels" })
-
-		// Verify LiteLLM was NOT called
-		expect(getModels).not.toHaveBeenCalledWith(
-			expect.objectContaining({
-				provider: "litellm",
-			}),
-		)
-
-		// Verify response includes empty object for LiteLLM
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "routerModels",
-			routerModels: {
-				deepinfra: mockModels,
-				openrouter: mockModels,
-				requesty: mockModels,
-				unbound: mockModels,
-				roo: mockModels,
-				chutes: mockModels,
-				litellm: {},
-				ollama: {},
-				lmstudio: {},
-				"vercel-ai-gateway": mockModels,
-				huggingface: {},
-				"io-intelligence": {},
-			},
-			values: undefined,
-		})
-	})
-
-	test("handles requestLmStudioModels with proper response", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		vi.spyOn(provider, "getState").mockResolvedValue({
-			apiConfiguration: {
-				lmStudioModelId: "model-1",
-				lmStudioBaseUrl: "http://localhost:1234",
-			},
-		} as any)
-
-		const mockModels = {
-			"model-1": { maxTokens: 4096, contextWindow: 8192, description: "Test model", supportsPromptCache: false },
-		}
-		const { getModels } = await import("../../../api/providers/fetchers/modelCache")
-		vi.mocked(getModels).mockResolvedValue(mockModels)
-
-		await messageHandler({
-			type: "requestLmStudioModels",
-		})
-
-		expect(getModels).toHaveBeenCalledWith({
-			provider: "lmstudio",
-			baseUrl: "http://localhost:1234",
-		})
-	})
-})
-
 describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 	let provider: ClineProvider
 	let mockContext: vscode.ExtensionContext
@@ -2797,7 +2455,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 		defaultTaskOptions = {
 			provider,
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 			},
 		}
 

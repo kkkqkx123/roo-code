@@ -313,7 +313,6 @@
 		"headerName": "标头名称",
 		"headerValue": "标头值",
 		"noCustomHeaders": "暂无自定义标头。点击 + 按钮添加。",
-		"requestyApiKey": "Requesty API 密钥",
 		"refreshModels": {
 			"label": "刷新模型",
 			"hint": "请重新打开设置以查看最新模型。",
@@ -460,10 +459,6 @@
 			"description": "Ollama 允许您在本地计算机上运行模型。有关如何开始使用的说明，请参阅其快速入门指南。",
 			"warning": "注意：Roo Code 使用复杂的提示，与 Claude 模型配合最佳。功能较弱的模型可能无法按预期工作。"
 		},
-		"unboundApiKey": "Unbound API 密钥",
-		"getUnboundApiKey": "获取 Unbound API 密钥",
-		"unboundRefreshModelsSuccess": "模型列表已更新！您现在可以从最新模型中选择。",
-		"unboundInvalidApiKey": "无效的API密钥。请检查您的API密钥并重试。",
 		"humanRelay": {
 			"description": "不需要 API 密钥，但用户需要帮助将信息复制并粘贴到网页聊天 AI。",
 			"instructions": "使用期间，将弹出对话框并自动将当前消息复制到剪贴板。您需要将这些内容粘贴到 AI 的网页版本（如 ChatGPT 或 Claude），然后将 AI 的回复复制回对话框并点击确认按钮。"
@@ -840,13 +835,10 @@
 			"providerLabel": "提供商",
 			"providerDescription": "选择用于图像生成的提供商。",
 			"name": "启用 AI 图像生成",
-			"description": "启用后，Roo 可以使用 OpenRouter 的图像生成模型从文本提示生成图像。需要配置 OpenRouter API 密钥。",
-			"openRouterApiKeyLabel": "OpenRouter API 密钥",
-			"openRouterApiKeyPlaceholder": "输入您的 OpenRouter API 密钥",
+			"description": "启用后，Roo 可以使用图像生成模型从文本提示生成图像。",
 			"getApiKeyText": "获取您的 API 密钥",
 			"modelSelectionLabel": "图像生成模型",
 			"modelSelectionDescription": "选择用于图像生成的模型",
-			"warningMissingKey": "⚠️ 图像生成需要 OpenRouter API 密钥。请在上方配置。",
 			"successConfigured": "✓ 图像生成已配置完成，可以使用"
 		},
 		"RUN_SLASH_COMMAND": {
