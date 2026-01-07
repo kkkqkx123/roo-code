@@ -876,39 +876,45 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.subtaskManager.resumeAfterDelegation()
 	}
 
-	public async submitUserMessage(text: string, images: string[] = []): Promise<void> {
-		if (text.length === 0 && images.length === 0) {
-			return
+	public async submitUserMessage(
+		text: string,
+		images: string[] = [],
+		mode?: string,
+		providerProfile?: string,
+	): Promise<void> {
+		try {
+			text = (text ?? "").trim()
+			images = images ?? []
+
+			if (text.length === 0 && images.length === 0) {
+				return
+			}
+
+			const provider = this.providerRef.deref()
+
+			if (provider) {
+				if (mode) {
+					await provider.setMode(mode)
+				}
+
+				if (providerProfile) {
+					await provider.setProviderProfile(providerProfile)
+
+					const newState = await provider.getState()
+					if (newState?.apiConfiguration) {
+						this.updateApiConfiguration(newState.apiConfiguration)
+					}
+				}
+
+				this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
+
+				provider.postMessageToWebview({ type: "invoke", invoke: "sendMessage", text, images })
+			} else {
+				console.error("[Task#submitUserMessage] Provider reference lost")
+			}
+		} catch (error) {
+			console.error("[Task#submitUserMessage] Failed to submit user message:", error)
 		}
-
-		const provider = this.providerRef.deref()
-		if (!provider) {
-			throw new Error("Provider reference lost")
-		}
-
-		const state = await provider.getState()
-		if (!state) {
-			throw new Error("Provider state not available")
-		}
-
-		const { mode, apiConfiguration } = state
-
-		if (mode) {
-			this._taskMode = mode
-		}
-
-		if (apiConfiguration) {
-			this.apiConfiguration = apiConfiguration
-			this.api = buildApiHandler(apiConfiguration)
-		}
-
-		await this.recursivelyMakeClineRequests(
-			[
-				{ type: "text", text: text },
-				...images.map((image) => ({ type: "image", source: { type: "base64", media_type: "image/png", data: image } } as Anthropic.Messages.ImageBlockParam)),
-			],
-			false,
-		)
 	}
 
 	async handleTerminalOperation(terminalOperation: "continue" | "abort") {

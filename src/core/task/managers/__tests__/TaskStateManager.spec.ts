@@ -39,7 +39,7 @@ describe("TaskStateManager", () => {
 			expect(stateManager.taskNumber).toBe(1)
 			expect(stateManager.workspacePath).toBe("/workspace")
 			expect(stateManager.metadata).toEqual({ task: "Test task" })
-			expect(stateManager.todoList).toEqual([{ id: "1", content: "Todo 1" }])
+			expect(stateManager.todoList).toEqual([{ id: "1", content: "Todo 1", status: "pending" }])
 		})
 
 		it("should generate unique instance id", () => {
@@ -190,10 +190,12 @@ describe("TaskStateManager", () => {
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
-			const providerObj = {}
-			const lostRef = new WeakRef(providerObj)
-			Object.assign(providerObj, null)
-			;(manager as any).providerRef = lostRef
+			// Create a mock WeakRef that returns undefined
+			const mockLostRef = {
+				deref: vi.fn().mockReturnValue(undefined),
+			} as unknown as WeakRef<ClineProvider>
+
+			;(manager as any).providerRef = mockLostRef
 
 			const result = manager.getProvider()
 			expect(result).toBeUndefined()

@@ -175,6 +175,8 @@ export class ApiRequestManager {
 	}
 
 	private resetStreamingState(): void {
+		this.isStreaming = false
+		this.isWaitingForFirstChunk = false
 		this.currentStreamingContentIndex = 0
 		this.currentStreamingDidCheckpoint = false
 		this.assistantMessageContent = []
@@ -289,6 +291,9 @@ export class ApiRequestManager {
 
 			await this.userInteractionManager.say("api_req_retry_delayed", headerText, undefined, false)
 		} catch (err) {
+			if (err instanceof Error && err.message.includes("Aborted during retry countdown")) {
+				throw err
+			}
 			console.error("Exponential backoff failed:", err)
 		}
 	}

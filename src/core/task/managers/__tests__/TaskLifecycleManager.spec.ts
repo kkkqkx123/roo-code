@@ -4,8 +4,19 @@ import { RooCodeEventName } from "@roo-code/types"
 import type { Task } from "../../Task"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import { MessageQueueService } from "../../../message-queue/MessageQueueService"
-import { RooIgnoreController } from "../../../ignore/RooIgnoreController"
-import { RooProtectedController } from "../../../protect/RooProtectedController"
+
+vi.mock("../../../ignore/RooIgnoreController", () => ({
+	RooIgnoreController: vi.fn().mockImplementation(() => ({
+		dispose: vi.fn(),
+		initialize: vi.fn().mockResolvedValue(undefined),
+	})),
+}))
+
+vi.mock("../../../protect/RooProtectedController", () => ({
+	RooProtectedController: vi.fn().mockImplementation(() => ({
+		dispose: vi.fn(),
+	})),
+}))
 
 describe("TaskLifecycleManager", () => {
 	let mockTask: Partial<Task>
@@ -116,6 +127,8 @@ describe("TaskLifecycleManager", () => {
 			
 			// Create instances with dispose spies
 			const mockMessageQueueService = new MessageQueueService()
+			const { RooIgnoreController } = await import("../../../ignore/RooIgnoreController")
+			const { RooProtectedController } = await import("../../../protect/RooProtectedController")
 			const mockRooIgnoreController = new RooIgnoreController("/workspace")
 			const mockRooProtectedController = new RooProtectedController("/workspace")
 

@@ -2,6 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ContextManager } from "../ContextManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 
+vi.mock("../../../ignore/RooIgnoreController", () => ({
+	RooIgnoreController: vi.fn().mockImplementation(() => ({
+		dispose: vi.fn(),
+		initialize: vi.fn().mockResolvedValue(undefined),
+		validateAccess: vi.fn().mockReturnValue(true),
+	})),
+}))
+
+vi.mock("../../../protect/RooProtectedController", () => ({
+	RooProtectedController: vi.fn().mockImplementation(() => ({
+		dispose: vi.fn(),
+		isWriteProtected: vi.fn().mockReturnValue(false),
+	})),
+}))
+
 describe("ContextManager", () => {
 	let mockProvider: Partial<ClineProvider>
 	let contextManager: ContextManager

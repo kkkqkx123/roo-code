@@ -10,6 +10,10 @@ import type { ApiHandler } from "../../../../api"
 import type { ProviderSettings } from "@roo-code/types"
 import type { TextContent } from "../../../../shared/tools"
 
+vi.mock("../../../environment/getEnvironmentDetails", () => ({
+	getEnvironmentDetails: vi.fn().mockResolvedValue("<environment_details>\nMock environment details\n</environment_details>"),
+}))
+
 describe("ApiRequestManager", () => {
 	let mockStateManager: Partial<TaskStateManager>
 	let mockMessageManager: Partial<MessageManager>
@@ -103,6 +107,10 @@ describe("ApiRequestManager", () => {
 
 			const result = apiRequestManager.attemptApiRequest()
 
+			// Need to start iterating the generator to trigger the API call
+			const iterator = result[Symbol.asyncIterator]()
+			await iterator.next()
+
 			expect(mockApi.createMessage).toHaveBeenCalledWith(
 				"System prompt",
 				[],
@@ -114,7 +122,6 @@ describe("ApiRequestManager", () => {
 				}),
 			)
 
-			const iterator = result[Symbol.asyncIterator]()
 			await expect(iterator.next()).resolves.toEqual({ done: true })
 		})
 	})
@@ -340,15 +347,29 @@ describe("ApiRequestManager", () => {
 			}
 
 			mockStateManager.providerRef!.deref = vi.fn().mockReturnValue(mockProvider)
+			mockUserInteractionManager.say = vi.fn().mockResolvedValue(undefined)
 
 			vi.useFakeTimers()
 
+			// Add global error handler to catch unhandled rejections
+			const unhandledRejectionHandler = vi.fn()
+			process.on('unhandledRejection', unhandledRejectionHandler)
+
 			const promise = apiRequestManager.backoffAndAnnounce(0, {})
 
+			// Advance to complete the first iteration (i=5)
 			await vi.advanceTimersByTimeAsync(1000)
+			
+			// Set abort before the second iteration
 			mockStateManager.abort = true
 
+			// Advance to trigger the abort check in the second iteration (i=4)
+			await vi.advanceTimersByTimeAsync(1000)
+
 			await expect(promise).rejects.toThrow("Aborted during retry countdown")
+
+			// Clean up the error handler
+			process.off('unhandledRejection', unhandledRejectionHandler)
 
 			vi.useRealTimers()
 		})

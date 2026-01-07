@@ -27,6 +27,8 @@ vi.mock("fs/promises", async (importOriginal) => {
 		readFile: vi.fn().mockResolvedValue("[]"),
 		unlink: vi.fn().mockResolvedValue(undefined),
 		rmdir: vi.fn().mockResolvedValue(undefined),
+		access: vi.fn().mockResolvedValue(undefined),
+		rename: vi.fn().mockResolvedValue(undefined),
 	}
 
 	return {
@@ -198,6 +200,8 @@ describe("Cline - User Interaction", () => {
 			anthropicApiKey: "test-key",
 			anthropicModelId: "claude-3-5-sonnet-20241022",
 		} as ProviderSettings
+
+		mockProvider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)
 	})
 
 	describe("submitUserMessage", () => {

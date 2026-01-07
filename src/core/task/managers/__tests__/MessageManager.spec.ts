@@ -80,13 +80,18 @@ describe("MessageManager", () => {
 				role: "assistant",
 				content: [
 					{ type: "text", text: "Response" },
-					{ type: "redacted_thinking", data: "base64data" },
+					{ type: "thought_signature", signature: "test-signature" },
 				],
-			}
+			} as any
 
 			await messageManager.addToApiConversationHistory(message, "Thinking")
 
 			expect(messageManager.apiConversationHistory[0].content).toHaveLength(3)
+			expect(messageManager.apiConversationHistory[0].content[2]).toEqual({
+				type: "reasoning_details",
+				reasoning: "Thinking",
+				signature: { type: "thought_signature", signature: "test-signature" },
+			})
 		})
 	})
 

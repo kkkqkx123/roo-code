@@ -366,6 +366,19 @@ export class TaskManager extends EventEmitter<TaskProviderEvents> {
 			taskSyncEnabled,
 		} = await this.getState()
 
+		const currentTask = this.getCurrentTask()
+
+		if (currentTask) {
+			if (currentTask.taskId !== historyItem.id) {
+				await this.removeClineFromStack()
+			} else {
+				currentTask.emit(RooCodeEventName.TaskUnfocused)
+				this.clineStack.pop()
+			}
+		} else {
+			await this.removeClineFromStack()
+		}
+
 		const task = new Task({
 			provider: this.provider,
 			apiConfiguration,

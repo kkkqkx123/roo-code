@@ -57,13 +57,13 @@ describe("SubtaskManager", () => {
 		})
 
 		it("should throw error if provider reference is lost", async () => {
-			const provider = {} as ClineProvider
-			const lostRef = new WeakRef(provider) as WeakRef<ClineProvider>
-			Object.assign(provider, null)
+			const mockProviderRef = {
+				deref: vi.fn().mockReturnValue(null),
+			} as unknown as WeakRef<ClineProvider>
 
 			const managerWithLostRef = new SubtaskManager({
 				task: mockTask as Task,
-				providerRef: lostRef,
+				providerRef: mockProviderRef,
 				taskId: "parent-1",
 				taskNumber: 1,
 				workspacePath: "/workspace",

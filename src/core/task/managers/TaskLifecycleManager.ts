@@ -187,12 +187,11 @@ export class TaskLifecycleManager {
 
 				if (lastApiReqStartedIndex !== -1) {
 					const lastClineMessage = modifiedClineMessages[lastApiReqStartedIndex]
-					if (lastClineMessage?.ask === "completion_result") {
-						const { cost, cancelReason }: ClineApiReqInfo = JSON.parse(lastClineMessage.text || "{}")
+					const parsedText: ClineApiReqInfo = JSON.parse(lastClineMessage.text || "{}")
+					const { cost, cancelReason } = parsedText
 
-						if (cost === undefined && cancelReason === undefined) {
-							modifiedClineMessages.splice(lastApiReqStartedIndex, 1)
-						}
+					if (cost === undefined && cancelReason === undefined) {
+						modifiedClineMessages.splice(lastApiReqStartedIndex, 1)
 					}
 				}
 				break

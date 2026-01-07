@@ -105,10 +105,7 @@ export class TaskStateManager extends EventEmitter {
 	}
 
 	get taskMode(): string {
-		if (this._taskMode === undefined) {
-			throw new Error("Task mode not initialized. Call waitForModeInitialization() first.")
-		}
-		return this._taskMode
+		return this._taskMode || defaultModeSlug
 	}
 
 	get taskToolProtocol(): ToolProtocol | undefined {

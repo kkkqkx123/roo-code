@@ -1,5 +1,8 @@
 import { ClineMessage } from "@roo-code/types"
 export function getLatestTodo(clineMessages: ClineMessage[]) {
+	if (!clineMessages || !Array.isArray(clineMessages)) {
+		return []
+	}
 	const todos = clineMessages
 		.filter(
 			(msg) =>
