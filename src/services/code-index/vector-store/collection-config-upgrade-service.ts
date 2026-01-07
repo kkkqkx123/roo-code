@@ -4,52 +4,14 @@ import type {
 	VectorStorageConfig,
 } from "@roo-code/types"
 import type {
-	CollectionConfigInfo,
 	PresetType,
 	UpgradeProgress,
 	UpgradeStep,
 	UpgradeThresholds,
-} from "./collection-config-upgrade-types"
+} from "../vector-storage-presets"
 import { VectorStorageConfigManager } from "../vector-storage-config-manager"
+import { VECTOR_STORAGE_PRESETS } from "../vector-storage-presets"
 import * as vscode from "vscode"
-
-const VECTOR_STORAGE_PRESETS = {
-	tiny: {
-		mode: "preset" as const,
-		preset: "tiny" as const,
-		customConfig: {
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 32, segments: 2 },
-		},
-	},
-	small: {
-		mode: "preset" as const,
-		preset: "small" as const,
-		customConfig: {
-			hnsw: { m: 16, ef_construct: 128, on_disk: true },
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 32, segments: 2 },
-		},
-	},
-	medium: {
-		mode: "preset" as const,
-		preset: "medium" as const,
-		customConfig: {
-			hnsw: { m: 32, ef_construct: 256, on_disk: true },
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 64, segments: 4 },
-		},
-	},
-	large: {
-		mode: "preset" as const,
-		preset: "large" as const,
-		customConfig: {
-			hnsw: { m: 64, ef_construct: 512, on_disk: true },
-			vectors: { on_disk: true, quantization: { enabled: true, type: "scalar", bits: 8 } },
-			wal: { capacity_mb: 256, segments: 8 },
-		},
-	},
-}
 
 export class CollectionConfigUpgradeService {
 	private qdrantClient: QdrantClient

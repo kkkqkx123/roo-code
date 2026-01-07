@@ -2,6 +2,50 @@ import type { CustomVectorStorageConfig } from "@roo-code/types"
 
 export type PresetType = "tiny" | "small" | "medium" | "large"
 
+export interface VectorStoragePreset {
+	mode: "preset"
+	preset: PresetType
+	customConfig: CustomVectorStorageConfig
+}
+
+export const VECTOR_STORAGE_PRESETS: Record<PresetType, VectorStoragePreset> = {
+	tiny: {
+		mode: "preset",
+		preset: "tiny",
+		customConfig: {
+			vectors: { on_disk: true },
+			wal: { capacity_mb: 32, segments: 2 },
+		},
+	},
+	small: {
+		mode: "preset",
+		preset: "small",
+		customConfig: {
+			hnsw: { m: 16, ef_construct: 128, on_disk: true },
+			vectors: { on_disk: true },
+			wal: { capacity_mb: 32, segments: 2 },
+		},
+	},
+	medium: {
+		mode: "preset",
+		preset: "medium",
+		customConfig: {
+			hnsw: { m: 32, ef_construct: 256, on_disk: true },
+			vectors: { on_disk: true },
+			wal: { capacity_mb: 64, segments: 4 },
+		},
+	},
+	large: {
+		mode: "preset",
+		preset: "large",
+		customConfig: {
+			hnsw: { m: 64, ef_construct: 512, on_disk: true },
+			vectors: { on_disk: true, quantization: { enabled: true, type: "scalar", bits: 8 } },
+			wal: { capacity_mb: 256, segments: 8 },
+		},
+	},
+} as const
+
 export type UpgradeStatus = "pending" | "in_progress" | "paused" | "completed" | "failed" | "rolling_back" | "cancelled"
 
 export interface QdrantCollectionConfig {
@@ -46,19 +90,6 @@ export interface UpgradeStep {
 	startTime?: number
 	endTime?: number
 	error?: string
-}
-
-export interface UpgradeResult {
-	collectionName: string
-	upgraded: boolean
-	error?: string
-	progress?: UpgradeProgress
-}
-
-export interface CollectionConfigInfo {
-	preset: PresetType
-	config: CustomVectorStorageConfig
-	vectorCount: number
 }
 
 export interface UpgradeThresholds {

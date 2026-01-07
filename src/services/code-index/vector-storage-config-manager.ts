@@ -4,44 +4,7 @@ import { CollectionSizeEstimator } from "./vector-store/collection-size-estimato
 import type { SizeEstimationResult } from "./token-based-size-estimator"
 import type { QdrantClient } from "@qdrant/js-client-rest"
 import { CollectionConfigUpgradeService } from "./vector-store/collection-config-upgrade-service"
-
-const VECTOR_STORAGE_PRESETS = {
-	tiny: {
-		mode: "preset" as const,
-		preset: "tiny" as const,
-		customConfig: {
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 32, segments: 2 },
-		},
-	},
-	small: {
-		mode: "preset" as const,
-		preset: "small" as const,
-		customConfig: {
-			hnsw: { m: 16, ef_construct: 128, on_disk: true },
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 32, segments: 2 },
-		},
-	},
-	medium: {
-		mode: "preset" as const,
-		preset: "medium" as const,
-		customConfig: {
-			hnsw: { m: 32, ef_construct: 256, on_disk: true },
-			vectors: { on_disk: true },
-			wal: { capacity_mb: 64, segments: 4 },
-		},
-	},
-	large: {
-		mode: "preset" as const,
-		preset: "large" as const,
-		customConfig: {
-			hnsw: { m: 64, ef_construct: 512, on_disk: true },
-			vectors: { on_disk: true, quantization: { enabled: true, type: "scalar", bits: 8 } },
-			wal: { capacity_mb: 256, segments: 8 },
-		},
-	},
-} as const
+import { VECTOR_STORAGE_PRESETS } from "./vector-storage-presets"
 
 const DEFAULT_VECTOR_STORAGE_CONFIG: VectorStorageConfig = {
 	mode: "auto",

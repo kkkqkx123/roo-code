@@ -49,7 +49,7 @@ import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { MarketplaceManager } from "../../services/marketplace"
 import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckpointService"
 import { CodeIndexManager } from "../../services/code-index/manager"
-import type { UpgradeProgress } from "../../services/code-index/vector-store/collection-config-upgrade-types"
+import type { UpgradeProgress } from "../../services/code-index/vector-storage-presets"
 
 import { getWorkspacePath } from "../../utils/path"
 import { OrganizationAllowListViolationError } from "../../utils/errors"
