@@ -1,5 +1,5 @@
 import React, { useMemo } from "react"
-import { VSCodeCheckbox, VSCodeTextField, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import { IMAGE_GENERATION_MODELS, type ImageGenerationProvider, getImageGenerationProvider } from "@roo-code/types"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 
@@ -28,7 +28,7 @@ export const ImageGenerationSettings = ({
 
 	const currentModel = availableModels[0]?.value || IMAGE_GENERATION_MODELS[0].value
 
-	const handleProviderChange = (value: string) => {
+	const _handleProviderChange = (value: string) => {
 		const newProvider = value as ImageGenerationProvider
 		setImageGenerationProvider(newProvider)
 

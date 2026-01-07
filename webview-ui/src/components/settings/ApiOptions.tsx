@@ -2,7 +2,6 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
 import { convertHeadersToObject } from "./utils/headers"
 import { useDebounce } from "react-use"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
-import { ExternalLinkIcon } from "@radix-ui/react-icons"
 
 import {
 	type ProviderName,
@@ -72,7 +71,7 @@ export interface ApiOptionsProps {
 }
 
 const ApiOptions = ({
-	uriScheme,
+	uriScheme: _uriScheme,
 	apiConfiguration,
 	setApiConfigurationField,
 	fromWelcomeView,

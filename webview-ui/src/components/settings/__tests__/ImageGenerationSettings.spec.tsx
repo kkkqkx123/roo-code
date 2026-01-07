@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react"
+import { render } from "@testing-library/react"
 
 import { ImageGenerationSettings } from "../ImageGenerationSettings"
 
@@ -52,7 +52,7 @@ describe("ImageGenerationSettings", () => {
 	describe("User Interaction Behavior", () => {
 		it("should call setImageGenerationSelectedModel when user changes model", async () => {
 			// Set provider to "roo" so the model field renders
-			const { getByPlaceholderText } = render(
+			const _getByPlaceholderText = render(
 				<ImageGenerationSettings {...defaultProps} enabled={true} imageGenerationProvider="roo" />,
 			)
 

@@ -19,7 +19,7 @@ import type { ProviderName } from "../provider-settings.js"
  */
 export function getProviderDefaultModelId(
 	provider: ProviderName,
-	options: { isChina?: boolean } = { isChina: false },
+	_options: { isChina?: boolean } = { isChina: false },
 ): string {
 	switch (provider) {
 		case "gemini":

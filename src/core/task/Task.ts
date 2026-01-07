@@ -4,16 +4,8 @@ import os from "os"
 import crypto from "crypto"
 import EventEmitter from "events"
 
-import { AskIgnoredError } from "./AskIgnoredError"
-
 import { Anthropic } from "@anthropic-ai/sdk"
-import OpenAI from "openai"
-import debounce from "lodash.debounce"
-import delay from "delay"
-import pWaitFor from "p-wait-for"
-import { serializeError } from "serialize-error"
 import { Package } from "../../shared/package"
-import { formatToolInvocation } from "../tools/helpers/toolResultFormatting"
 
 import {
 	type TaskLike,
@@ -141,6 +133,9 @@ import {
 	CheckpointManager,
 	ContextManager,
 	UsageTracker,
+	ConfigurationManager,
+	SubtaskManager,
+	TaskLifecycleManager,
 } from "./managers"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -318,6 +313,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	private checkpointManager: CheckpointManager
 	private contextManager: ContextManager
 	private usageTracker: UsageTracker
+	private configurationManager: ConfigurationManager
+	private subtaskManager: SubtaskManager
+	private taskLifecycleManager: TaskLifecycleManager
 
 	constructor({
 		provider,
@@ -493,6 +491,36 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			cwd: this.cwd,
 		})
 
+		this.configurationManager = new ConfigurationManager({
+			taskId: this.taskId,
+			providerRef: this.providerRef,
+			onConfigurationUpdate: (newConfig) => {
+				this.updateApiConfiguration(newConfig)
+			},
+		})
+
+		this.subtaskManager = new SubtaskManager({
+			task: this,
+			providerRef: this.providerRef,
+			taskId: this.taskId,
+			rootTaskId: this.rootTaskId,
+			parentTaskId: this.parentTaskId,
+			taskNumber: this.taskNumber,
+			workspacePath: this.workspacePath,
+			apiConfiguration,
+		})
+
+		this.taskLifecycleManager = new TaskLifecycleManager({
+			task: this,
+			providerRef: this.providerRef,
+			taskId: this.taskId,
+			taskNumber: this.taskNumber,
+			workspacePath: this.workspacePath,
+			apiConfiguration,
+			metadata: this.metadata,
+			enableCheckpoints: this.enableCheckpoints,
+		})
+
 		// Sync task mode from state manager
 		this._taskMode = this.stateManager.taskMode
 		this._taskToolProtocol = this.stateManager.taskToolProtocol
@@ -509,9 +537,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		this.messageQueueService.on("stateChanged", this.messageQueueStateChangedHandler)
-
-		// Listen for provider profile changes to update parser state
-		this.setupProviderProfileChangeListener(provider)
 
 		// Only set up diff strategy if diff is enabled.
 		if (this.diffEnabled) {
@@ -539,9 +564,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		if (startTask) {
 			if (task || images) {
-				this.startTask(task, images)
+				this.taskLifecycleManager.startTask(task, images)
 			} else if (historyItem) {
-				this.resumeTaskFromHistory()
+				this.taskLifecycleManager.resumeTaskFromHistory()
 			} else {
 				throw new Error("Either historyItem or task/images must be provided")
 			}
@@ -564,8 +589,16 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.stateManager.taskMode
 	}
 
+	public set taskMode(mode: string) {
+		this._taskMode = mode
+	}
+
 	public get taskToolProtocol(): ToolProtocol | undefined {
 		return this._taskToolProtocol
+	}
+
+	public set taskToolProtocol(protocol: ToolProtocol | undefined) {
+		this._taskToolProtocol = protocol
 	}
 
 	public get taskStatus(): TaskStatus {
@@ -656,7 +689,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.taskMessageManager.updateClineMessage(message, this.providerRef)
 	}
 
-	private async saveClineMessages() {
+	public async saveClineMessages() {
 		return this.taskMessageManager.saveClineMessages()
 	}
 
@@ -828,131 +861,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	// Task lifecycle methods
 	public async abortTask(isAbandoned = false) {
-		this.abort = true
-
-		if (isAbandoned) {
-			this.abandoned = true
-		}
-
-		this.consecutiveNoToolUseCount = 0
-
-		this.emitFinalTokenUsageUpdate()
-
-		this.emit(RooCodeEventName.TaskAborted)
-
-		try {
-			this.dispose()
-		} catch (error) {
-			console.error(`Error during task ${this.taskId}.${this.instanceId} disposal:`, error)
-		}
-
-		try {
-			await this.saveClineMessages()
-		} catch (error) {
-			console.error(`Error saving messages during abort for task ${this.taskId}.${this.instanceId}:`, error)
-		}
+		this.taskLifecycleManager.abortTask(isAbandoned)
 	}
 
 	public dispose(): void {
-		this.stateManager.dispose(this.providerRef, this.messageQueueStateChangedHandler, this.providerProfileChangeListener)
-
-		if (this.messageQueueService) {
-			this.messageQueueService.dispose()
-		}
-
-		const provider = this.providerRef.deref()
-		if (provider) {
-			this.urlContentFetcher.dispose()
-			this.browserSession.dispose()
-
-			if (this.rooIgnoreController) {
-				this.rooIgnoreController.dispose()
-			}
-
-			if (this.rooProtectedController) {
-				this.rooProtectedController.dispose()
-			}
-
-			if (this.isStreaming && this.diffViewProvider.isEditing) {
-				this.diffViewProvider.revertChanges()
-			}
-
-			this.fileContextTracker.dispose()
-		}
-
-		this.removeAllListeners()
+		this.taskLifecycleManager.dispose()
 	}
 
 	public async startSubtask(message: string, initialTodos: TodoItem[], mode: string) {
-		const provider = this.providerRef.deref()
-		if (!provider) {
-			throw new Error("Provider reference lost")
-		}
-
-		const state = await provider.getState()
-		if (!state) {
-			throw new Error("Provider state not available")
-		}
-
-		this.childTaskId = crypto.randomUUID()
-
-		const subtask = new Task({
-			provider,
-			apiConfiguration: state.apiConfiguration,
-			enableDiff: this.diffEnabled,
-			enableCheckpoints: this.enableCheckpoints,
-			checkpointTimeout: this.checkpointTimeout,
-			enableBridge: this.enableBridge,
-			fuzzyMatchThreshold: this.fuzzyMatchThreshold,
-			consecutiveMistakeLimit: this.consecutiveMistakeLimit,
-			task: message,
-			historyItem: undefined,
-			experiments: state.experiments,
-			startTask: false,
-			rootTask: this.rootTask || this,
-			parentTask: this,
-			taskNumber: this.taskNumber + 1,
-			initialTodos,
-			initialStatus: "delegated",
-		})
-
-		this.emit(RooCodeEventName.TaskSpawned, subtask.taskId)
-
-		await subtask.startTask(message, undefined)
-
-		return subtask
+		return this.subtaskManager.startSubtask(message, initialTodos, mode)
 	}
 
 	public async resumeAfterDelegation(): Promise<void> {
-		if (this.apiConversationHistory.length === 0) {
-			return
-		}
-
-		let lastUserMsgIndex = -1
-		for (let i = this.apiConversationHistory.length - 1; i >= 0; i--) {
-			if (this.apiConversationHistory[i].role === "user") {
-				lastUserMsgIndex = i
-				break
-			}
-		}
-
-		if (lastUserMsgIndex >= 0) {
-			const lastUserMsg = this.apiConversationHistory[lastUserMsgIndex]
-			if (Array.isArray(lastUserMsg.content)) {
-				const textBlocks = lastUserMsg.content.filter(
-					(block) => block.type === "text" && typeof block.text === "string",
-				)
-				if (textBlocks.length > 0) {
-					const lastTextBlock = textBlocks[textBlocks.length - 1] as Anthropic.Messages.TextBlockParam
-					if (lastTextBlock.text.includes("Task delegated to subtask")) {
-						this.apiConversationHistory.splice(lastUserMsgIndex, 1)
-						await this.saveApiConversationHistory()
-					}
-				}
-			}
-		}
-
-		await this.recursivelyMakeClineRequests([])
+		return this.subtaskManager.resumeAfterDelegation()
 	}
 
 	public async submitUserMessage(text: string, images: string[] = []): Promise<void> {
@@ -1003,6 +924,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.stateManager.updateApiConfiguration(newApiConfiguration)
 		this.apiConfiguration = newApiConfiguration
 		this.api = buildApiHandler(newApiConfiguration)
+		this.configurationManager.updateApiConfiguration(newApiConfiguration)
 	}
 
 	public async processQueuedMessages(): Promise<void> {
@@ -1012,148 +934,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				setTimeout(() => {
 					this.submitUserMessage(queued.text, queued.images)
 				}, 100)
-			}
-		}
-	}
-
-	private async startTask(task?: string, images?: string[]): Promise<void> {
-		if (this.abandoned === true || this.abortReason === "user_cancelled") {
-			return
-		}
-
-		this.isInitialized = true
-
-		let userContent: Anthropic.Messages.ContentBlockParam[] = []
-
-		if (task) {
-			userContent.push({ type: "text", text: task })
-		}
-
-		if (images && images.length > 0) {
-			for (const image of images) {
-				userContent.push({
-					type: "image",
-					source: {
-						type: "base64",
-						media_type: "image/png",
-						data: image,
-					},
-				})
-			}
-		}
-
-		await this.initiateTaskLoop(userContent)
-	}
-
-	private async resumeTaskFromHistory() {
-		const modifiedClineMessages = await this.getSavedClineMessages()
-
-		if (modifiedClineMessages.length === 0) {
-			throw new Error("No saved messages found")
-		}
-
-		this.clineMessages = modifiedClineMessages
-
-		let lastRelevantMessageIndex = -1
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "reasoning") {
-				continue
-			}
-			if (msg.type === "ask" && msg.ask === "command_output" && msg.text?.includes("Exit code: 0")) {
-				continue
-			}
-			lastRelevantMessageIndex = i
-			break
-		}
-
-		while (modifiedClineMessages.length > 0) {
-			const last = modifiedClineMessages[modifiedClineMessages.length - 1]
-			if (last.type === "say" && last.say === "reasoning") {
-				modifiedClineMessages.pop()
-			} else {
-				break
-			}
-		}
-
-		if (lastRelevantMessageIndex !== -1) {
-			const lastRelevantMessage = modifiedClineMessages[lastRelevantMessageIndex]
-			if (lastRelevantMessage.type === "ask") {
-				this.askResponse = "messageResponse"
-				this.askResponseText = lastRelevantMessage.text
-				this.askResponseImages = lastRelevantMessage.images
-				this.lastMessageTs = lastRelevantMessage.ts
-			}
-		}
-
-		this.apiConversationHistory = await this.getSavedApiConversationHistory()
-
-		let lastApiReqStartedIndex = -1
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "api_req_started") {
-				lastApiReqStartedIndex = i
-				break
-			}
-		}
-
-		if (lastApiReqStartedIndex !== -1) {
-			const lastApiReqMessage = modifiedClineMessages[lastApiReqStartedIndex]
-			const { cost, cancelReason } = JSON.parse(lastApiReqMessage.text || "{}")
-
-			if (cost === undefined && cancelReason === undefined) {
-				await this.recursivelyMakeClineRequests([])
-				return
-			}
-		}
-
-		if (!this._taskToolProtocol) {
-			const detectedProtocol = detectToolProtocolFromHistory(this.apiConversationHistory)
-			if (detectedProtocol) {
-				this._taskToolProtocol = detectedProtocol
-			} else {
-				this._taskToolProtocol = resolveToolProtocol(this.apiConfiguration, this.api.getModel().info)
-			}
-		}
-
-		const shouldUseXmlParser = this._taskToolProtocol === "xml"
-		if (shouldUseXmlParser && !this.assistantMessageParser) {
-			this.assistantMessageParser = new AssistantMessageParser()
-		} else if (!shouldUseXmlParser) {
-			this.assistantMessageParser = undefined
-		}
-
-		if (lastApiReqStartedIndex !== -1) {
-			const lastClineMessage = modifiedClineMessages[lastApiReqStartedIndex]
-			if (lastClineMessage?.ask === "completion_result") {
-				const { response } = await this.ask("completion_result")
-				if (response === "messageResponse") {
-					await this.recursivelyMakeClineRequests([])
-				}
-			}
-		} else {
-			await this.recursivelyMakeClineRequests([])
-		}
-	}
-
-	private async initiateTaskLoop(userContent: Anthropic.Messages.ContentBlockParam[]): Promise<void> {
-		const provider = this.providerRef.deref()
-
-		getCheckpointService(this)
-
-		let nextUserContent = userContent
-		let includeFileDetails = true
-
-		this.emit(RooCodeEventName.TaskStarted)
-
-		while (!this.abort) {
-			const didEndLoop = await this.recursivelyMakeClineRequests(nextUserContent, includeFileDetails)
-			includeFileDetails = false
-
-			if (didEndLoop) {
-				break
-			} else {
-				nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(this._taskToolProtocol ?? "xml") }]
 			}
 		}
 	}
@@ -1265,7 +1045,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		})
 		const contextWindow = modelInfo.contextWindow
 
-		const currentProfileId = this.getCurrentProfileId(state)
+		const currentProfileId = this.configurationManager.getCurrentProfileId(state)
 		const useNativeTools = isNativeProtocol(this._taskToolProtocol ?? "xml")
 
 		let condensingApiHandler: ApiHandler | undefined
@@ -1347,13 +1127,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	private async backoffAndAnnounce(retryAttempt: number, error: any): Promise<void> {
 		return this.apiRequestManager.backoffAndAnnounce(retryAttempt, error)
-	}
-
-	private getCurrentProfileId(state: any): string {
-		return (
-			state?.listApiConfigMeta?.find((profile: any) => profile.name === state?.currentApiConfigName)?.id ??
-			"default"
-		)
 	}
 
 	private buildCleanConversationHistory(
@@ -1462,37 +1235,15 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		})
 	}
 
-	private setupProviderProfileChangeListener(provider: ClineProvider): void {
-		if (typeof provider.on !== "function") {
-			return
-		}
-
-		this.providerProfileChangeListener = async () => {
-			try {
-				const newState = await provider.getState()
-				if (newState?.apiConfiguration) {
-					this.updateApiConfiguration(newState.apiConfiguration)
-				}
-			} catch (error) {
-				console.error(
-					`[Task#${this.taskId}.${this.instanceId}] Failed to update API configuration on profile change:`,
-					error,
-				)
-			}
-		}
-
-		provider.on(RooCodeEventName.ProviderProfileChanged, this.providerProfileChangeListener)
-	}
-
 	static create(options: TaskOptions): [Task, Promise<void>] {
 		const instance = new Task({ ...options, startTask: false })
 		const { images, task, historyItem } = options
 		let promise
 
 		if (images || task) {
-			promise = instance.startTask(task, images)
+			promise = instance.taskLifecycleManager.startTask(task, images)
 		} else if (historyItem) {
-			promise = instance.resumeTaskFromHistory()
+			promise = instance.taskLifecycleManager.resumeTaskFromHistory()
 		} else {
 			throw new Error("Either historyItem or task/images must be provided")
 		}

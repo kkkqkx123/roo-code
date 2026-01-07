@@ -10,7 +10,6 @@ import {
 	normalizeClaudeCodeModelId,
 	qwenCodeModels,
 	getProviderDefaultModelId,
-	NATIVE_TOOL_DEFAULTS,
 } from "@roo-code/types"
 
 import type { ModelRecord } from "@roo/api"
@@ -20,7 +19,7 @@ import { useMemo } from "react"
  * Helper to get a validated model ID for dynamic providers.
  * Returns the configured model ID if it exists in the available models, otherwise returns the default.
  */
-function getValidatedModelId(
+function _getValidatedModelId(
 	configuredId: string | undefined,
 	availableModels: ModelRecord | undefined,
 	defaultModelId: string,

@@ -43,7 +43,7 @@ export type ImageGenerationProvider = "roo"
  */
 export function getImageGenerationProvider(
 	explicitProvider: ImageGenerationProvider | undefined,
-	hasExistingModel: boolean,
+	_hasExistingModel: boolean,
 ): ImageGenerationProvider {
 	return explicitProvider !== undefined ? explicitProvider : "roo"
 }
