@@ -91,10 +91,7 @@ export class ProviderCoordinator {
 	/**
 	 * Updates task API handler if needed based on mode
 	 */
-	public async updateTaskApiHandlerIfNeeded(
-		mode: ModeConfig,
-		hasFileBasedSystemPromptOverride: boolean,
-	): Promise<void> {
+	public async updateTaskApiHandlerIfNeeded(mode: ModeConfig): Promise<void> {
 		const currentProvider = await this.contextProxy.getValue("apiProvider")
 		const currentModelId = await this.contextProxy.getValue("apiModelId")
 
@@ -102,13 +99,6 @@ export class ProviderCoordinator {
 		if (mode.slug === "architect" && currentProvider === "anthropic" && !currentModelId?.includes("claude-3-5")) {
 			// For architect mode, prefer Claude 3.5 models
 			await this.contextProxy.setValue("apiModelId", "claude-3-5-sonnet-20241022")
-		}
-
-		// Handle other mode-specific API handler updates
-		if (hasFileBasedSystemPromptOverride) {
-			// If there's a file-based system prompt override, we might need to adjust the model
-			// based on the capabilities required
-			console.log("File-based system prompt override detected, API handler may need adjustment")
 		}
 	}
 

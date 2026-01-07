@@ -1,5 +1,7 @@
 import * as vscode from "vscode"
 import EventEmitter from "events"
+import fs from "fs/promises"
+import path from "path"
 
 import {
 	type TaskProviderLike,
@@ -38,6 +40,7 @@ import { t } from "../../i18n"
 import { experimentDefault } from "../../shared/experiments"
 import { formatLanguage } from "../../shared/language"
 import { findLast } from "../../shared/array"
+import { GlobalFileNames } from "../../shared/globalFileNames"
 import os from "os"
 
 import WorkspaceTracker from "../../integrations/workspace/WorkspaceTracker"
@@ -49,8 +52,9 @@ import { CodeIndexManager } from "../../services/code-index/manager"
 
 import { getWorkspacePath } from "../../utils/path"
 import { OrganizationAllowListViolationError } from "../../utils/errors"
-import { getWorkspaceGitInfo } from "../../utils/git"
+import { getWorkspaceGitInfo, getGitRepositoryInfo } from "../../utils/git"
 import { getTheme } from "../../integrations/theme/getTheme"
+import { getSettingsDirectoryPath } from "../../utils/storage"
 
 import { ContextProxy } from "../config/ContextProxy"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
@@ -88,15 +92,13 @@ export class ClineProvider
 	private view?: vscode.WebviewView | vscode.WebviewPanel
 	
 	// Task related
-	private clineStack: Task[] = []
 	private taskCreationCallback: (task: Task) => void
-	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	
 	// Coordinator instances
-	private taskManager!: TaskManager
-	private webviewCoordinator!: WebviewCoordinator
-	private providerCoordinator!: ProviderCoordinator
-	private stateCoordinator!: StateCoordinator
+	public taskManager!: TaskManager
+	public webviewCoordinator!: WebviewCoordinator
+	public providerCoordinator!: ProviderCoordinator
+	public stateCoordinator!: StateCoordinator
 	
 	// Service instances
 	private _workspaceTracker?: WorkspaceTracker
@@ -107,10 +109,9 @@ export class ClineProvider
 	
 	private codeIndexStatusSubscription?: vscode.Disposable
 	private codeIndexManager?: CodeIndexManager
+	private recentTasksCache?: string[]
 	
 	// Other properties
-	private recentTasksCache?: string[]
-	private pendingOperations: Map<string, any> = new Map()
 	public isViewLaunched = false
 	
 	private currentWorkspacePath: string | undefined
@@ -179,24 +180,6 @@ export class ClineProvider
 			instance.on(RooCodeEventName.TaskSpawned, onTaskSpawned)
 			instance.on(RooCodeEventName.TaskUserMessage, onTaskUserMessage)
 			instance.on(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated)
-
-			// Store the cleanup functions for later removal.
-			this.taskEventListeners.set(instance, [
-				() => instance.off(RooCodeEventName.TaskStarted, onTaskStarted),
-				() => instance.off(RooCodeEventName.TaskCompleted, onTaskCompleted),
-				() => instance.off(RooCodeEventName.TaskAborted, onTaskAborted),
-				() => instance.off(RooCodeEventName.TaskFocused, onTaskFocused),
-				() => instance.off(RooCodeEventName.TaskUnfocused, onTaskUnfocused),
-				() => instance.off(RooCodeEventName.TaskActive, onTaskActive),
-				() => instance.off(RooCodeEventName.TaskInteractive, onTaskInteractive),
-				() => instance.off(RooCodeEventName.TaskResumable, onTaskResumable),
-				() => instance.off(RooCodeEventName.TaskIdle, onTaskIdle),
-				() => instance.off(RooCodeEventName.TaskUserMessage, onTaskUserMessage),
-				() => instance.off(RooCodeEventName.TaskPaused, onTaskPaused),
-				() => instance.off(RooCodeEventName.TaskUnpaused, onTaskUnpaused),
-				() => instance.off(RooCodeEventName.TaskSpawned, onTaskSpawned),
-				() => instance.off(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated),
-			])
 		}
 		
 		// Initialize coordinators
@@ -373,6 +356,30 @@ export class ClineProvider
 	}
 
 	/**
+	 * Removes and destroys the top Cline instance (the current finished task),
+	 * activating the previous one (resuming the parent task).
+	 */
+	public async removeClineFromStack(): Promise<void> {
+		await this.taskManager.removeClineFromStack()
+	}
+
+	/**
+	 * Sets a pending edit operation
+	 */
+	public setPendingEditOperation(
+		operationId: string,
+		editData: {
+			messageTs: number
+			editedContent: string
+			images?: string[]
+			messageIndex: number
+			apiConversationHistoryIndex: number
+		},
+	): void {
+		this.taskManager.setPendingEditOperation(operationId, editData)
+	}
+
+	/**
 	 * Resumes a task
 	 */
 	public resumeTask(taskId: string): void {
@@ -471,50 +478,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Removes and destroys the top Cline instance (the current finished task),
-	 * activating the previous one (resuming the parent task).
-	 */
-	async removeClineFromStack() {
-		this.logger.debug("Removing Cline from stack...")
-		
-		if (this.clineStack.length === 0) {
-			this.logger.warn("Cline stack is empty, nothing to remove")
-			return
-		}
-
-		// Pop the top Cline instance from the stack.
-		let task = this.clineStack.pop()
-
-		if (task) {
-			this.logger.debug(`Removing task ${task.taskId} from stack`)
-			task.emit(RooCodeEventName.TaskUnfocused)
-
-			try {
-				// Abort the running task and set isAbandoned to true so
-				// all running promises will exit as well.
-				await task.abortTask(true)
-				this.logger.debug(`Task ${task.taskId} aborted successfully`)
-			} catch (e) {
-				this.logger.error(`Failed to abort task ${task.taskId}`, e)
-			}
-
-			// Remove event listeners before clearing the reference.
-			const cleanupFunctions = this.taskEventListeners.get(task)
-
-			if (cleanupFunctions) {
-				cleanupFunctions.forEach((cleanup) => cleanup())
-				this.taskEventListeners.delete(task)
-				this.logger.debug(`Removed event listeners for task ${task.taskId}`)
-			}
-
-			// Make sure no reference kept, once promises end it will be
-			// garbage collected.
-			task = undefined
-			this.logger.debug("Cline removed from stack successfully")
-		}
-	}
-
-	/**
 	 * Gets modes
 	 */
 	public async getModes(): Promise<{ slug: string; name: string }[]> {
@@ -545,10 +508,7 @@ export class ClineProvider
 		}
 		
 		await this.stateCoordinator.updateGlobalState("mode", mode)
-		await this.providerCoordinator.updateTaskApiHandlerIfNeeded(
-			modeConfig,
-			await this.hasFileBasedSystemPromptOverride(mode)
-		)
+		await this.providerCoordinator.updateTaskApiHandlerIfNeeded(modeConfig)
 		await this.postStateToWebview()
 	}
 
@@ -690,24 +650,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Ensures MCP servers directory exists
-	 */
-	public async ensureMcpServersDirectoryExists(): Promise<string> {
-		const mcpServersPath = vscode.Uri.joinPath(this.context.globalStorageUri, "mcp_servers").fsPath
-		await vscode.workspace.fs.createDirectory(vscode.Uri.file(mcpServersPath))
-		return mcpServersPath
-	}
-
-	/**
-	 * Ensures settings directory exists
-	 */
-	public async ensureSettingsDirectoryExists(): Promise<string> {
-		const settingsPath = vscode.Uri.joinPath(this.context.globalStorageUri, "settings").fsPath
-		await vscode.workspace.fs.createDirectory(vscode.Uri.file(settingsPath))
-		return settingsPath
-	}
-
-	/**
 	 * Gets the full state
 	 */
 	public async getState(): Promise<
@@ -812,51 +754,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Sets a pending edit operation with automatic timeout cleanup
-	 */
-	public setPendingEditOperation(
-		operationId: string,
-		editData: {
-			messageTs: number
-			editedContent: string
-			images?: string[]
-			messageIndex: number
-			apiConversationHistoryIndex: number
-		},
-	): void {
-		this.logger.debug(`Setting pending edit operation: ${operationId}`)
-		
-		this.clearPendingEditOperation(operationId)
-
-		const timeoutId = setTimeout(() => {
-			this.clearPendingEditOperation(operationId)
-			this.logger.warn(`Automatically cleared stale pending operation: ${operationId}`)
-		}, 300000)
-
-		this.pendingOperations.set(operationId, {
-			...editData,
-			timeoutId,
-			createdAt: Date.now(),
-		})
-
-		this.logger.debug(`Pending operation set: ${operationId}`)
-	}
-
-	/**
-	 * Clears a specific pending edit operation
-	 */
-	private clearPendingEditOperation(operationId: string): boolean {
-		const operation = this.pendingOperations.get(operationId)
-		if (operation) {
-			clearTimeout(operation.timeoutId)
-			this.pendingOperations.delete(operationId)
-			this.logger.debug(`Cleared pending operation: ${operationId}`)
-			return true
-		}
-		return false
-	}
-
-	/**
 	 * Fetches marketplace data
 	 */
 	public async fetchMarketplaceData(): Promise<void> {
@@ -870,11 +767,6 @@ export class ClineProvider
 	/**
 	 * Checks if there's a file-based system prompt override
 	 */
-	public async hasFileBasedSystemPromptOverride(mode: Mode): Promise<boolean> {
-		// Implementation would depend on the actual file-based system prompt logic
-		return false
-	}
-
 	/**
 	 * Sets configuration value
 	 */
@@ -935,13 +827,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Enables/disables remote control
-	 */
-	public async remoteControlEnabled(enabled: boolean): Promise<void> {
-		// Remote control functionality removed
-	}
-
-	/**
 	 * Gets current workspace code index manager
 	 */
 	public getCurrentWorkspaceCodeIndexManager(): CodeIndexManager | undefined {
@@ -951,10 +836,6 @@ export class ClineProvider
 	/**
 	 * Updates code index status subscription
 	 */
-	private updateCodeIndexStatusSubscription(): void {
-		// Implementation would depend on the actual code index status logic
-	}
-
 	/**
 	 * Gets current CWD
 	 */
@@ -976,14 +857,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Gets git properties
-	 */
-	public get gitProperties(): Record<string, string> | undefined {
-		// Implementation would depend on the actual git properties logic
-		return undefined
-	}
-
-	/**
 	 * Converts to webview URI
 	 */
 	public convertToWebviewUri(filePath: string): string {
@@ -1002,7 +875,41 @@ export class ClineProvider
 	}
 
 	/**
-	 * Static method to get/**
+	 * Ensures MCP servers directory exists
+	 */
+	public async ensureMcpServersDirectoryExists(): Promise<string> {
+		const settingsDir = await getSettingsDirectoryPath(this.context.globalStorageUri.fsPath)
+		const mcpServersDir = path.join(settingsDir, "mcp_servers")
+		await fs.mkdir(mcpServersDir, { recursive: true })
+		return mcpServersDir
+	}
+
+	/**
+	 * Ensures settings directory exists
+	 */
+	public async ensureSettingsDirectoryExists(): Promise<string> {
+		return await getSettingsDirectoryPath(this.context.globalStorageUri.fsPath)
+	}
+
+	/**
+	 * Gets git properties
+	 */
+	public get gitProperties(): Record<string, string> | undefined {
+		const cwd = this.cwd
+		if (!cwd) return undefined
+
+		try {
+			return {
+				gitExecutablePath: "git",
+				gitDir: cwd,
+				workingDirectory: cwd,
+			}
+		} catch {
+			return undefined
+		}
+	}
+
+	/**
 	 * Gets the visible instance
 	 */
 	public static getVisibleInstance(): ClineProvider | undefined {
