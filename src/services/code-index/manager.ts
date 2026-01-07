@@ -10,6 +10,8 @@ import { CodeIndexOrchestrator } from "./orchestrator"
 import { CacheManager } from "./cache-manager"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { TokenBasedSizeEstimator } from "./token-based-size-estimator"
+import { CollectionConfigUpgradeService } from "./vector-store/collection-config-upgrade-service"
+import { UpgradeProgress } from "./vector-store/collection-config-upgrade-types"
 import fs from "fs/promises"
 import ignore from "ignore"
 import path from "path"
@@ -27,6 +29,10 @@ export class CodeIndexManager {
 	private _searchService: CodeIndexSearchService | undefined
 	private _cacheManager: CacheManager | undefined
 	private _tokenBasedSizeEstimator: TokenBasedSizeEstimator | undefined
+	private _upgradeService: CollectionConfigUpgradeService | undefined
+
+	// Event emitter for configuration upgrade status updates
+	private _configUpgradeStatusEmitter = new vscode.EventEmitter<UpgradeProgress>()
 
 	// Flag to prevent race conditions during error recovery
 	private _isRecoveringFromError = false
@@ -77,6 +83,10 @@ export class CodeIndexManager {
 
 	public get onProgressUpdate() {
 		return this._stateManager.onProgressUpdate
+	}
+
+	public get onConfigUpgradeStatusUpdate() {
+		return this._configUpgradeStatusEmitter.event
 	}
 
 	private assertInitialized() {
@@ -285,6 +295,122 @@ export class CodeIndexManager {
 	}
 
 	/**
+	 * Gets the current configuration upgrade progress.
+	 */
+	public getCurrentConfigUpgradeProgress(): UpgradeProgress | undefined {
+		if (!this._upgradeService) {
+			return undefined
+		}
+		return this._upgradeService.getCurrentUpgrade()
+	}
+
+	/**
+	 * Gets the configuration upgrade history for the current collection.
+	 */
+	public getConfigUpgradeHistory(): UpgradeProgress[] {
+		if (!this._upgradeService) {
+			return []
+		}
+		const collectionName = this.workspacePath.replace(/[^a-zA-Z0-9_-]/g, "_")
+		if (!collectionName) {
+			return []
+		}
+		return this._upgradeService.getUpgradeHistory(collectionName)
+	}
+
+	/**
+	 * Cancels the current configuration upgrade.
+	 */
+	public cancelConfigUpgrade(): boolean {
+		if (!this._upgradeService) {
+			return false
+		}
+		return this._upgradeService.cancelUpgrade()
+	}
+
+	/**
+	 * Pauses the current configuration upgrade.
+	 */
+	public pauseConfigUpgrade(): boolean {
+		if (!this._upgradeService) {
+			return false
+		}
+		return this._upgradeService.pauseUpgrade()
+	}
+
+	/**
+	 * Resumes a paused configuration upgrade.
+	 */
+	public resumeConfigUpgrade(): Promise<boolean> {
+		if (!this._upgradeService) {
+			return Promise.resolve(false)
+		}
+		return this._upgradeService.resumeUpgrade()
+	}
+
+	/**
+	 * Retries a failed configuration upgrade.
+	 */
+	public retryConfigUpgrade(): Promise<boolean> {
+		if (!this._upgradeService) {
+			return Promise.resolve(false)
+		}
+		return this._upgradeService.retryUpgrade()
+	}
+
+	/**
+	 * Gets the configuration upgrade statistics.
+	 */
+	public getConfigUpgradeStatistics(): {
+		totalUpgrades: number
+		successfulUpgrades: number
+		failedUpgrades: number
+		cancelledUpgrades: number
+		averageDuration: number
+	} {
+		if (!this._upgradeService) {
+			return {
+				totalUpgrades: 0,
+				successfulUpgrades: 0,
+				failedUpgrades: 0,
+				cancelledUpgrades: 0,
+				averageDuration: 0,
+			}
+		}
+		return this._upgradeService.getUpgradeStatistics()
+	}
+
+	/**
+	 * Gets the recent configuration upgrades.
+	 */
+	public getRecentConfigUpgrades(limit: number = 10): UpgradeProgress[] {
+		if (!this._upgradeService) {
+			return []
+		}
+		return this._upgradeService.getRecentUpgrades(limit)
+	}
+
+	/**
+	 * Checks if a configuration upgrade is currently in progress.
+	 */
+	public isConfigUpgradeInProgress(): boolean {
+		if (!this._upgradeService) {
+			return false
+		}
+		return this._upgradeService.isUpgradeInProgress()
+	}
+
+	/**
+	 * Checks if a configuration upgrade is currently paused.
+	 */
+	public isConfigUpgradePaused(): boolean {
+		if (!this._upgradeService) {
+			return false
+		}
+		return this._upgradeService.isUpgradePaused()
+	}
+
+	/**
 	 * Private helper method to recreate services with current configuration.
 	 * Used by both initialize() and handleSettingsChange().
 	 */
@@ -296,6 +422,7 @@ export class CodeIndexManager {
 		// Clear existing services to ensure clean state
 		this._orchestrator = undefined
 		this._searchService = undefined
+		this._upgradeService = undefined
 
 		// (Re)Initialize service factory
 		this._serviceFactory = new CodeIndexServiceFactory(
@@ -334,6 +461,18 @@ export class CodeIndexManager {
 			ignoreInstance,
 			rooIgnoreController,
 		)
+
+		// Get upgrade service from vector store's config manager
+		const qdrantVectorStore = vectorStore as any
+		const vectorStorageConfigManager = qdrantVectorStore.configManager
+		if (vectorStorageConfigManager && vectorStorageConfigManager.upgradeService) {
+			this._upgradeService = vectorStorageConfigManager.upgradeService
+			if (this._upgradeService) {
+				this._upgradeService.onStatusUpdate((progress) => {
+					this._configUpgradeStatusEmitter.fire(progress)
+				})
+			}
+		}
 
 		// Validate embedder configuration before proceeding
 		const validationResult = await this._serviceFactory.validateEmbedder(embedder)

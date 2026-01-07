@@ -27,7 +27,7 @@ export const VectorStorageSettings: React.FC<VectorStorageSettingsProps> = ({ co
 		onChange(newConfig)
 	}
 
-	const handlePresetChange = (preset: "small" | "medium" | "large") => {
+	const handlePresetChange = (preset: "tiny" | "small" | "medium" | "large") => {
 		onChange({
 			...config,
 			preset,
@@ -35,12 +35,14 @@ export const VectorStorageSettings: React.FC<VectorStorageSettingsProps> = ({ co
 		})
 	}
 
-	const handleThresholdChange = (thresholdType: "small" | "medium", value: number) => {
+	const handleThresholdChange = (thresholdType: "tiny" | "small" | "medium" | "large", value: number) => {
 		onChange({
 			...config,
 			thresholds: {
+				tiny: config.thresholds?.tiny ?? 2000,
 				small: config.thresholds?.small ?? 10000,
 				medium: config.thresholds?.medium ?? 100000,
+				large: config.thresholds?.large ?? 1000000,
 				[thresholdType]: value,
 			},
 		})
@@ -73,6 +75,9 @@ export const VectorStorageSettings: React.FC<VectorStorageSettingsProps> = ({ co
 						value={config.preset || "medium"}
 						onChange={(e: any) => handlePresetChange(e.target.value)}
 						className="w-full">
+						<VSCodeOption value="tiny">
+							{t("settings:codeIndex.vectorStorage.presets.tiny")}
+						</VSCodeOption>
 						<VSCodeOption value="small">
 							{t("settings:codeIndex.vectorStorage.presets.small")}
 						</VSCodeOption>
@@ -88,6 +93,26 @@ export const VectorStorageSettings: React.FC<VectorStorageSettingsProps> = ({ co
 
 			{config.mode === "auto" && (
 				<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-2">
+						<label className="block font-medium">
+							{t("settings:codeIndex.vectorStorage.thresholds.tiny")}
+						</label>
+						<div className="flex items-center gap-2">
+							<Slider
+								min={500}
+								max={5000}
+								step={100}
+								value={[config.thresholds?.tiny || 2000]}
+								onValueChange={([value]) => handleThresholdChange("tiny", value)}
+								className="flex-1"
+							/>
+							<span className="w-16 text-right">{config.thresholds?.tiny || 2000}</span>
+						</div>
+						<div className="text-sm text-vscode-descriptionForeground">
+							{t("settings:codeIndex.vectorStorage.thresholds.tinyDescription")}
+						</div>
+					</div>
+
 					<div className="flex flex-col gap-2">
 						<label className="block font-medium">
 							{t("settings:codeIndex.vectorStorage.thresholds.small")}

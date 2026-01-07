@@ -132,6 +132,12 @@ export interface WebviewMessage {
 		| "startIndexing"
 		| "clearIndexData"
 		| "indexingStatusUpdate"
+		| "configUpgradeStatusUpdate"
+		| "cancelConfigUpgrade"
+		| "pauseConfigUpgrade"
+		| "resumeConfigUpgrade"
+		| "retryConfigUpgrade"
+		| "rollbackConfigUpgrade"
 		| "indexCleared"
 		| "focusPanelRequest"
 		| "openExternal"
@@ -288,6 +294,26 @@ export interface IndexClearedPayload {
 	error?: string
 }
 
+export interface ConfigUpgradeStatusPayload {
+	collectionName: string
+	workspacePath?: string
+	currentPreset: string
+	targetPreset: string
+	status: "pending" | "in_progress" | "completed" | "failed"
+	progress: number
+	message: string
+	error?: string
+	startTime: number
+	endTime?: number
+	steps: Array<{
+		preset: string
+		status: "pending" | "in_progress" | "completed" | "failed"
+		startTime?: number
+		endTime?: number
+		error?: string
+	}>
+}
+
 export const installMarketplaceItemWithParametersPayloadSchema = z.object({
 	item: marketplaceItemSchema,
 	parameters: z.record(z.string(), z.any()),
@@ -302,6 +328,7 @@ export type WebViewMessagePayload =
 	| CheckpointRestorePayload
 	| IndexingStatusPayload
 	| IndexClearedPayload
+	| ConfigUpgradeStatusPayload
 	| InstallMarketplaceItemWithParametersPayload
 	| UpdateTodoListPayload
 	| EditQueuedMessagePayload

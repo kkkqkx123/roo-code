@@ -141,8 +141,7 @@ export class QdrantVectorStore implements IVectorStore {
 
 	private async getConfig(): Promise<{
 		vectors: { on_disk: boolean }
-		hnsw: { m: number; ef_construct: number; on_disk: boolean }
-		optimizer?: { indexing_threshold: number }
+		hnsw?: { m: number; ef_construct: number; on_disk: boolean }
 		wal?: { capacity_mb: number; segments: number }
 	}> {
 		if (this.configManager) {
@@ -151,16 +150,21 @@ export class QdrantVectorStore implements IVectorStore {
 		return {
 			vectors: { on_disk: true },
 			hnsw: { m: 64, ef_construct: 512, on_disk: true },
-			optimizer: { indexing_threshold: 200000 },
 		}
 	}
 
 	async setCollectionConfigFromEstimation(estimation: import("../interfaces/vector-store").SizeEstimationResult): Promise<void> {
 		if (this.configManager) {
 			const config = await this.configManager.getCollectionConfigFromEstimation(estimation)
-			console.log(
-				`[QdrantVectorStore] Using configuration for estimated ${estimation.estimatedVectorCount} vectors: HNSW m=${config.hnsw.m}, ef_construct=${config.hnsw.ef_construct}`,
-			)
+			if (config.hnsw) {
+				console.log(
+					`[QdrantVectorStore] Using configuration for estimated ${estimation.estimatedVectorCount} vectors: HNSW m=${config.hnsw.m}, ef_construct=${config.hnsw.ef_construct}`,
+				)
+			} else {
+				console.log(
+					`[QdrantVectorStore] Using configuration for estimated ${estimation.estimatedVectorCount} vectors: No HNSW index (full table search)`,
+				)
+			}
 		}
 	}
 
@@ -180,6 +184,14 @@ export class QdrantVectorStore implements IVectorStore {
 	}
 
 	/**
+	 * Gets the Qdrant client instance
+	 * @returns The Qdrant client instance
+	 */
+	public getClient(): QdrantClient {
+		return this.client
+	}
+
+	/**
 	 * Initializes the vector store
 	 * @returns Promise resolving to boolean indicating if a new collection was created
 	 */
@@ -190,21 +202,21 @@ export class QdrantVectorStore implements IVectorStore {
 
 			if (collectionInfo === null) {
 				const config = await this.getConfig()
-				await this.client.createCollection(this.collectionName, {
+				const createParams: any = {
 					vectors: {
 						size: this.vectorSize,
 						distance: this.DISTANCE_METRIC,
 						on_disk: config.vectors.on_disk,
 					},
-					hnsw_config: {
+				}
+				if (config.hnsw) {
+					createParams.hnsw_config = {
 						m: config.hnsw.m,
 						ef_construct: config.hnsw.ef_construct,
 						on_disk: config.hnsw.on_disk,
-					},
-					optimizers_config: {
-						indexing_threshold: config.optimizer?.indexing_threshold ?? 20000,
-					},
-				})
+					}
+				}
+				await this.client.createCollection(this.collectionName, createParams)
 				created = true
 			} else {
 				// Collection exists, check vector size
@@ -289,21 +301,21 @@ export class QdrantVectorStore implements IVectorStore {
 			)
 			recreationAttempted = true
 			const config = await this.getConfig()
-			await this.client.createCollection(this.collectionName, {
+			const createParams: any = {
 				vectors: {
 					size: this.vectorSize,
-				distance: this.DISTANCE_METRIC,
-				on_disk: config.vectors.on_disk,
-			},
-			hnsw_config: {
-				m: config.hnsw.m,
-				ef_construct: config.hnsw.ef_construct,
-				on_disk: config.hnsw.on_disk,
-			},
-			optimizers_config: {
-				indexing_threshold: config.optimizer?.indexing_threshold ?? 20000,
-			},
-		})
+					distance: this.DISTANCE_METRIC,
+					on_disk: config.vectors.on_disk,
+				},
+			}
+			if (config.hnsw) {
+				createParams.hnsw_config = {
+					m: config.hnsw.m,
+					ef_construct: config.hnsw.ef_construct,
+					on_disk: config.hnsw.on_disk,
+				}
+			}
+			await this.client.createCollection(this.collectionName, createParams)
 			console.log(`[QdrantVectorStore] Successfully created new collection ${this.collectionName}`)
 			return true
 		} catch (recreationError) {

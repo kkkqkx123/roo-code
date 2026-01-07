@@ -24,57 +24,61 @@ export const VectorStorageAdvancedSettings: React.FC<VectorStorageAdvancedSettin
 
 	return (
 		<Section>
-			<h3 className="text-base font-semibold mb-3">{t("settings:codeIndex.vectorStorage.hnswConfig")}</h3>
+			{config.hnsw && (
+				<>
+					<h3 className="text-base font-semibold mb-3">{t("settings:codeIndex.vectorStorage.hnswConfig")}</h3>
 
-			<div className="flex flex-col gap-3 mb-4">
-				<div className="flex flex-col gap-1">
-					<label className="text-sm font-medium">
-						{t("settings:codeIndex.vectorStorage.hnswM")}
-					</label>
-					<div className="flex items-center gap-2">
-						<Slider
-							min={2}
-							max={128}
-							step={2}
-							value={[config.hnsw.m]}
-							onValueChange={([value]) => updateConfig("hnsw", "m", value)}
-							className="flex-1"
-						/>
-						<span className="w-10 text-right text-sm">{config.hnsw.m}</span>
-					</div>
-					<div className="text-xs text-vscode-descriptionForeground">
-						{t("settings:codeIndex.vectorStorage.hnswMDescription")}
-					</div>
-				</div>
+					<div className="flex flex-col gap-3 mb-4">
+						<div className="flex flex-col gap-1">
+							<label className="text-sm font-medium">
+								{t("settings:codeIndex.vectorStorage.hnswM")}
+							</label>
+							<div className="flex items-center gap-2">
+								<Slider
+									min={2}
+									max={128}
+									step={2}
+									value={[config.hnsw.m]}
+									onValueChange={([value]) => updateConfig("hnsw", "m", value)}
+									className="flex-1"
+								/>
+								<span className="w-10 text-right text-sm">{config.hnsw.m}</span>
+							</div>
+							<div className="text-xs text-vscode-descriptionForeground">
+								{t("settings:codeIndex.vectorStorage.hnswMDescription")}
+							</div>
+						</div>
 
-				<div className="flex flex-col gap-1">
-					<label className="text-sm font-medium">
-						{t("settings:codeIndex.vectorStorage.hnswEfConstruct")}
-					</label>
-					<div className="flex items-center gap-2">
-						<Slider
-							min={10}
-							max={1000}
-							step={10}
-							value={[config.hnsw.ef_construct]}
-							onValueChange={([value]) => updateConfig("hnsw", "ef_construct", value)}
-							className="flex-1"
-						/>
-						<span className="w-10 text-right text-sm">{config.hnsw.ef_construct}</span>
-					</div>
-					<div className="text-xs text-vscode-descriptionForeground">
-						{t("settings:codeIndex.vectorStorage.hnswEfConstructDescription")}
-					</div>
-				</div>
+						<div className="flex flex-col gap-1">
+							<label className="text-sm font-medium">
+								{t("settings:codeIndex.vectorStorage.hnswEfConstruct")}
+							</label>
+							<div className="flex items-center gap-2">
+								<Slider
+									min={10}
+									max={1000}
+									step={10}
+									value={[config.hnsw.ef_construct]}
+									onValueChange={([value]) => updateConfig("hnsw", "ef_construct", value)}
+									className="flex-1"
+								/>
+								<span className="w-10 text-right text-sm">{config.hnsw.ef_construct}</span>
+							</div>
+							<div className="text-xs text-vscode-descriptionForeground">
+								{t("settings:codeIndex.vectorStorage.hnswEfConstructDescription")}
+							</div>
+						</div>
 
-				<VSCodeCheckbox
-					checked={config.hnsw.on_disk}
-					onChange={(e: any) => updateConfig("hnsw", "on_disk", e.target.checked)}>
-					<label className="text-sm font-medium">
-						{t("settings:codeIndex.vectorStorage.hnswOnDisk")}
-					</label>
-				</VSCodeCheckbox>
-			</div>
+						<VSCodeCheckbox
+							checked={config.hnsw.on_disk}
+							onChange={(e: any) => updateConfig("hnsw", "on_disk", e.target.checked)}>
+							<label className="text-sm font-medium">
+								{t("settings:codeIndex.vectorStorage.hnswOnDisk")}
+							</label>
+						</VSCodeCheckbox>
+					</div>
+				</>
+			)}
 
 			<h3 className="text-base font-semibold mb-3">{t("settings:codeIndex.vectorStorage.vectorConfig")}</h3>
 

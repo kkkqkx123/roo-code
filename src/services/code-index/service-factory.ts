@@ -15,6 +15,7 @@ import { Package } from "../../shared/package"
 import { BATCH_SEGMENT_THRESHOLD } from "./constants"
 import { VectorStorageConfigManager } from "./vector-storage-config-manager"
 import { CollectionSizeEstimator } from "./vector-store/collection-size-estimator"
+import { CollectionConfigUpgradeService } from "./vector-store/collection-config-upgrade-service"
 
 /**
  * Factory class responsible for creating and configuring code indexing service dependencies.
@@ -126,13 +127,26 @@ export class CodeIndexServiceFactory {
 			collectionSizeEstimator,
 		)
 
-		return new QdrantVectorStore(
+		const collectionName = this.workspacePath.replace(/[^a-zA-Z0-9_-]/g, "_")
+		vectorStorageConfigManager.setCollectionName(collectionName)
+
+		const qdrantVectorStore = new QdrantVectorStore(
 			this.workspacePath,
 			config.qdrantUrl,
 			vectorSize,
 			config.qdrantApiKey,
 			vectorStorageConfigManager,
 		)
+
+		const upgradeService = new CollectionConfigUpgradeService(
+			qdrantVectorStore.getClient(),
+			vectorStorageConfigManager,
+			collectionName,
+		)
+
+		vectorStorageConfigManager.setUpgradeService(upgradeService)
+
+		return qdrantVectorStore
 	}
 
 	/**

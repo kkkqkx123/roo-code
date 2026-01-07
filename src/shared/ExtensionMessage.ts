@@ -49,6 +49,32 @@ export interface IndexingStatusUpdateMessage {
 	values: IndexingStatus
 }
 
+export interface ConfigUpgradeStatusUpdateMessage {
+	type: "configUpgradeStatusUpdate"
+	values: ConfigUpgradeStatus
+}
+
+export interface ConfigUpgradeStatus {
+	collectionName: string
+	workspacePath?: string
+	currentPreset?: string
+	targetPreset?: string
+	status: "idle" | "pending" | "in_progress" | "paused" | "completed" | "failed" | "rolling_back" | "cancelled"
+	progress?: number
+	message?: string
+	error?: string
+	startTime?: number
+	endTime?: number
+	steps?: Array<{
+		preset?: string
+		name?: string
+		status: "pending" | "in_progress" | "completed" | "failed"
+		startTime?: number
+		endTime?: number
+		error?: string
+	}>
+}
+
 export interface LanguageModelChatSelector {
 	vendor?: string
 	family?: string
@@ -127,6 +153,7 @@ export interface ExtensionMessage {
 		| "browserSessionUpdate"
 		| "browserSessionNavigate"
 		| "claudeCodeRateLimits"
+		| "configUpgradeStatusUpdate"
 	text?: string
 	payload?: any // Add a generic payload for now, can refine later
 	// Checkpoint warning message

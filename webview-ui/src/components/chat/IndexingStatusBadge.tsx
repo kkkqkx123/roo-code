@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react"
-import { Database } from "lucide-react"
+import { Database, Zap } from "lucide-react"
 
 import { cn } from "@src/lib/utils"
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 
-import type { IndexingStatus, IndexingStatusUpdateMessage } from "@roo/ExtensionMessage"
+import type { IndexingStatus, IndexingStatusUpdateMessage, ConfigUpgradeStatusUpdateMessage } from "@roo/ExtensionMessage"
 
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { PopoverTrigger, StandardTooltip, Button } from "@src/components/ui"
@@ -27,16 +27,21 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		currentItemUnit: "items",
 	})
 
+	const [configUpgradeStatus, setConfigUpgradeStatus] = useState<any>(null)
+
 	useEffect(() => {
-		// Request initial indexing status.
 		vscode.postMessage({ type: "requestIndexingStatus" })
 
-		// Set up message listener for status updates.
-		const handleMessage = (event: MessageEvent<IndexingStatusUpdateMessage>) => {
+		const handleMessage = (event: MessageEvent<IndexingStatusUpdateMessage | ConfigUpgradeStatusUpdateMessage>) => {
 			if (event.data.type === "indexingStatusUpdate") {
 				const status = event.data.values
 				if (!status.workspacePath || status.workspacePath === cwd) {
 					setIndexingStatus(status)
+				}
+			} else if (event.data.type === "configUpgradeStatusUpdate") {
+				const status = event.data.values
+				if (!status.workspacePath || status.workspacePath === cwd) {
+					setConfigUpgradeStatus(status)
 				}
 			}
 		}
@@ -57,6 +62,24 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 	)
 
 	const tooltipText = useMemo(() => {
+		if (configUpgradeStatus && configUpgradeStatus.status === "in_progress") {
+			const progress = configUpgradeStatus.progress || 0
+			return t("chat:indexingStatus.upgrading", { 
+				percentage: progress,
+				currentPreset: configUpgradeStatus.currentPreset,
+				targetPreset: configUpgradeStatus.targetPreset 
+			})
+		}
+		
+		if (configUpgradeStatus && configUpgradeStatus.status === "rolling_back") {
+			const progress = configUpgradeStatus.progress || 0
+			return t("chat:indexingStatus.rollingBack", { 
+				percentage: progress,
+				currentPreset: configUpgradeStatus.currentPreset,
+				targetPreset: configUpgradeStatus.targetPreset 
+			})
+		}
+		
 		switch (indexingStatus.systemStatus) {
 			case "Standby":
 				return t("chat:indexingStatus.ready")
@@ -69,9 +92,17 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 			default:
 				return t("chat:indexingStatus.status")
 		}
-	}, [indexingStatus.systemStatus, progressPercentage, t])
+	}, [indexingStatus.systemStatus, progressPercentage, configUpgradeStatus, t])
 
 	const statusColorClass = useMemo(() => {
+		if (configUpgradeStatus && configUpgradeStatus.status === "in_progress") {
+			return "bg-blue-500 animate-pulse"
+		}
+		
+		if (configUpgradeStatus && configUpgradeStatus.status === "rolling_back") {
+			return "bg-yellow-500 animate-pulse"
+		}
+		
 		const statusColors = {
 			Standby: "bg-vscode-descriptionForeground/60",
 			Indexing: "bg-yellow-500 animate-pulse",
@@ -80,10 +111,12 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		}
 
 		return statusColors[indexingStatus.systemStatus as keyof typeof statusColors] || statusColors.Standby
-	}, [indexingStatus.systemStatus])
+	}, [indexingStatus.systemStatus, configUpgradeStatus])
+
+	const showUpgradeIcon = configUpgradeStatus && (configUpgradeStatus.status === "in_progress" || configUpgradeStatus.status === "rolling_back")
 
 	return (
-		<CodeIndexPopover indexingStatus={indexingStatus}>
+		<CodeIndexPopover indexingStatus={indexingStatus} configUpgradeStatus={configUpgradeStatus}>
 			<StandardTooltip content={tooltipText}>
 				<PopoverTrigger asChild>
 					<Button
@@ -97,7 +130,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 							"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
 							className,
 						)}>
-						<Database className="w-4 h-4" />
+						{showUpgradeIcon ? <Zap className="w-4 h-4" /> : <Database className="w-4 h-4" />}
 						<span
 							className={cn(
 								"absolute top-0 right-0 w-1.5 h-1.5 rounded-full transition-colors duration-200",

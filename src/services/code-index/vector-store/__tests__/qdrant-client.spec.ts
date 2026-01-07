@@ -531,7 +531,7 @@ describe("QdrantVectorStore", () => {
 			expect(mockQdrantClientInstance.createCollection).toHaveBeenCalledWith(expectedCollectionName, {
 				vectors: {
 					size: mockVectorSize,
-					distance: "Cosine", // Assuming 'Cosine' is the DISTANCE_METRIC
+					distance: "Cosine",
 					on_disk: true,
 				},
 				hnsw_config: {

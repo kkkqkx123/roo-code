@@ -2133,6 +2133,70 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		case "cancelConfigUpgrade": {
+			try {
+				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				if (!manager) {
+					provider.log("Cannot cancel config upgrade: No workspace folder open")
+					return
+				}
+				const success = manager.cancelConfigUpgrade()
+				if (success) {
+					provider.log("Configuration upgrade cancelled successfully")
+				} else {
+					provider.log("Failed to cancel configuration upgrade: No upgrade in progress")
+				}
+			} catch (error) {
+				provider.log(`Error cancelling config upgrade: ${error instanceof Error ? error.message : String(error)}`)
+			}
+			break
+		}
+		case "pauseConfigUpgrade": {
+			try {
+				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				if (!manager) {
+					provider.log("Cannot pause config upgrade: No workspace folder open")
+					return
+				}
+				const success = manager.pauseConfigUpgrade()
+				if (success) {
+					provider.log("Configuration upgrade paused successfully")
+				} else {
+					provider.log("Failed to pause configuration upgrade: No upgrade in progress")
+				}
+			} catch (error) {
+				provider.log(`Error pausing config upgrade: ${error instanceof Error ? error.message : String(error)}`)
+			}
+			break
+		}
+		case "resumeConfigUpgrade": {
+			try {
+				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				if (!manager) {
+					provider.log("Cannot resume config upgrade: No workspace folder open")
+					return
+				}
+				await manager.resumeConfigUpgrade()
+				provider.log("Configuration upgrade resumed successfully")
+			} catch (error) {
+				provider.log(`Error resuming config upgrade: ${error instanceof Error ? error.message : String(error)}`)
+			}
+			break
+		}
+		case "retryConfigUpgrade": {
+			try {
+				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				if (!manager) {
+					provider.log("Cannot retry config upgrade: No workspace folder open")
+					return
+				}
+				await manager.retryConfigUpgrade()
+				provider.log("Configuration upgrade retry initiated successfully")
+			} catch (error) {
+				provider.log(`Error retrying config upgrade: ${error instanceof Error ? error.message : String(error)}`)
+			}
+			break
+		}
 		case "focusPanelRequest": {
 			// Execute the focusPanel command to focus the WebView
 			await vscode.commands.executeCommand(getCommand("focusPanel"))

@@ -16,7 +16,7 @@ import { CODEBASE_INDEX_DEFAULTS } from "@roo-code/types"
 import type { VectorStorageConfig } from "@roo-code/types"
 
 import type { EmbedderProvider } from "@roo/embeddingModels"
-import type { IndexingStatus } from "@roo/ExtensionMessage"
+import type { IndexingStatus, ConfigUpgradeStatus } from "@roo/ExtensionMessage"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -56,6 +56,7 @@ const DEFAULT_OLLAMA_URL = "http://localhost:11434"
 interface CodeIndexPopoverProps {
 	children: React.ReactNode
 	indexingStatus: IndexingStatus
+	configUpgradeStatus?: ConfigUpgradeStatus | null
 }
 
 interface LocalCodeIndexSettings {
@@ -180,6 +181,7 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 	children,
 	indexingStatus: externalIndexingStatus,
+	configUpgradeStatus: externalConfigUpgradeStatus,
 }) => {
 	const SECRET_PLACEHOLDER = "••••••••••••••••"
 	const { t } = useAppTranslation()
@@ -189,6 +191,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 	const [isSetupSettingsOpen, setIsSetupSettingsOpen] = useState(false)
 
 	const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>(externalIndexingStatus)
+	const [configUpgradeStatus, setConfigUpgradeStatus] = useState<ConfigUpgradeStatus | null>(externalConfigUpgradeStatus || null)
 
 	const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
 	const [saveError, setSaveError] = useState<string | null>(null)
@@ -199,6 +202,9 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 	// Discard changes dialog state
 	const [isDiscardDialogShow, setDiscardDialogShow] = useState(false)
 	const confirmDialogHandler = useRef<(() => void) | null>(null)
+
+	// Rollback confirmation dialog state
+	const [isRollbackDialogShow, setRollbackDialogShow] = useState(false)
 
 	// Default settings template
 	const getDefaultSettings = (): LocalCodeIndexSettings => ({
@@ -304,6 +310,10 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 						totalItems: event.data.values.totalItems,
 						currentItemUnit: event.data.values.currentItemUnit || "items",
 					})
+				}
+			} else if (event.data.type === "configUpgradeStatusUpdate") {
+				if (!event.data.values.workspacePath || event.data.values.workspacePath === cwd) {
+					setConfigUpgradeStatus(event.data.values)
 				}
 			} else if (event.data.type === "codeIndexSettingsSaved") {
 				if (event.data.success) {
@@ -652,6 +662,139 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 								</div>
 							)}
 						</div>
+
+						{/* Configuration Upgrade Status Section */}
+						{configUpgradeStatus && configUpgradeStatus.status !== "idle" && (
+							<div className="space-y-2 mt-4">
+								<div className="flex items-center justify-between">
+									<h4 className="text-sm font-medium">{t("settings:codeIndex.configUpgradeTitle")}</h4>
+									{configUpgradeStatus.status === "completed" && (
+										<AlertDialog open={isRollbackDialogShow} onOpenChange={setRollbackDialogShow}>
+											<AlertDialogTrigger asChild>
+												<Button variant="secondary" size="sm">
+													{t("settings:codeIndex.rollbackConfig")}
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														{t("settings:codeIndex.rollbackDialog.title")}
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														{t("settings:codeIndex.rollbackDialog.description")}
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>
+														{t("settings:codeIndex.rollbackDialog.cancelButton")}
+													</AlertDialogCancel>
+													<AlertDialogAction
+														onClick={() => {
+															vscode.postMessage({ type: "rollbackConfigUpgrade" })
+															setRollbackDialogShow(false)
+														}}>
+														{t("settings:codeIndex.rollbackDialog.confirmButton")}
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+									)}
+								</div>
+								<div className="text-sm text-vscode-descriptionForeground">
+									<span
+										className={cn("inline-block w-3 h-3 rounded-full mr-2", {
+											"bg-blue-500 animate-pulse": configUpgradeStatus.status === "in_progress",
+											"bg-green-500": configUpgradeStatus.status === "completed",
+											"bg-red-500": configUpgradeStatus.status === "failed",
+											"bg-yellow-500 animate-pulse": configUpgradeStatus.status === "rolling_back",
+											"bg-gray-400": configUpgradeStatus.status === "paused",
+											"bg-gray-500": configUpgradeStatus.status === "cancelled",
+										})}
+									/>
+									{configUpgradeStatus.currentPreset && configUpgradeStatus.targetPreset && (
+										<span>
+											{configUpgradeStatus.status === "rolling_back"
+												? t("settings:codeIndex.rollingBackFromTo", {
+														current: configUpgradeStatus.currentPreset,
+														target: configUpgradeStatus.targetPreset,
+												  })
+												: t("settings:codeIndex.upgradingFromTo", {
+														current: configUpgradeStatus.currentPreset,
+														target: configUpgradeStatus.targetPreset,
+												  })}
+										</span>
+									)}
+									{configUpgradeStatus.message && ` - ${configUpgradeStatus.message}`}
+								</div>
+
+								{configUpgradeStatus.status === "in_progress" && configUpgradeStatus.progress !== undefined && (
+									<div className="mt-2">
+										<ProgressPrimitive.Root
+											className="relative h-2 w-full overflow-hidden rounded-full bg-secondary"
+											value={configUpgradeStatus.progress}>
+											<ProgressPrimitive.Indicator
+												className="h-full w-full flex-1 bg-blue-500 transition-transform duration-300 ease-in-out"
+												style={{
+													transform: `translateX(-${100 - configUpgradeStatus.progress}%)`,
+												}}
+											/>
+										</ProgressPrimitive.Root>
+										<div className="text-xs text-vscode-descriptionForeground mt-1">
+											{configUpgradeStatus.progress}%
+										</div>
+									</div>
+								)}
+
+								{configUpgradeStatus.status === "rolling_back" && configUpgradeStatus.progress !== undefined && (
+									<div className="mt-2">
+										<ProgressPrimitive.Root
+											className="relative h-2 w-full overflow-hidden rounded-full bg-secondary"
+											value={configUpgradeStatus.progress}>
+											<ProgressPrimitive.Indicator
+												className="h-full w-full flex-1 bg-yellow-500 transition-transform duration-300 ease-in-out"
+												style={{
+													transform: `translateX(-${100 - configUpgradeStatus.progress}%)`,
+												}}
+											/>
+										</ProgressPrimitive.Root>
+										<div className="text-xs text-vscode-descriptionForeground mt-1">
+											{configUpgradeStatus.progress}%
+										</div>
+									</div>
+								)}
+
+								{configUpgradeStatus.steps && configUpgradeStatus.steps.length > 0 && (
+									<div className="mt-2 space-y-1">
+										{configUpgradeStatus.steps.map((step, index) => (
+											<div
+												key={index}
+												className="flex items-center text-xs text-vscode-descriptionForeground">
+												<span
+													className={cn("inline-block w-2 h-2 rounded-full mr-2", {
+														"bg-gray-400": step.status === "pending",
+														"bg-blue-500 animate-pulse": step.status === "in_progress",
+														"bg-green-500": step.status === "completed",
+														"bg-red-500": step.status === "failed",
+													})}
+												/>
+												<span>
+													{step.preset || step.name}
+													{step.status === "in_progress" && " (进行中)"}
+													{step.status === "completed" && " (已完成)"}
+													{step.status === "failed" && " (失败)"}
+												</span>
+											</div>
+										))}
+									</div>
+								)}
+
+								{configUpgradeStatus.status === "failed" && configUpgradeStatus.error && (
+									<div className="mt-2 text-xs text-red-500">
+										{t("settings:codeIndex.upgradeFailed")}: {configUpgradeStatus.error}
+									</div>
+								)}
+							</div>
+						)}
 
 						{/* Setup Settings Disclosure */}
 						<div className="mt-4">

@@ -49,6 +49,7 @@ import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { MarketplaceManager } from "../../services/marketplace"
 import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckpointService"
 import { CodeIndexManager } from "../../services/code-index/manager"
+import type { UpgradeProgress } from "../../services/code-index/vector-store/collection-config-upgrade-types"
 
 import { getWorkspacePath } from "../../utils/path"
 import { OrganizationAllowListViolationError } from "../../utils/errors"
@@ -108,6 +109,7 @@ export class ClineProvider
 	private _customModesManager!: CustomModesManager
 	
 	private codeIndexStatusSubscription?: vscode.Disposable
+	private configUpgradeStatusSubscription?: vscode.Disposable
 	private codeIndexManager?: CodeIndexManager
 	private recentTasksCache?: string[]
 	
@@ -306,7 +308,8 @@ export class ClineProvider
 			await this.webviewCoordinator.resolveWebviewView(webviewView)
 			this.logger.debug("WebviewCoordinator resolved webview view")
 			
-			// Post initial state to webview
+			this.updateCodeIndexStatusSubscription()
+			
 			await this.postStateToWebview()
 			this.logger.info("Initial state posted to webview")
 		} catch (error) {
@@ -830,7 +833,97 @@ export class ClineProvider
 	 * Gets current workspace code index manager
 	 */
 	public getCurrentWorkspaceCodeIndexManager(): CodeIndexManager | undefined {
-		return this.codeIndexManager
+		const workspacePath = this.currentWorkspacePath
+		if (!workspacePath) {
+			return undefined
+		}
+		return CodeIndexManager.getInstance(this.context, workspacePath)
+	}
+
+	/**
+	 * Updates code index status subscription to listen to the current workspace manager
+	 */
+	private updateCodeIndexStatusSubscription(): void {
+		const currentManager = this.getCurrentWorkspaceCodeIndexManager()
+
+		if (currentManager === this.codeIndexManager) {
+			return
+		}
+
+		if (this.codeIndexStatusSubscription) {
+			this.codeIndexStatusSubscription.dispose()
+			this.codeIndexStatusSubscription = undefined
+		}
+
+		if (this.configUpgradeStatusSubscription) {
+			this.configUpgradeStatusSubscription.dispose()
+			this.configUpgradeStatusSubscription = undefined
+		}
+
+		this.codeIndexManager = currentManager
+
+		if (currentManager) {
+			this.codeIndexStatusSubscription = currentManager.onProgressUpdate((update: any) => {
+				if (currentManager === this.getCurrentWorkspaceCodeIndexManager()) {
+					const fullStatus = currentManager.getCurrentStatus()
+					this.postMessageToWebview({
+						type: "indexingStatusUpdate",
+						values: fullStatus,
+					})
+				}
+			})
+
+			this.configUpgradeStatusSubscription = currentManager.onConfigUpgradeStatusUpdate((progress: any) => {
+				if (currentManager === this.getCurrentWorkspaceCodeIndexManager()) {
+					this.postMessageToWebview({
+						type: "configUpgradeStatusUpdate",
+						values: {
+							collectionName: progress.collectionName,
+							workspacePath: this.currentWorkspacePath,
+							currentPreset: progress.currentPreset,
+							targetPreset: progress.targetPreset,
+							status: progress.status,
+							progress: progress.progress,
+							message: progress.message,
+							error: progress.error,
+							startTime: progress.startTime,
+							endTime: progress.endTime,
+							steps: progress.steps,
+						},
+					})
+				}
+			})
+
+			if (this.view) {
+				this.webviewDisposables.push(this.codeIndexStatusSubscription)
+				this.webviewDisposables.push(this.configUpgradeStatusSubscription)
+			}
+
+			this.postMessageToWebview({
+				type: "indexingStatusUpdate",
+				values: currentManager.getCurrentStatus(),
+			})
+
+			const currentUpgrade = currentManager.getCurrentConfigUpgradeProgress()
+			if (currentUpgrade) {
+				this.postMessageToWebview({
+					type: "configUpgradeStatusUpdate",
+					values: {
+						collectionName: currentUpgrade.collectionName,
+						workspacePath: this.currentWorkspacePath,
+						currentPreset: currentUpgrade.currentPreset,
+						targetPreset: currentUpgrade.targetPreset,
+						status: currentUpgrade.status,
+						progress: currentUpgrade.progress,
+						message: currentUpgrade.message,
+						error: currentUpgrade.error,
+						startTime: currentUpgrade.startTime,
+						endTime: currentUpgrade.endTime,
+						steps: currentUpgrade.steps,
+					},
+				})
+			}
+		}
 	}
 
 	/**
@@ -1021,7 +1114,18 @@ export class ClineProvider
 		this.logger.info("Disposing ClineProvider...")
 
 		try {
-			// Dispose coordinators
+			if (this.codeIndexStatusSubscription) {
+				this.codeIndexStatusSubscription.dispose()
+				this.codeIndexStatusSubscription = undefined
+			}
+
+			if (this.configUpgradeStatusSubscription) {
+				this.configUpgradeStatusSubscription.dispose()
+				this.configUpgradeStatusSubscription = undefined
+			}
+
+			this.codeIndexManager = undefined
+
 			await this.taskManager.dispose()
 			this.logger.debug("TaskManager disposed")
 			
@@ -1034,7 +1138,6 @@ export class ClineProvider
 			this.stateCoordinator.dispose()
 			this.logger.debug("StateCoordinator disposed")
 
-			// Dispose services
 			this._workspaceTracker?.dispose()
 			this.logger.debug("WorkspaceTracker disposed")
 			
@@ -1049,7 +1152,6 @@ export class ClineProvider
 			this.customModesManager.dispose()
 			this.logger.debug("CustomModesManager disposed")
 
-			// Clear disposables
 			while (this.disposables.length) {
 				const x = this.disposables.pop()
 				if (x) {
@@ -1058,15 +1160,12 @@ export class ClineProvider
 			}
 			this.logger.debug("All disposables cleared")
 
-			// Remove event listeners
 			this.removeAllListeners()
 			this.logger.debug("All event listeners removed")
 			
-			// Remove from active instances
 			ClineProvider.activeInstances.delete(this)
 			this.logger.debug("Removed from active instances")
 			
-			// Unregister from MCP server manager
 			McpServerManager.unregisterProvider(this as any)
 			this.logger.debug("Unregistered from MCP server manager")
 			

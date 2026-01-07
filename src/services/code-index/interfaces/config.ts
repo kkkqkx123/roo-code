@@ -2,7 +2,7 @@ import { ApiHandlerOptions } from "../../../shared/api" // Adjust path if needed
 import { EmbedderProvider } from "./manager"
 
 export interface CustomVectorStorageConfig {
-	hnsw: {
+	hnsw?: {
 		m: number
 		ef_construct: number
 		on_disk: boolean
@@ -19,22 +19,33 @@ export interface CustomVectorStorageConfig {
 		capacity_mb: number
 		segments: number
 	}
-	optimizer?: {
-		indexing_threshold: number
-	}
 }
 
 export interface VectorStorageConfig {
 	mode: "auto" | "preset" | "custom"
-	preset?: "small" | "medium" | "large"
+	preset?: "tiny" | "small" | "medium" | "large"
 	customConfig?: CustomVectorStorageConfig
 	thresholds?: {
+		tiny: number
 		small: number
 		medium: number
 	}
 }
 
 export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
+	tiny: {
+		mode: "preset",
+		preset: "tiny",
+		customConfig: {
+			vectors: {
+				on_disk: true,
+			},
+			wal: {
+				capacity_mb: 32,
+				segments: 2,
+			},
+		},
+	},
 	small: {
 		mode: "preset",
 		preset: "small",
@@ -42,17 +53,14 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 			hnsw: {
 				m: 16,
 				ef_construct: 128,
-				on_disk: false,
+				on_disk: true,
 			},
 			vectors: {
-				on_disk: false,
+				on_disk: true,
 			},
 			wal: {
 				capacity_mb: 32,
 				segments: 2,
-			},
-			optimizer: {
-				indexing_threshold: 10000,
 			},
 		},
 	},
@@ -61,7 +69,7 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 		preset: "medium",
 		customConfig: {
 			hnsw: {
-				m: 24,
+				m: 32,
 				ef_construct: 256,
 				on_disk: true,
 			},
@@ -72,9 +80,6 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 				capacity_mb: 64,
 				segments: 4,
 			},
-			optimizer: {
-				indexing_threshold: 20000,
-			},
 		},
 	},
 	large: {
@@ -82,8 +87,8 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 		preset: "large",
 		customConfig: {
 			hnsw: {
-				m: 32,
-				ef_construct: 256,
+				m: 64,
+				ef_construct: 512,
 				on_disk: true,
 			},
 			vectors: {
@@ -95,11 +100,8 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 				},
 			},
 			wal: {
-				capacity_mb: 128,
+				capacity_mb: 256,
 				segments: 8,
-			},
-			optimizer: {
-				indexing_threshold: 50000,
 			},
 		},
 	},
@@ -108,6 +110,7 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 export const DEFAULT_VECTOR_STORAGE_CONFIG: VectorStorageConfig = {
 	mode: "auto",
 	thresholds: {
+		tiny: 2000,
 		small: 10000,
 		medium: 100000,
 	},

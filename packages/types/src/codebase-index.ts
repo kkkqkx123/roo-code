@@ -20,14 +20,16 @@ export const CODEBASE_INDEX_DEFAULTS = {
 
 export const vectorStorageConfigSchema = z.object({
 	mode: z.enum(["auto", "preset", "custom"]),
-	preset: z.enum(["small", "medium", "large"]).optional(),
+	preset: z.enum(["tiny", "small", "medium", "large"]).optional(),
 	customConfig: z
 		.object({
-			hnsw: z.object({
-				m: z.number().min(2).max(128),
-				ef_construct: z.number().min(10).max(1000),
-				on_disk: z.boolean(),
-			}),
+			hnsw: z
+				.object({
+					m: z.number().min(2).max(128),
+					ef_construct: z.number().min(10).max(1000),
+					on_disk: z.boolean(),
+				})
+				.optional(),
 			vectors: z.object({
 				on_disk: z.boolean(),
 				quantization: z
@@ -44,17 +46,14 @@ export const vectorStorageConfigSchema = z.object({
 					segments: z.number(),
 				})
 				.optional(),
-			optimizer: z
-				.object({
-					indexing_threshold: z.number(),
-				})
-				.optional(),
 		})
 		.optional(),
 	thresholds: z
 		.object({
+			tiny: z.number(),
 			small: z.number(),
 			medium: z.number(),
+			large: z.number(),
 		})
 		.optional(),
 })
@@ -64,6 +63,19 @@ export type VectorStorageConfig = z.infer<typeof vectorStorageConfigSchema>
 export type CustomVectorStorageConfig = NonNullable<z.infer<typeof vectorStorageConfigSchema>["customConfig"]>
 
 export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
+	tiny: {
+		mode: "preset",
+		preset: "tiny",
+		customConfig: {
+			vectors: {
+				on_disk: true,
+			},
+			wal: {
+				capacity_mb: 16,
+				segments: 1,
+			},
+		},
+	},
 	small: {
 		mode: "preset",
 		preset: "small",
@@ -71,17 +83,14 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 			hnsw: {
 				m: 16,
 				ef_construct: 128,
-				on_disk: false,
+				on_disk: true,
 			},
 			vectors: {
-				on_disk: false,
+				on_disk: true,
 			},
 			wal: {
 				capacity_mb: 32,
 				segments: 2,
-			},
-			optimizer: {
-				indexing_threshold: 10000,
 			},
 		},
 	},
@@ -100,9 +109,6 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 			wal: {
 				capacity_mb: 64,
 				segments: 4,
-			},
-			optimizer: {
-				indexing_threshold: 20000,
 			},
 		},
 	},
@@ -127,9 +133,6 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 				capacity_mb: 128,
 				segments: 8,
 			},
-			optimizer: {
-				indexing_threshold: 50000,
-			},
 		},
 	},
 }
@@ -137,8 +140,10 @@ export const VECTOR_STORAGE_PRESETS: Record<string, VectorStorageConfig> = {
 export const DEFAULT_VECTOR_STORAGE_CONFIG: VectorStorageConfig = {
 	mode: "auto",
 	thresholds: {
+		tiny: 2000,
 		small: 10000,
 		medium: 100000,
+		large: 1000000,
 	},
 }
 
