@@ -49,7 +49,6 @@ vi.mock("../../../services/mcp/McpServerManager", () => ({
 		unregisterProvider: vi.fn(),
 	},
 }))
-vi.mock("../../../services/marketplace")
 vi.mock("../../../integrations/workspace/WorkspaceTracker")
 vi.mock("../../config/ProviderSettingsManager")
 vi.mock("../../config/CustomModesManager")

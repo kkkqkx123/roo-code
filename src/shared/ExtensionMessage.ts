@@ -155,6 +155,7 @@ export interface ExtensionMessage {
 		| "focusInput"
 		| "switchTab"
 		| "toggleAutoApprove"
+	tab?: string
 	invoke?: "newChat" | "sendMessage" | "primaryButtonClick" | "secondaryButtonClick" | "setChatBoxMessage"
 	state?: ExtensionState
 	images?: string[]
@@ -185,6 +186,7 @@ export interface ExtensionMessage {
 	settings?: any
 	messageTs?: number
 	hasCheckpoint?: boolean
+	hasContent?: boolean
 	context?: string
 	commands?: Command[]
 	queuedMessages?: QueuedMessage[]

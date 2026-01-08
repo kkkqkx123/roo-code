@@ -23,7 +23,7 @@ import {
 } from "@roo-code/types"
 
 import { Package } from "../../shared/package"
-import type { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } from "../../shared/ExtensionMessage"
+import type { ExtensionMessage, ExtensionState } from "../../shared/ExtensionMessage"
 import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import { t } from "../../i18n"
@@ -34,7 +34,6 @@ import os from "os"
 import WorkspaceTracker from "../../integrations/workspace/WorkspaceTracker"
 import { McpHub } from "../../services/mcp/McpHub"
 import { McpServerManager } from "../../services/mcp/McpServerManager"
-import { MarketplaceManager } from "../../services/marketplace"
 import { CodeIndexManager } from "../../services/code-index/manager"
 
 import { getWorkspacePath } from "../../utils/path"
@@ -86,7 +85,6 @@ export class ClineProvider
 	// Service instances
 	private _workspaceTracker?: WorkspaceTracker
 	private mcpHub?: McpHub
-	private marketplaceManager!: MarketplaceManager
 	private _providerSettingsManager!: ProviderSettingsManager
 	private _customModesManager!: CustomModesManager
 	
@@ -229,17 +227,14 @@ export class ClineProvider
 			await this.postStateToWebview()
 		})
 		this.logger.debug("CustomModesManager initialized")
-		
-		this.marketplaceManager = new MarketplaceManager(this.context, this._customModesManager)
-		this.logger.debug("MarketplaceManager initialized")
 
 		// Initialize git properties asynchronously
 		this.initializeGitProperties().catch((error) => {
 			this.logger.warn(`Failed to initialize git properties during startup: ${error}`)
 		})
 
-		// Initialize WebviewCoordinator with provider and marketplaceManager
-		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this, this.marketplaceManager)
+		// Initialize WebviewCoordinator with provider
+		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this)
 		this.logger.debug("WebviewCoordinator initialized")
 		
 		// Initialize MCP Hub
@@ -745,17 +740,6 @@ export class ClineProvider
 	}
 
 	/**
-	 * Fetches marketplace data
-	 */
-	public async fetchMarketplaceData(): Promise<void> {
-		try {
-			await this.marketplaceManager.getMarketplaceItems()
-		} catch (error) {
-			console.error("Failed to fetch marketplace data:", error)
-		}
-	}
-
-	/**
 	 * Checks if there's a file-based system prompt override
 	 */
 	/**
@@ -1194,10 +1178,7 @@ export class ClineProvider
 				await this.mcpHub.unregisterClient()
 				this.logger.debug("MCP Hub unregistered")
 			}
-			
-			this.marketplaceManager.cleanup()
-			this.logger.debug("MarketplaceManager cleaned up")
-			
+
 			this.customModesManager.dispose()
 			this.logger.debug("CustomModesManager disposed")
 

@@ -6,7 +6,6 @@ import { WebviewMessage } from "../../shared/WebviewMessage"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
 import { webviewMessageHandler } from "./webviewMessageHandler"
-import { MarketplaceManager } from "../../services/marketplace"
 import { ClineProvider } from "./ClineProvider"
 import { createLogger } from "../../utils/logger"
 import { t } from "../../i18n"
@@ -18,14 +17,12 @@ export class WebviewCoordinator {
 	private context: vscode.ExtensionContext
 	private outputChannel: vscode.OutputChannel
 	private provider: ClineProvider
-	private marketplaceManager?: MarketplaceManager
 	private logger: ReturnType<typeof createLogger>
 
-	constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel, provider: ClineProvider, marketplaceManager?: MarketplaceManager) {
+	constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel, provider: ClineProvider) {
 		this.context = context
 		this.outputChannel = outputChannel
 		this.provider = provider
-		this.marketplaceManager = marketplaceManager
 		this.logger = createLogger(outputChannel, "WebviewCoordinator")
 	}
 
@@ -213,7 +210,7 @@ export class WebviewCoordinator {
 	 */
 	private setWebviewMessageListener(webview: vscode.Webview): void {
 		const onReceiveMessage = async (message: WebviewMessage) =>
-			webviewMessageHandler(this.provider, message, this.marketplaceManager)
+			webviewMessageHandler(this.provider, message)
 
 		const messageDisposable = webview.onDidReceiveMessage(onReceiveMessage)
 		this.webviewDisposables.push(messageDisposable)
