@@ -7,6 +7,7 @@ import { DirectoryScanner } from "./processors"
 import { CacheManager } from "./cache-manager"
 import { TokenBasedSizeEstimator } from "./token-based-size-estimator"
 import { t } from "../../i18n"
+import { QdrantConnectionError } from "./vector-store/qdrant-client"
 
 /**
  * Manages the code indexing workflow, coordinating between different services and managers.
@@ -89,7 +90,7 @@ export class CodeIndexOrchestrator {
 	/**
 	 * Initiates the indexing process (initial scan and starts watcher).
 	 */
-	public async startIndexing(): Promise<void> {
+	public async startIndexing(isRetryAfterError: boolean = false): Promise<void> {
 		// Check if workspace is available first
 		if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
 			this.stateManager.setSystemState("Error", t("embeddings:orchestrator.indexingRequiresWorkspace"))
@@ -118,7 +119,53 @@ export class CodeIndexOrchestrator {
 		this._isProcessing = true
 		this.stateManager.setSystemState("Indexing", "Initializing services...")
 
-		const collectionExists = await this.vectorStore.collectionExists()
+		let collectionExists = false
+		let hasExistingData = false
+
+		try {
+			collectionExists = await this.vectorStore.collectionExists()
+
+			if (isRetryAfterError) {
+				if (collectionExists) {
+					hasExistingData = await this.vectorStore.hasIndexedData()
+					if (hasExistingData) {
+						console.log(
+							"[CodeIndexOrchestrator] Error retry: Collection exists with indexed data. Reusing existing collection for incremental scan.",
+						)
+						this.stateManager.setSystemState("Indexing", "Reusing existing collection...")
+					} else {
+						console.log(
+							"[CodeIndexOrchestrator] Error retry: Collection exists but has no indexed data. Will perform full scan.",
+						)
+					}
+				} else {
+					console.log(
+						"[CodeIndexOrchestrator] Error retry: Collection does not exist. Will create new collection and perform full scan.",
+					)
+				}
+			}
+		} catch (error) {
+			if (error instanceof QdrantConnectionError) {
+				console.error("[CodeIndexOrchestrator] Failed to connect to Qdrant:", error.message)
+				this.stateManager.setSystemState(
+					"Error",
+					t("embeddings:orchestrator.failedToConnect", {
+						errorMessage: error.message,
+					}),
+				)
+				this._isProcessing = false
+				return
+			}
+			console.error("[CodeIndexOrchestrator] Unexpected error checking collection:", error)
+			this.stateManager.setSystemState(
+				"Error",
+				t("embeddings:orchestrator.unexpectedError", {
+					errorMessage: error instanceof Error ? error.message : String(error),
+				}),
+			)
+			this._isProcessing = false
+			return
+		}
 
 		if (!collectionExists) {
 			this.stateManager.setSystemState("Indexing", "Estimating collection size...")
@@ -157,9 +204,9 @@ export class CodeIndexOrchestrator {
 				await this.cacheManager.clearCacheFile()
 			}
 
-			// Check if the collection already has indexed data
-			// If it does, we can skip the full scan and just start the watcher
-			const hasExistingData = await this.vectorStore.hasIndexedData()
+			if (!hasExistingData) {
+				hasExistingData = await this.vectorStore.hasIndexedData()
+			}
 
 			if (hasExistingData && !collectionCreated) {
 				// Collection exists with data - run incremental scan to catch any new/changed files

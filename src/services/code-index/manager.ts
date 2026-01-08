@@ -187,18 +187,16 @@ export class CodeIndexManager {
 			return
 		}
 
-		// Check if we're in error state and recover if needed
+		// Check if we're in error state and handle accordingly
 		const currentStatus = this.getCurrentStatus()
-		if (currentStatus.systemStatus === "Error") {
-			await this.recoverFromError()
+		const isRetryAfterError = currentStatus.systemStatus === "Error"
 
-			// After recovery, we need to reinitialize since recoverFromError clears all services
-			// This will be handled by the caller (webviewMessageHandler) checking isInitialized
-			return
+		if (isRetryAfterError) {
+			console.log("[CodeIndexManager] Starting indexing after error state, will attempt to reuse existing collection if available")
 		}
 
 		this.assertInitialized()
-		await this._orchestrator!.startIndexing()
+		await this._orchestrator!.startIndexing(isRetryAfterError)
 	}
 
 	/**
