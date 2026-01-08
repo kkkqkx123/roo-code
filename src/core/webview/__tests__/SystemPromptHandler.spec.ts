@@ -252,7 +252,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 	test("uses correct mode-specific instructions when mode is specified", async () => {
 		vi.spyOn(provider, "getState").mockResolvedValue({
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 			},
 			customModePrompts: {
 				architect: { customInstructions: "Architect mode instructions" },
@@ -302,7 +302,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 
 		vi.spyOn(provider, "getState").mockResolvedValueOnce({
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 			},
 			browserToolEnabled: false,
 			mode: "code",

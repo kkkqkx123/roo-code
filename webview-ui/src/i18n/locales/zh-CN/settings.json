@@ -791,11 +791,6 @@
 		"projectId": "请输入项目 ID...",
 		"customArn": "请输入 ARN（例：arn:aws:bedrock:us-east-1:123456789012:foundation-model/my-model）",
 		"baseUrl": "请输入基础 URL...",
-		"modelId": {
-			"lmStudio": "例：meta-llama-3.1-8b-instruct",
-			"lmStudioDraft": "例：lmstudio-community/llama-3.2-1b-instruct",
-			"ollama": "例：llama3.1"
-		},
 		"numbers": {
 			"maxTokens": "例：4096",
 			"contextWindow": "例：128000",
@@ -805,8 +800,6 @@
 		}
 	},
 	"defaults": {
-		"ollamaUrl": "默认值：http://localhost:11434",
-		"lmStudioUrl": "默认值：http://localhost:1234",
 		"geminiUrl": "默认值：https://generativelanguage.googleapis.com"
 	},
 	"labels": {

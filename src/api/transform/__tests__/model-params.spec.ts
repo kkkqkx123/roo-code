@@ -24,9 +24,9 @@ describe("getModelParams", () => {
 		format: "openai" as const,
 	}
 
-	const openrouterParams = {
+	const geminiParams = {
 		modelId: "test",
-		format: "openrouter" as const,
+		format: "gemini" as const,
 	}
 
 	describe("Basic functionality", () => {
@@ -167,30 +167,19 @@ describe("getModelParams", () => {
 			expect(result.format).toBe("openai")
 		})
 
-		it("should return correct format for openrouter", () => {
+		it("should return correct format for gemini", () => {
 			const result = getModelParams({
-				...openrouterParams,
+				...geminiParams,
 				settings: {},
 				model: baseModel,
 			})
 
-			expect(result.format).toBe("openrouter")
+			expect(result.format).toBe("gemini")
 		})
 
 		it("should use ANTHROPIC_DEFAULT_MAX_TOKENS for anthropic format when no maxTokens", () => {
 			const result = getModelParams({
 				...anthropicParams,
-				settings: {},
-				model: baseModel,
-			})
-
-			expect(result.maxTokens).toBe(ANTHROPIC_DEFAULT_MAX_TOKENS)
-		})
-
-		it("should use ANTHROPIC_DEFAULT_MAX_TOKENS for openrouter with anthropic model", () => {
-			const result = getModelParams({
-				modelId: "anthropic/claude-3-sonnet",
-				format: "openrouter" as const,
 				settings: {},
 				model: baseModel,
 			})
@@ -208,10 +197,10 @@ describe("getModelParams", () => {
 			expect(result.maxTokens).toBeUndefined()
 		})
 
-		it("should not force maxTokens for openrouter with non-anthropic model", () => {
+		it("should not force maxTokens for gemini format", () => {
 			const result = getModelParams({
-				modelId: "openai/gpt-4",
-				format: "openrouter" as const,
+				modelId: "gemini-2.5-pro",
+				format: "gemini" as const,
 				settings: {},
 				model: baseModel,
 			})
@@ -397,12 +386,12 @@ describe("getModelParams", () => {
 			expect(
 				getModelParams({
 					modelId: "google/gemini-2.5-pro",
-					format: "openrouter" as const,
+					format: "gemini" as const,
 					settings: { modelMaxTokens: 4000 },
 					model,
 				}),
 			).toEqual({
-				format: "openrouter",
+				format: "gemini",
 				maxTokens: 4000,
 				temperature: 1.0,
 				reasoningEffort: undefined,
@@ -558,23 +547,6 @@ describe("getModelParams", () => {
 			expect(result.reasoningEffort).toBeUndefined()
 		})
 
-		it("should handle reasoning effort for openrouter format", () => {
-			const model: ModelInfo = {
-				...baseModel,
-				supportsReasoningEffort: true,
-				reasoningEffort: "medium",
-			}
-
-			const result = getModelParams({
-				...openrouterParams,
-				settings: {},
-				model,
-			})
-
-			expect(result.reasoningEffort).toBe("medium")
-			expect(result.reasoning).toEqual({ effort: "medium" })
-		})
-
 		it("should include 'minimal' effort for openai format", () => {
 			const model: ModelInfo = {
 				...baseModel,
@@ -624,29 +596,6 @@ describe("getModelParams", () => {
 			expect(result.reasoningEffort).toBeUndefined()
 		})
 
-		it("should include 'minimal' and 'none' for openrouter format", () => {
-			const model: ModelInfo = {
-				...baseModel,
-				// Array capability explicitly includes both
-				supportsReasoningEffort: ["none", "minimal", "low", "medium", "high"] as any,
-			}
-
-			const minimalRes = getModelParams({
-				...openrouterParams,
-				settings: { reasoningEffort: "minimal" as any },
-				model,
-			})
-			expect(minimalRes.reasoningEffort).toBe("minimal")
-			expect(minimalRes.reasoning).toEqual({ effort: "minimal" })
-
-			const noneRes = getModelParams({
-				...openrouterParams,
-				settings: { reasoningEffort: "none" as any },
-				model,
-			})
-			expect(noneRes.reasoningEffort).toBe("none")
-			expect(noneRes.reasoning).toEqual({ effort: "none" })
-		})
 		it("should not use reasoning effort for anthropic format", () => {
 			const model: ModelInfo = {
 				...baseModel,
@@ -842,37 +791,6 @@ describe("getModelParams", () => {
 			})
 
 			expect(result.reasoning).toEqual({ reasoning_effort: "medium" })
-		})
-
-		it("should return correct reasoning format for openrouter with reasoning effort", () => {
-			const model: ModelInfo = {
-				...baseModel,
-				supportsReasoningEffort: true,
-				reasoningEffort: "high",
-			}
-
-			const result = getModelParams({
-				...openrouterParams,
-				settings: {},
-				model,
-			})
-
-			expect(result.reasoning).toEqual({ effort: "high" })
-		})
-
-		it("should return correct reasoning format for openrouter with reasoning budget", () => {
-			const model: ModelInfo = {
-				...baseModel,
-				requiredReasoningBudget: true,
-			}
-
-			const result = getModelParams({
-				...openrouterParams,
-				settings: { modelMaxTokens: 4000 },
-				model,
-			})
-
-			expect(result.reasoning).toEqual({ max_tokens: 3200 })
 		})
 
 		it("should return undefined reasoning for anthropic with reasoning effort", () => {

@@ -52,7 +52,7 @@ function makeProviderStub() {
 		// State must enable browser tool and provide apiConfiguration
 		getState: async () => ({
 			apiConfiguration: {
-				apiProvider: "openrouter", // not used by the test beyond handler creation
+				apiProvider: "anthropic", // not used by the test beyond handler creation
 			},
 			customModePrompts: undefined,
 			customInstructions: undefined,

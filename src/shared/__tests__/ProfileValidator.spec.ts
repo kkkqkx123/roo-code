@@ -291,19 +291,19 @@ describe("ProfileValidator", () => {
 			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
 		})
 
-		it("should extract apiModelId for openrouter provider", () => {
+		it("should extract apiModelId for anthropic provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
 				providers: {
-					openrouter: { allowAll: false, models: ["openrouter-model"] },
+					anthropic: { allowAll: false, models: ["anthropic-model"] },
 				},
 			}
 			const profile: ProviderSettings = {
 				apiProvider: "anthropic",
-				apiModelId: "openrouter-model",
+				apiModelId: "anthropic-model",
 			}
 
-			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(false)
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
 		})
 
 		it("should handle empty providers object", () => {

@@ -76,18 +76,12 @@ interface LocalCodeIndexSettings {
 	// Indexing confirmation requirement
 	codebaseIndexRequireIndexingConfirmation?: boolean
 
-	// Bedrock-specific settings
-	codebaseIndexBedrockRegion?: string
-	codebaseIndexBedrockProfile?: string
-
 	// Secret settings (start empty, will be loaded separately)
 	codeIndexOpenAiKey?: string
 	codeIndexQdrantApiKey?: string
 	codebaseIndexOpenAiCompatibleBaseUrl?: string
 	codebaseIndexOpenAiCompatibleApiKey?: string
 	codebaseIndexGeminiApiKey?: string
-	codebaseIndexMistralApiKey?: string
-	codebaseIndexVercelAiGatewayApiKey?: string
 }
 
 // Validation schema for codebase index settings
@@ -146,33 +140,6 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
 			})
 
-		case "mistral":
-			return baseSchema.extend({
-				codebaseIndexMistralApiKey: z.string().min(1, t("settings:codeIndex.validation.mistralApiKeyRequired")),
-				codebaseIndexEmbedderModelId: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
-			})
-
-		case "vercel-ai-gateway":
-			return baseSchema.extend({
-				codebaseIndexVercelAiGatewayApiKey: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.vercelAiGatewayApiKeyRequired")),
-				codebaseIndexEmbedderModelId: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
-			})
-
-		case "bedrock":
-			return baseSchema.extend({
-				codebaseIndexBedrockRegion: z.string().min(1, t("settings:codeIndex.validation.bedrockRegionRequired")),
-				codebaseIndexBedrockProfile: z.string().optional(),
-				codebaseIndexEmbedderModelId: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
-			})
-
 		default:
 			return baseSchema
 	}
@@ -217,15 +184,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexSearchMaxResults: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 		codebaseIndexSearchMinScore: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
 		codebaseIndexRequireIndexingConfirmation: true,
-		codebaseIndexBedrockRegion: "",
-		codebaseIndexBedrockProfile: "",
 		codeIndexOpenAiKey: "",
 		codeIndexQdrantApiKey: "",
 		codebaseIndexOpenAiCompatibleBaseUrl: "",
 		codebaseIndexOpenAiCompatibleApiKey: "",
 		codebaseIndexGeminiApiKey: "",
-		codebaseIndexMistralApiKey: "",
-		codebaseIndexVercelAiGatewayApiKey: "",
 	})
 
 	// Initial settings state - stores the settings when popover opens
@@ -256,15 +219,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					codebaseIndexConfig.codebaseIndexSearchMinScore ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
 				codebaseIndexRequireIndexingConfirmation:
 					codebaseIndexConfig.codebaseIndexRequireIndexingConfirmation ?? true,
-				codebaseIndexBedrockRegion: codebaseIndexConfig.codebaseIndexBedrockRegion || "",
-				codebaseIndexBedrockProfile: codebaseIndexConfig.codebaseIndexBedrockProfile || "",
 				codeIndexOpenAiKey: "",
 				codeIndexQdrantApiKey: "",
 				codebaseIndexOpenAiCompatibleBaseUrl: codebaseIndexConfig.codebaseIndexOpenAiCompatibleBaseUrl || "",
 				codebaseIndexOpenAiCompatibleApiKey: "",
 				codebaseIndexGeminiApiKey: "",
-				codebaseIndexMistralApiKey: "",
-				codebaseIndexVercelAiGatewayApiKey: "",
 			}
 			setInitialSettings(settings)
 			setCurrentSettings(settings)
@@ -374,17 +333,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					if (!prev.codebaseIndexGeminiApiKey || prev.codebaseIndexGeminiApiKey === SECRET_PLACEHOLDER) {
 						updated.codebaseIndexGeminiApiKey = secretStatus.hasGeminiApiKey ? SECRET_PLACEHOLDER : ""
 					}
-					if (!prev.codebaseIndexMistralApiKey || prev.codebaseIndexMistralApiKey === SECRET_PLACEHOLDER) {
-						updated.codebaseIndexMistralApiKey = secretStatus.hasMistralApiKey ? SECRET_PLACEHOLDER : ""
-					}
-					if (
-						!prev.codebaseIndexVercelAiGatewayApiKey ||
-						prev.codebaseIndexVercelAiGatewayApiKey === SECRET_PLACEHOLDER
-					) {
-						updated.codebaseIndexVercelAiGatewayApiKey = secretStatus.hasVercelAiGatewayApiKey
-							? SECRET_PLACEHOLDER
-							: ""
-					}
 
 					return updated
 				}
@@ -456,10 +404,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				if (
 					key === "codeIndexOpenAiKey" ||
 					key === "codebaseIndexOpenAiCompatibleApiKey" ||
-					key === "codebaseIndexGeminiApiKey" ||
-					key === "codebaseIndexMistralApiKey" ||
-					key === "codebaseIndexVercelAiGatewayApiKey" ||
-					key === "codebaseIndexOpenRouterApiKey"
+					key === "codebaseIndexGeminiApiKey"
 				) {
 					dataToValidate[key] = "placeholder-valid"
 				}
@@ -577,7 +522,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		return models ? Object.keys(models) : []
 	}
 
-	// Fetch OpenRouter model providers for embedding model
 	const portalContainer = useRooPortal("roo-portal")
 
 	return (
@@ -838,15 +782,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												</SelectItem>
 												<SelectItem value="gemini">
 													{t("settings:codeIndex.geminiProvider")}
-												</SelectItem>
-												<SelectItem value="mistral">
-													{t("settings:codeIndex.mistralProvider")}
-												</SelectItem>
-												<SelectItem value="bedrock">
-													{t("settings:codeIndex.bedrockProvider")}
-												</SelectItem>
-												<SelectItem value="openrouter">
-													{t("settings:codeIndex.openRouterProvider")}
 												</SelectItem>
 											</SelectContent>
 										</Select>
@@ -1130,234 +1065,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												{formErrors.codebaseIndexGeminiApiKey && (
 													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
 														{formErrors.codebaseIndexGeminiApiKey}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelLabel")}
-												</label>
-												<VSCodeDropdown
-													value={currentSettings.codebaseIndexEmbedderModelId}
-													onChange={(e: any) =>
-														updateSetting("codebaseIndexEmbedderModelId", e.target.value)
-													}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderModelId,
-													})}>
-													<VSCodeOption value="" className="p-2">
-														{t("settings:codeIndex.selectModel")}
-													</VSCodeOption>
-													{getAvailableModels().map((modelId) => {
-														const model =
-															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
-															]?.[modelId]
-														return (
-															<VSCodeOption key={modelId} value={modelId} className="p-2">
-																{modelId}{" "}
-																{model
-																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
-																		})
-																	: ""}
-															</VSCodeOption>
-														)
-													})}
-												</VSCodeDropdown>
-												{formErrors.codebaseIndexEmbedderModelId && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-										</>
-									)}
-
-									{currentSettings.codebaseIndexEmbedderProvider === "mistral" && (
-										<>
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.mistralApiKeyLabel")}
-												</label>
-												<VSCodeTextField
-													type="password"
-													value={currentSettings.codebaseIndexMistralApiKey || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexMistralApiKey", e.target.value)
-													}
-													placeholder={t("settings:codeIndex.mistralApiKeyPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexMistralApiKey,
-													})}
-												/>
-												{formErrors.codebaseIndexMistralApiKey && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexMistralApiKey}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelLabel")}
-												</label>
-												<VSCodeDropdown
-													value={currentSettings.codebaseIndexEmbedderModelId}
-													onChange={(e: any) =>
-														updateSetting("codebaseIndexEmbedderModelId", e.target.value)
-													}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderModelId,
-													})}>
-													<VSCodeOption value="" className="p-2">
-														{t("settings:codeIndex.selectModel")}
-													</VSCodeOption>
-													{getAvailableModels().map((modelId) => {
-														const model =
-															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
-															]?.[modelId]
-														return (
-															<VSCodeOption key={modelId} value={modelId} className="p-2">
-																{modelId}{" "}
-																{model
-																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
-																		})
-																	: ""}
-															</VSCodeOption>
-														)
-													})}
-												</VSCodeDropdown>
-												{formErrors.codebaseIndexEmbedderModelId && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-										</>
-									)}
-
-									{currentSettings.codebaseIndexEmbedderProvider === "vercel-ai-gateway" && (
-										<>
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.vercelAiGatewayApiKeyLabel")}
-												</label>
-												<VSCodeTextField
-													type="password"
-													value={currentSettings.codebaseIndexVercelAiGatewayApiKey || ""}
-													onInput={(e: any) =>
-														updateSetting(
-															"codebaseIndexVercelAiGatewayApiKey",
-															e.target.value,
-														)
-													}
-													placeholder={t(
-														"settings:codeIndex.vercelAiGatewayApiKeyPlaceholder",
-													)}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexVercelAiGatewayApiKey,
-													})}
-												/>
-												{formErrors.codebaseIndexVercelAiGatewayApiKey && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexVercelAiGatewayApiKey}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelLabel")}
-												</label>
-												<VSCodeDropdown
-													value={currentSettings.codebaseIndexEmbedderModelId}
-													onChange={(e: any) =>
-														updateSetting("codebaseIndexEmbedderModelId", e.target.value)
-													}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderModelId,
-													})}>
-													<VSCodeOption value="" className="p-2">
-														{t("settings:codeIndex.selectModel")}
-													</VSCodeOption>
-													{getAvailableModels().map((modelId) => {
-														const model =
-															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
-															]?.[modelId]
-														return (
-															<VSCodeOption key={modelId} value={modelId} className="p-2">
-																{modelId}{" "}
-																{model
-																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
-																		})
-																	: ""}
-															</VSCodeOption>
-														)
-													})}
-												</VSCodeDropdown>
-												{formErrors.codebaseIndexEmbedderModelId && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-										</>
-									)}
-
-									{currentSettings.codebaseIndexEmbedderProvider === "bedrock" && (
-										<>
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.bedrockRegionLabel")}
-												</label>
-												<VSCodeTextField
-													value={currentSettings.codebaseIndexBedrockRegion || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexBedrockRegion", e.target.value)
-													}
-													placeholder={t("settings:codeIndex.bedrockRegionPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexBedrockRegion,
-													})}
-												/>
-												{formErrors.codebaseIndexBedrockRegion && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexBedrockRegion}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.bedrockProfileLabel")}
-													<span className="text-xs text-vscode-descriptionForeground ml-1">
-														({t("settings:codeIndex.optional")})
-													</span>
-												</label>
-												<VSCodeTextField
-													value={currentSettings.codebaseIndexBedrockProfile || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexBedrockProfile", e.target.value)
-													}
-													placeholder={t("settings:codeIndex.bedrockProfilePlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexBedrockProfile,
-													})}
-												/>
-												{formErrors.codebaseIndexBedrockProfile && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexBedrockProfile}
-													</p>
-												)}
-												{!formErrors.codebaseIndexBedrockProfile && (
-													<p className="text-xs text-vscode-descriptionForeground mt-1 mb-0">
-														{t("settings:codeIndex.bedrockProfileDescription")}
 													</p>
 												)}
 											</div>

@@ -19,14 +19,12 @@ import {
 	type AnthropicReasoningParams,
 	type OpenAiReasoningParams,
 	type GeminiReasoningParams,
-	type OpenRouterReasoningParams,
 	getAnthropicReasoning,
 	getOpenAiReasoning,
 	getGeminiReasoning,
-	getOpenRouterReasoning,
 } from "./reasoning"
 
-type Format = "anthropic" | "openai" | "gemini" | "openrouter"
+type Format = "anthropic" | "openai" | "gemini"
 
 type GetModelParamsOptions<T extends Format> = {
 	format: T
@@ -60,18 +58,12 @@ type GeminiModelParams = {
 	reasoning: GeminiReasoningParams | undefined
 } & BaseModelParams
 
-type OpenRouterModelParams = {
-	format: "openrouter"
-	reasoning: OpenRouterReasoningParams | undefined
-} & BaseModelParams
-
-export type ModelParams = AnthropicModelParams | OpenAiModelParams | GeminiModelParams | OpenRouterModelParams
+export type ModelParams = AnthropicModelParams | OpenAiModelParams | GeminiModelParams
 
 // Function overloads for specific return types
 export function getModelParams(options: GetModelParamsOptions<"anthropic">): AnthropicModelParams
 export function getModelParams(options: GetModelParamsOptions<"openai">): OpenAiModelParams
 export function getModelParams(options: GetModelParamsOptions<"gemini">): GeminiModelParams
-export function getModelParams(options: GetModelParamsOptions<"openrouter">): OpenRouterModelParams
 export function getModelParams({
 	format,
 	modelId,
@@ -172,19 +164,7 @@ export function getModelParams({
 			reasoning: getGeminiReasoning({ model, reasoningBudget, reasoningEffort, settings }),
 		}
 	} else {
-		// Special case for o1-pro, which doesn't support temperature.
-		// Note that OpenRouter's `supported_parameters` field includes
-		// `temperature`, which is probably a bug.
-		// TODO: Add a `supportsTemperature` field to the model info and populate
-		// it appropriately in the OpenRouter fetcher.
-		if (modelId === "openai/o1-pro") {
-			params.temperature = undefined
-		}
-
-		return {
-			format,
-			...params,
-			reasoning: getOpenRouterReasoning({ model, reasoningBudget, reasoningEffort, settings }),
-		}
+		const _exhaustiveCheck: never = format
+		throw new Error(`Unsupported format: ${_exhaustiveCheck}`)
 	}
 }

@@ -202,8 +202,6 @@ export class StateCoordinator {
 					stateValues.codebaseIndexConfig?.codebaseIndexOpenAiCompatibleBaseUrl,
 				codebaseIndexSearchMaxResults: stateValues.codebaseIndexConfig?.codebaseIndexSearchMaxResults,
 				codebaseIndexSearchMinScore: stateValues.codebaseIndexConfig?.codebaseIndexSearchMinScore,
-				codebaseIndexBedrockRegion: stateValues.codebaseIndexConfig?.codebaseIndexBedrockRegion,
-				codebaseIndexBedrockProfile: stateValues.codebaseIndexConfig?.codebaseIndexBedrockProfile,
 			},
 			profileThresholds: stateValues.profileThresholds ?? {},
 			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,

@@ -76,27 +76,9 @@ body:
       label: API Provider (optional)
       options:
         - Anthropic
-        - Amazon Bedrock
-        - Chutes AI
-        - DeepSeek
-        - Featherless AI
-        - Fireworks AI
-        - Google Gemini
-        - Google Vertex AI
-        - Groq
         - Human Relay Provider
-        - LiteLLM
-        - LM Studio
-        - Mistral AI
-        - Ollama
         - OpenAI
         - OpenAI Compatible
-        - OpenRouter
-        - Requesty
-        - SambaNova
-        - Unbound
-        - VS Code Language Model API
-        - xAI (Grok)
         - Not Applicable / Other
 
   - type: input

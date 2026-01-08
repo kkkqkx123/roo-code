@@ -92,16 +92,13 @@ export const getModelMaxOutputTokens = ({
 	modelId: string
 	model: ModelInfo
 	settings?: ProviderSettings
-	format?: "anthropic" | "openai" | "gemini" | "openrouter"
+	format?: "anthropic" | "openai" | "gemini"
 }): number | undefined => {
 	if (shouldUseReasoningBudget({ model, settings })) {
 		return settings?.modelMaxTokens || DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS
 	}
 
-	const isAnthropicContext =
-		modelId.includes("claude") ||
-		format === "anthropic" ||
-		(format === "openrouter" && modelId.startsWith("anthropic/"))
+	const isAnthropicContext = modelId.includes("claude") || format === "anthropic"
 
 	// For "Hybrid" reasoning models, discard the model's actual maxTokens for Anthropic contexts
 	if (model.supportsReasoningBudget && isAnthropicContext) {

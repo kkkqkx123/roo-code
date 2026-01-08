@@ -118,8 +118,6 @@ describe("ApiOptions Provider Filtering", () => {
 		// Should include both static and dynamic providers
 		const providerValues = options.map((opt: any) => opt.value)
 		expect(providerValues).toContain("anthropic") // static provider
-		expect(providerValues).toContain("openrouter") // dynamic provider
-		expect(providerValues).toContain("ollama") // dynamic provider
 	})
 
 	it("should hide static providers with empty models", () => {
@@ -152,7 +150,6 @@ describe("ApiOptions Provider Filtering", () => {
 		const providerValues = options.map((opt: any) => opt.value)
 
 		// Dynamic providers (not in MODELS_BY_PROVIDER) should always be shown
-		expect(providerValues).toContain("openrouter")
 		expect(providerValues).toContain("ollama")
 		expect(providerValues).toContain("lmstudio")
 		expect(providerValues).toContain("litellm")
@@ -173,9 +170,6 @@ describe("ApiOptions Provider Filtering", () => {
 				gemini: {
 					allowAll: false,
 					models: [], // No models allowed
-				},
-				openrouter: {
-					allowAll: true, // Dynamic provider with all models allowed
 				},
 			},
 		}
@@ -198,12 +192,8 @@ describe("ApiOptions Provider Filtering", () => {
 		// Should NOT include gemini (no allowed models)
 		expect(providerValues).not.toContain("gemini")
 
-		// Should include openrouter (dynamic provider)
-		expect(providerValues).toContain("openrouter")
-
 		// Should NOT include providers not in the allow list
 		expect(providerValues).not.toContain("openai-native")
-		expect(providerValues).not.toContain("mistral")
 	})
 
 	it("should show static provider when allowAll is true for that provider", () => {

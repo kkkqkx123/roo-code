@@ -13,13 +13,7 @@ describe("getApiProtocol", () => {
 		})
 	})
 
-	describe("Vercel AI Gateway provider", () => {
-		it("should return 'anthropic' for vercel-ai-gateway provider with anthropic models", () => {
-		})
 
-		it("should return 'openai' for vercel-ai-gateway provider with non-anthropic models", () => {
-		})
-	})
 
 	describe("Other providers", () => {
 		it("should return 'openai' for non-anthropic providers regardless of model", () => {

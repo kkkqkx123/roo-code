@@ -1661,12 +1661,12 @@ describe("importExport", () => {
 			// the codebaseIndexOpenAiCompatibleBaseUrl and codebaseIndexOpenAiCompatibleModelDimension
 			// fields in the provider profile itself
 			const mockProviderProfiles = {
-				currentApiConfigName: "openrouter-provider", // Current provider is OpenRouter
+				currentApiConfigName: "anthropic-provider", // Current provider is Anthropic
 				apiConfigs: {
-					"openrouter-provider": {
-						apiProvider: "openrouter" as ProviderName,
-						id: "openrouter-id",
-						// OpenRouter doesn't have OpenAI Compatible fields
+					"anthropic-provider": {
+						apiProvider: "anthropic" as ProviderName,
+						id: "anthropic-id",
+						// Anthropic doesn't have OpenAI Compatible fields
 					},
 				},
 				modeApiConfigs: {},

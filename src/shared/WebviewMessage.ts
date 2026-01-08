@@ -241,11 +241,8 @@ export interface WebviewMessage {
 		codebaseIndexEmbedderModelId: string
 		codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 		codebaseIndexOpenAiCompatibleBaseUrl?: string
-		codebaseIndexBedrockRegion?: string
-		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
-		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
 		codebaseIndexRequireIndexingConfirmation?: boolean
 
 		// Secret settings
@@ -253,9 +250,6 @@ export interface WebviewMessage {
 		codeIndexQdrantApiKey?: string
 		codebaseIndexOpenAiCompatibleApiKey?: string
 		codebaseIndexGeminiApiKey?: string
-		codebaseIndexMistralApiKey?: string
-		codebaseIndexVercelAiGatewayApiKey?: string
-		codebaseIndexOpenRouterApiKey?: string
 	}
 	updatedSettings?: RooCodeSettings
 }

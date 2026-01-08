@@ -4,8 +4,34 @@ import { RooCodeEventName } from "./events.js"
 import type { RooCodeSettings } from "./global-settings.js"
 import type { ClineMessage, QueuedMessage, TokenUsage } from "./message.js"
 import type { ToolUsage, ToolName } from "./tool.js"
-import type { StaticAppProperties, GitProperties } from "./cloud.js"
 import type { TodoItem } from "./todo.js"
+
+/**
+ * StaticAppProperties
+ */
+
+export const staticAppPropertiesSchema = z.object({
+	extensionVersion: z.string(),
+	vscodeVersion: z.string(),
+	locale: z.string(),
+	platform: z.string(),
+	architecture: z.string(),
+})
+
+export type StaticAppProperties = z.infer<typeof staticAppPropertiesSchema>
+
+/**
+ * GitProperties
+ */
+
+export const gitPropertiesSchema = z.object({
+	gitExecutablePath: z.string().optional(),
+	gitVersion: z.string().optional(),
+	gitDir: z.string().optional(),
+	workingDirectory: z.string().optional(),
+})
+
+export type GitProperties = z.infer<typeof gitPropertiesSchema>
 
 /**
  * TaskProviderLike
