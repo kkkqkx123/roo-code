@@ -2,6 +2,7 @@ import { QdrantClient } from "@qdrant/js-client-rest"
 import { createHash } from "crypto"
 
 import { QdrantVectorStore } from "../qdrant-client"
+import { QdrantCollectionNotFoundError } from "../qdrant-client"
 import { getWorkspacePath } from "../../../../utils/path"
 import { DEFAULT_MAX_SEARCH_RESULTS, DEFAULT_SEARCH_MIN_SCORE } from "../../constants"
 
@@ -515,10 +516,9 @@ describe("QdrantVectorStore", () => {
 	describe("initialize", () => {
 		it("should create a new collection if none exists and return true", async () => {
 			// Mock getCollection to throw a 404-like error
-			mockQdrantClientInstance.getCollection.mockRejectedValue({
-				response: { status: 404 },
-				message: "Not found",
-			})
+			mockQdrantClientInstance.getCollection.mockRejectedValue(
+				new QdrantCollectionNotFoundError(expectedCollectionName),
+			)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any) // Cast to any to satisfy QdrantClient types if strict
 			mockQdrantClientInstance.createPayloadIndex.mockResolvedValue({} as any) // Mock successful index creation
 
@@ -603,10 +603,7 @@ describe("QdrantVectorStore", () => {
 						},
 					},
 				} as any)
-				.mockRejectedValueOnce({
-					response: { status: 404 },
-					message: "Not found",
-				})
+				.mockRejectedValueOnce(new QdrantCollectionNotFoundError(expectedCollectionName))
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createPayloadIndex.mockResolvedValue({} as any)
@@ -666,10 +663,9 @@ describe("QdrantVectorStore", () => {
 			;(console.warn as any).mockRestore()
 		})
 		it("should re-throw error from createCollection when no collection initially exists", async () => {
-			mockQdrantClientInstance.getCollection.mockRejectedValue({
-				response: { status: 404 },
-				message: "Not found",
-			})
+			mockQdrantClientInstance.getCollection.mockRejectedValue(
+				new QdrantCollectionNotFoundError(expectedCollectionName),
+			)
 			const createError = new Error("Create Collection Failed")
 			mockQdrantClientInstance.createCollection.mockRejectedValue(createError)
 			vitest.spyOn(console, "error").mockImplementation(() => {}) // Suppress console.error
@@ -688,10 +684,9 @@ describe("QdrantVectorStore", () => {
 		})
 		it("should log but not fail if payload index creation errors occur", async () => {
 			// Mock successful collection creation
-			mockQdrantClientInstance.getCollection.mockRejectedValue({
-				response: { status: 404 },
-				message: "Not found",
-			})
+			mockQdrantClientInstance.getCollection.mockRejectedValue(
+				new QdrantCollectionNotFoundError(expectedCollectionName),
+			)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
 
 			// Mock payload index creation to fail
@@ -708,8 +703,8 @@ describe("QdrantVectorStore", () => {
 			// Verify all payload index creations were attempted (6: type + 5 pathSegments)
 			expect(mockQdrantClientInstance.createPayloadIndex).toHaveBeenCalledTimes(6)
 
-			// Verify warnings were logged for each failed index (now 6)
-			expect(console.warn).toHaveBeenCalledTimes(6)
+			// Verify warnings were logged for each failed index (6) + 1 warning from getCollectionInfo = 7 total
+			expect(console.warn).toHaveBeenCalledTimes(7)
 			// Verify warning for 'type' index
 			expect(console.warn).toHaveBeenCalledWith(
 				expect.stringContaining(`Could not create payload index for type`),
@@ -778,10 +773,7 @@ describe("QdrantVectorStore", () => {
 					},
 				} as any)
 				// Second call should return 404 to confirm deletion
-				.mockRejectedValueOnce({
-					response: { status: 404 },
-					message: "Not found",
-				})
+				.mockRejectedValueOnce(new QdrantCollectionNotFoundError(expectedCollectionName))
 
 			// Delete succeeds but create fails
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
@@ -806,8 +798,8 @@ describe("QdrantVectorStore", () => {
 			expect(mockQdrantClientInstance.deleteCollection).toHaveBeenCalledTimes(1)
 			expect(mockQdrantClientInstance.createCollection).toHaveBeenCalledTimes(1)
 			expect(mockQdrantClientInstance.createPayloadIndex).not.toHaveBeenCalled()
-			// Should log warning, critical error, and outer error
-			expect(console.warn).toHaveBeenCalledTimes(1)
+			// Should log warning (for dimension mismatch), warning during verification, critical error, and outer error
+			expect(console.warn).toHaveBeenCalledTimes(2)
 			expect(console.error).toHaveBeenCalledTimes(2)
 			;(console.error as any).mockRestore()
 			;(console.warn as any).mockRestore()
@@ -826,10 +818,7 @@ describe("QdrantVectorStore", () => {
 					},
 				} as any)
 				// Second call should return 404 to confirm deletion
-				.mockRejectedValueOnce({
-					response: { status: 404 },
-					message: "Not found",
-				})
+				.mockRejectedValueOnce(new QdrantCollectionNotFoundError(expectedCollectionName))
 
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
@@ -913,10 +902,7 @@ describe("QdrantVectorStore", () => {
 					},
 				} as any)
 				// Second call should return 404 to confirm deletion
-				.mockRejectedValueOnce({
-					response: { status: 404 },
-					message: "Not found",
-				})
+				.mockRejectedValueOnce(new QdrantCollectionNotFoundError(expectedCollectionName))
 
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
@@ -995,10 +981,9 @@ describe("QdrantVectorStore", () => {
 	})
 
 	it("should return false when collection does not exist (404 error)", async () => {
-		mockQdrantClientInstance.getCollection.mockRejectedValue({
-			response: { status: 404 },
-			message: "Not found",
-		})
+		mockQdrantClientInstance.getCollection.mockRejectedValue(
+			new QdrantCollectionNotFoundError(expectedCollectionName),
+		)
 
 		const result = await vectorStore.collectionExists()
 

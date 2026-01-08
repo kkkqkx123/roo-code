@@ -142,6 +142,7 @@ export class ConfigUpgradeScheduler extends EventEmitter {
 						collectionName: result.collectionName,
 						error: result.error,
 					})
+					this.emit("checkError", { error: result.error })
 				}
 			}
 		} catch (error) {
@@ -309,6 +310,10 @@ export class ConfigUpgradeScheduler extends EventEmitter {
 	}
 
 	public async triggerManualUpgrade(collectionName: string): Promise<boolean> {
+		if (!this.isRunning) {
+			throw new Error("Scheduler is not running")
+		}
+
 		const configManager = this.configManagers.get(collectionName)
 
 		if (!configManager) {

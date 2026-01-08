@@ -347,9 +347,17 @@ export class QdrantVectorStore implements IVectorStore {
 			await new Promise((resolve) => setTimeout(resolve, 100))
 
 			// Step 3: Verify the collection is actually deleted
-			const verificationInfo = await this.getCollectionInfo()
-			if (verificationInfo !== null) {
-				throw new Error("Collection still exists after deletion attempt")
+			try {
+				const verificationInfo = await this.getCollectionInfo()
+				if (verificationInfo !== null) {
+					throw new Error("Collection still exists after deletion attempt")
+				}
+			} catch (verificationError) {
+				if (verificationError instanceof QdrantCollectionNotFoundError) {
+					console.log(`[QdrantVectorStore] Verified collection ${this.collectionName} has been deleted`)
+				} else {
+					throw verificationError
+				}
 			}
 
 			// Step 4: Create the new collection with correct dimensions

@@ -62,7 +62,8 @@ pnpm install
 - `pnpm build` - Build all packages
 - `pnpm lint` - Run ESLint
 - `pnpm check-types` - Type checking
-- `pnpm test` - Run tests
+- `pnpm test` - Run tests. 
+Always use command like `cd "d:\项目\agent\Roo-Code\src" && pnpm test --run --dir services/code-index/vector-store/__tests__`, dont't run full test suite.
 - `pnpm format` - Format code with Prettier
 - `pnpm vsix` - Create VSIX package for distribution
 - `pnpm clean` - Clean build artifacts
