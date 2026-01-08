@@ -7,6 +7,7 @@ import { detectToolProtocolFromHistory } from "../../../utils/resolveToolProtoco
 import { getCheckpointService } from "../../checkpoints"
 import { formatResponse } from "../../prompts/responses"
 import { ClineApiReqInfo } from "../../../shared/ExtensionMessage"
+import { TerminalRegistry } from "../../../integrations/terminal/TerminalRegistry"
 
 export interface TaskLifecycleManagerOptions {
 	task: Task
@@ -285,5 +286,7 @@ export class TaskLifecycleManager {
 				this.task.diffViewProvider.revertChanges()
 			}
 		}
+
+		TerminalRegistry.releaseTerminalsForTask(this.taskId)
 	}
 }
