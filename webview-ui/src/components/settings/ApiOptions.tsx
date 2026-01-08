@@ -17,11 +17,11 @@ import {
 } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
-import { validateApiConfigurationExcludingModelErrors, getModelValidationError } from "@src/utils/validate"
+import { validateApiConfiguration } from "@src/utils/validate"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
-import { filterProviders, filterModels } from "./utils/organizationFilters"
+
 import {
 	Select,
 	SelectTrigger,
@@ -79,7 +79,7 @@ const ApiOptions = ({
 	setErrorMessage,
 }: ApiOptionsProps) => {
 	const { t } = useAppTranslation()
-	const { organizationAllowList, claudeCodeIsAuthenticated } = useExtensionState()
+	const { claudeCodeIsAuthenticated } = useExtensionState()
 
 	const [customHeaders, setCustomHeaders] = useState<[string, string][]>(() => {
 		const headers = apiConfiguration?.openAiHeaders || {}
@@ -170,38 +170,31 @@ const ApiOptions = ({
 	)
 
 	useEffect(() => {
-		const apiValidationResult = validateApiConfigurationExcludingModelErrors(
-			apiConfiguration,
-			organizationAllowList,
-		)
+		const apiValidationResult = validateApiConfiguration(apiConfiguration)
 		setErrorMessage(apiValidationResult)
-	}, [apiConfiguration, organizationAllowList, setErrorMessage])
+	}, [apiConfiguration, setErrorMessage])
 
 	const selectedProviderModels = useMemo(() => {
 		const models = MODELS_BY_PROVIDER[selectedProvider]
 
 		if (!models) return []
 
-		const filteredModels = filterModels(models, selectedProvider, organizationAllowList)
-
 		// Include the currently selected model even if deprecated (so users can see what they have selected)
 		// But filter out other deprecated models from being newly selectable
-		const availableModels = filteredModels
-			? Object.entries(filteredModels)
-					.filter(([modelId, modelInfo]) => {
-						// Always include the currently selected model
-						if (modelId === selectedModelId) return true
-						// Filter out deprecated models that aren't currently selected
-						return !modelInfo.deprecated
-					})
-					.map(([modelId]) => ({
-						value: modelId,
-						label: modelId,
-					}))
-			: []
+		const availableModels = Object.entries(models)
+			.filter(([modelId, modelInfo]) => {
+				// Always include the currently selected model
+				if (modelId === selectedModelId) return true
+				// Filter out deprecated models that aren't currently selected
+				return !modelInfo.deprecated
+			})
+			.map(([modelId]) => ({
+				value: modelId,
+				label: modelId,
+			}))
 
 		return availableModels
-	}, [selectedProvider, organizationAllowList, selectedModelId])
+	}, [selectedProvider, selectedModelId])
 
 	const onProviderChange = useCallback(
 		(value: ProviderName) => {
@@ -261,10 +254,6 @@ const ApiOptions = ({
 		[setApiConfigurationField, apiConfiguration],
 	)
 
-	const modelValidationError = useMemo(() => {
-		return getModelValidationError(apiConfiguration, organizationAllowList)
-	}, [apiConfiguration, organizationAllowList])
-
 	const docs = useMemo(() => {
 		const provider = PROVIDERS.find(({ value }) => value === selectedProvider)
 		const name = provider?.label
@@ -299,11 +288,8 @@ const ApiOptions = ({
 
 	// Convert providers to SearchableSelect options
 	const providerOptions = useMemo(() => {
-		// First filter by organization allow list
-		const allowedProviders = filterProviders(PROVIDERS, organizationAllowList)
-
-		// Then filter out static providers that have no models (unless currently selected)
-		const providersWithModels = allowedProviders.filter(({ value }) => {
+		// Filter out static providers that have no models (unless currently selected)
+		const providersWithModels = PROVIDERS.filter(({ value }) => {
 			// Always show the currently selected provider to avoid breaking existing configurations
 			// Use apiConfiguration.apiProvider directly since that's what's actually selected
 			if (value === apiConfiguration.apiProvider) {
@@ -313,11 +299,10 @@ const ApiOptions = ({
 			// Check if this is a static provider (has models in MODELS_BY_PROVIDER)
 			const staticModels = MODELS_BY_PROVIDER[value as ProviderName]
 
-			// If it's a static provider, check if it has any models after filtering
+			// If it's a static provider, check if it has any models
 			if (staticModels) {
-				const filteredModels = filterModels(staticModels, value as ProviderName, organizationAllowList)
-				// Hide the provider if it has no models after filtering
-				return filteredModels && Object.keys(filteredModels).length > 0
+				// Hide the provider if it has no models
+				return Object.keys(staticModels).length > 0
 			}
 
 			// If it's a dynamic provider (not in MODELS_BY_PROVIDER), always show it
@@ -340,7 +325,7 @@ const ApiOptions = ({
 		}
 
 		return options
-	}, [organizationAllowList, apiConfiguration.apiProvider, fromWelcomeView])
+	}, [apiConfiguration.apiProvider, fromWelcomeView])
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -406,8 +391,6 @@ const ApiOptions = ({
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration}
 					setApiConfigurationField={setApiConfigurationField}
-					organizationAllowList={organizationAllowList}
-					modelValidationError={modelValidationError}
 					simplifySettings={fromWelcomeView}
 				/>
 			)}

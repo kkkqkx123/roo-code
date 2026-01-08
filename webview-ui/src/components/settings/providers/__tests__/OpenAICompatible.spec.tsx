@@ -87,10 +87,6 @@ vi.mock("react-use", () => ({
 
 describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 	const mockSetApiConfigurationField = vi.fn()
-	const mockOrganizationAllowList = {
-		allowAll: true,
-		providers: {},
-	}
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -106,7 +102,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -127,7 +122,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -149,7 +143,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -166,7 +159,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -183,7 +175,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -200,7 +191,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -219,7 +209,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -239,7 +228,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -261,7 +249,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfigurationInitial as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -278,7 +265,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfigurationUpdated as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 
@@ -298,7 +284,6 @@ describe("OpenAICompatible Component - includeMaxTokens checkbox", () => {
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration as ProviderSettings}
 					setApiConfigurationField={mockSetApiConfigurationField}
-					organizationAllowList={mockOrganizationAllowList}
 				/>,
 			)
 

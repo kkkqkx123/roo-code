@@ -9,7 +9,6 @@ import {
 	type Language,
 	type GlobalState,
 	type ClineMessage,
-	type UserSettingsConfig,
 	RooCodeSettings,
 	Experiments,
 	ExperimentId,

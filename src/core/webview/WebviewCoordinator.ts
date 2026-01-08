@@ -9,6 +9,7 @@ import { webviewMessageHandler } from "./webviewMessageHandler"
 import { MarketplaceManager } from "../../services/marketplace"
 import { ClineProvider } from "./ClineProvider"
 import { createLogger } from "../../utils/logger"
+import { t } from "../../i18n"
 
 export class WebviewCoordinator {
 	private view?: vscode.WebviewView | vscode.WebviewPanel
@@ -109,7 +110,7 @@ export class WebviewCoordinator {
 			const axios = (await import("axios")).default
 			await axios.get(`http://${localServerUrl}`)
 		} catch (error) {
-			vscode.window.showErrorMessage("Vite dev server is not running. Please run 'pnpm dev' in the webview-ui directory.")
+			vscode.window.showErrorMessage(t("common:errors.hmr_not_running"))
 			return this.getHtmlContent(webview)
 		}
 

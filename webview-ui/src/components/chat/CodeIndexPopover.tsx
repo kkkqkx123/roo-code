@@ -104,19 +104,6 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
 			})
 
-		case "ollama":
-			return baseSchema.extend({
-				codebaseIndexEmbedderBaseUrl: z
-					.string()
-					.min(1, t("settings:codeIndex.validation.ollamaBaseUrlRequired"))
-					.url(t("settings:codeIndex.validation.invalidOllamaUrl")),
-				codebaseIndexEmbedderModelId: z.string().min(1, t("settings:codeIndex.validation.modelIdRequired")),
-				codebaseIndexEmbedderModelDimension: z
-					.number()
-					.min(1, t("settings:codeIndex.validation.modelDimensionRequired"))
-					.optional(),
-			})
-
 		case "openai-compatible":
 			return baseSchema.extend({
 				codebaseIndexOpenAiCompatibleBaseUrl: z
@@ -774,9 +761,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												<SelectItem value="openai">
 													{t("settings:codeIndex.openaiProvider")}
 												</SelectItem>
-												<SelectItem value="ollama">
-													{t("settings:codeIndex.ollamaProvider")}
-												</SelectItem>
 												<SelectItem value="openai-compatible">
 													{t("settings:codeIndex.openaiCompatibleProvider")}
 												</SelectItem>
@@ -847,90 +831,6 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												{formErrors.codebaseIndexEmbedderModelId && (
 													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
 														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-										</>
-									)}
-
-									{currentSettings.codebaseIndexEmbedderProvider === "ollama" && (
-										<>
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.ollamaBaseUrlLabel")}
-												</label>
-												<VSCodeTextField
-													value={currentSettings.codebaseIndexEmbedderBaseUrl || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexEmbedderBaseUrl", e.target.value)
-													}
-													onBlur={(e: any) => {
-														// Set default Ollama URL if field is empty
-														if (!e.target.value.trim()) {
-															e.target.value = DEFAULT_OLLAMA_URL
-															updateSetting(
-																"codebaseIndexEmbedderBaseUrl",
-																DEFAULT_OLLAMA_URL,
-															)
-														}
-													}}
-													placeholder={t("settings:codeIndex.ollamaUrlPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderBaseUrl,
-													})}
-												/>
-												{formErrors.codebaseIndexEmbedderBaseUrl && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderBaseUrl}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelLabel")}
-												</label>
-												<VSCodeTextField
-													value={currentSettings.codebaseIndexEmbedderModelId || ""}
-													onInput={(e: any) =>
-														updateSetting("codebaseIndexEmbedderModelId", e.target.value)
-													}
-													placeholder={t("settings:codeIndex.modelPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500": formErrors.codebaseIndexEmbedderModelId,
-													})}
-												/>
-												{formErrors.codebaseIndexEmbedderModelId && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelId}
-													</p>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<label className="text-sm font-medium">
-													{t("settings:codeIndex.modelDimensionLabel")}
-												</label>
-												<VSCodeTextField
-													value={
-														currentSettings.codebaseIndexEmbedderModelDimension?.toString() ||
-														""
-													}
-													onInput={(e: any) => {
-														const value = e.target.value
-															? parseInt(e.target.value, 10) || undefined
-															: undefined
-														updateSetting("codebaseIndexEmbedderModelDimension", value)
-													}}
-													placeholder={t("settings:codeIndex.modelDimensionPlaceholder")}
-													className={cn("w-full", {
-														"border-red-500":
-															formErrors.codebaseIndexEmbedderModelDimension,
-													})}
-												/>
-												{formErrors.codebaseIndexEmbedderModelDimension && (
-													<p className="text-xs text-vscode-errorForeground mt-1 mb-0">
-														{formErrors.codebaseIndexEmbedderModelDimension}
 													</p>
 												)}
 											</div>

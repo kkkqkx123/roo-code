@@ -7,12 +7,10 @@ import {
 	type ModeConfig,
 	type ExperimentId,
 	type TodoItem,
-	type OrganizationAllowList,
-	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 
-import { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata, Command } from "@roo/ExtensionMessage"
+import { ExtensionMessage, ExtensionState, Command } from "@roo/ExtensionMessage"
 import { findLastIndex } from "@roo/array"
 import { McpServer } from "@roo/mcp"
 import { checkExistKey } from "@roo/checkExistApiConfig"
@@ -35,8 +33,6 @@ export interface ExtensionStateContextType extends ExtensionState {
 	filePaths: string[]
 	openedTabs: Array<{ label: string; isActive: boolean; path?: string }>
 	commands: Command[]
-	organizationAllowList: OrganizationAllowList
-	organizationSettingsVersion: number
 	maxConcurrentFileReads?: number
 	mdmCompliant?: boolean
 	hasOpenedModeSelector: boolean // New property to track if user has opened mode selector
@@ -49,8 +45,6 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setCondensingApiConfigId: (value: string) => void
 	customCondensingPrompt?: string
 	setCustomCondensingPrompt: (value: string) => void
-	marketplaceItems?: any[]
-	marketplaceInstalledMetadata?: MarketplaceInstalledMetadata
 	profileThresholds: Record<string, number>
 	setProfileThresholds: (value: Record<string, number>) => void
 	setApiConfiguration: (config: ProviderSettings) => void
@@ -237,8 +231,6 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		historyPreviewCollapsed: false, // Initialize the new state (default to expanded)
 		reasoningBlockCollapsed: true, // Default to collapsed
 		enterBehavior: "send", // Default: Enter sends, Shift+Enter creates newline
-		organizationAllowList: ORGANIZATION_ALLOW_ALL,
-		organizationSettingsVersion: -1,
 		autoCondenseContext: true,
 		autoCondenseContextPercent: 100,
 		profileThresholds: {},
@@ -251,7 +243,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 			codebaseIndexSearchMaxResults: undefined,
 			codebaseIndexSearchMinScore: undefined,
 		},
-		codebaseIndexModels: { ollama: {}, openai: {} },
+		codebaseIndexModels: { openai: {} },
 		includeDiagnosticMessages: true,
 		maxDiagnosticMessages: 50,
 		includeCurrentTime: true,
@@ -427,7 +419,6 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		fuzzyMatchThreshold: state.fuzzyMatchThreshold,
 		writeDelayMs: state.writeDelayMs,
 		screenshotQuality: state.screenshotQuality,
-		organizationSettingsVersion: state.organizationSettingsVersion ?? -1,
 		marketplaceItems,
 		marketplaceInstalledMetadata,
 		profileThresholds: state.profileThresholds ?? {},

@@ -7,7 +7,6 @@ import axios from "axios"
 import {
 	type ProviderSettingsEntry,
 	type ClineMessage,
-	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 
@@ -566,7 +565,6 @@ describe("ClineProvider", () => {
 			maxReadFileLine: 500,
 			maxImageFileSize: 5,
 			maxTotalImageSize: 20,
-			organizationAllowList: ORGANIZATION_ALLOW_ALL,
 			autoCondenseContext: true,
 			autoCondenseContextPercent: 100,
 			profileThresholds: {},

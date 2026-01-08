@@ -8,7 +8,6 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_WRITE_DELAY_MS,
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
-	ORGANIZATION_ALLOW_ALL,
 } from "@roo-code/types"
 
 import { ContextProxy } from "../config/ContextProxy"
@@ -183,8 +182,6 @@ export class StateCoordinator {
 			historyPreviewCollapsed: stateValues.historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: stateValues.reasoningBlockCollapsed ?? true,
 			enterBehavior: stateValues.enterBehavior ?? "send",
-			organizationAllowList: ORGANIZATION_ALLOW_ALL,
-			organizationSettingsVersion: -1,
 			condensingApiConfigId: stateValues.condensingApiConfigId,
 			customCondensingPrompt: stateValues.customCondensingPrompt,
 			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,

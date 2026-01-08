@@ -476,13 +476,13 @@ describe("QdrantVectorStore", () => {
 		})
 
 		it("should handle complex URL with multiple segments, multiple trailing slashes, query params, and fragment", () => {
-			const complexUrl = "https://example.com/ollama/api/v1///?key=value#pos"
+			const complexUrl = "https://example.com/custom/api/v1///?key=value#pos"
 			const vectorStoreComplex = new QdrantVectorStore(mockWorkspacePath, complexUrl, mockVectorSize)
 			expect(QdrantClient).toHaveBeenLastCalledWith({
 				host: "example.com",
 				https: true,
 				port: 443,
-				prefix: "/ollama/api/v1", // Trailing slash removed, query/fragment ignored
+				prefix: "/custom/api/v1", // Trailing slash removed, query/fragment ignored
 				apiKey: undefined,
 				headers: {
 					"User-Agent": "Roo-Code",

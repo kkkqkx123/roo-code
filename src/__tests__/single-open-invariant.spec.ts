@@ -3,7 +3,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ClineProvider } from "../core/webview/ClineProvider"
 import { API } from "../extension/api"
-import * as ProfileValidatorMod from "../shared/ProfileValidator"
 
 // Mock Task class used by ClineProvider to avoid heavy startup
 vi.mock("../core/task/Task", () => {
@@ -33,9 +32,6 @@ describe("Single-open-task invariant", () => {
 	})
 
 	it("User-initiated create: closes existing before opening new", async () => {
-		// Allow profile
-		vi.spyOn(ProfileValidatorMod.ProfileValidator, "isProfileAllowed").mockReturnValue(true)
-
 		const removeClineFromStack = vi.fn().mockResolvedValue(undefined)
 		const addClineToStack = vi.fn().mockResolvedValue(undefined)
 

@@ -15,7 +15,6 @@ import {
 import { Task } from "./Task"
 import { readTaskMessages } from "../task-persistence/taskMessages"
 import { saveTaskMessages } from "../task-persistence"
-import { OrganizationAllowListViolationError } from "../../utils/errors"
 import { downloadTask } from "../../integrations/misc/export-markdown"
 import { t } from "../../i18n"
 import { GlobalFileNames } from "../../shared/globalFileNames"

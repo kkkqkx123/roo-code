@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { AlertTriangle } from "lucide-react"
 
-import type { ProviderSettingsEntry, OrganizationAllowList } from "@roo-code/types"
+import type { ProviderSettingsEntry } from "@roo-code/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import {
@@ -19,7 +19,6 @@ import {
 interface ApiConfigManagerProps {
 	currentApiConfigName?: string
 	listApiConfigMeta?: ProviderSettingsEntry[]
-	organizationAllowList?: OrganizationAllowList
 	onSelectConfig: (configName: string) => void
 	onDeleteConfig: (configName: string) => void
 	onRenameConfig: (oldName: string, newName: string) => void
@@ -29,7 +28,6 @@ interface ApiConfigManagerProps {
 const ApiConfigManager = ({
 	currentApiConfigName = "",
 	listApiConfigMeta = [],
-	organizationAllowList,
 	onSelectConfig,
 	onDeleteConfig,
 	onRenameConfig,
@@ -44,26 +42,6 @@ const ApiConfigManager = ({
 	const [error, setError] = useState<string | null>(null)
 	const inputRef = useRef<any>(null)
 	const newProfileInputRef = useRef<any>(null)
-
-	// Check if a profile is valid based on the organization allow list
-	const isProfileValid = (profile: ProviderSettingsEntry): boolean => {
-		// If no organization allow list or allowAll is true, all profiles are valid
-		if (!organizationAllowList || organizationAllowList.allowAll) {
-			return true
-		}
-
-		// Check if the provider is allowed
-		const provider = profile.apiProvider
-		if (!provider) return true
-
-		const providerConfig = organizationAllowList.providers[provider]
-		if (!providerConfig) {
-			return false
-		}
-
-		// If provider allows all models, profile is valid
-		return !!providerConfig.allowAll || !!(providerConfig.models && providerConfig.models.length > 0)
-	}
 
 	const validateName = (name: string, isNewProfile: boolean): string | null => {
 		const trimmed = name.trim()
@@ -237,21 +215,10 @@ const ApiConfigManager = ({
 						<SearchableSelect
 							value={currentApiConfigName}
 							onValueChange={handleSelectConfig}
-							options={listApiConfigMeta.map((config) => {
-								const valid = isProfileValid(config)
-								return {
-									value: config.name,
-									label: config.name,
-									disabled: !valid,
-									icon: !valid ? (
-										<StandardTooltip content={t("settings:validation.profileInvalid")}>
-											<span>
-												<AlertTriangle size={16} className="mr-2 text-vscode-errorForeground" />
-											</span>
-										</StandardTooltip>
-									) : undefined,
-								} as SearchableSelectOption
-							})}
+							options={listApiConfigMeta.map((config) => ({
+								value: config.name,
+								label: config.name,
+							} as SearchableSelectOption))}
 							placeholder={t("settings:common.select")}
 							searchPlaceholder={t("settings:providers.searchPlaceholder")}
 							emptyMessage={t("settings:providers.noMatchFound")}

@@ -6,10 +6,7 @@ import type {
 	ModeConfig,
 	Experiments,
 	ClineMessage,
-	MarketplaceItem,
 	TodoItem,
-	OrganizationAllowList,
-	ShareVisibility,
 	QueuedMessage,
 } from "@roo-code/types"
 
@@ -26,12 +23,6 @@ export interface Command {
 	filePath?: string
 	description?: string
 	argumentHint?: string
-}
-
-// Type for marketplace installed metadata
-export interface MarketplaceInstalledMetadata {
-	project: Record<string, { type: string }>
-	global: Record<string, { type: string }>
 }
 
 // Indexing status types
@@ -99,7 +90,6 @@ export interface ExtensionMessage {
 		| "commitSearchResults"
 		| "listApiConfig"
 		| "openAiModels"
-		| "lmStudioModels"
 		| "vsCodeLmModels"
 		| "huggingFaceModels"
 		| "vsCodeLmApiAvailable"
@@ -137,9 +127,6 @@ export interface ExtensionMessage {
 		| "indexingStatusUpdate"
 		| "indexCleared"
 		| "codebaseIndexConfig"
-		| "marketplaceInstallResult"
-		| "marketplaceRemoveResult"
-		| "marketplaceData"
 		| "shareTaskSuccess"
 		| "codeIndexSettingsSaved"
 		| "codeIndexSecretStatus"
@@ -164,7 +151,6 @@ export interface ExtensionMessage {
 		| "chatButtonClicked"
 		| "settingsButtonClicked"
 		| "historyButtonClicked"
-		| "marketplaceButtonClicked"
 		| "didBecomeVisible"
 		| "focusInput"
 		| "switchTab"
@@ -194,15 +180,7 @@ export interface ExtensionMessage {
 	error?: string
 	setting?: string
 	value?: any
-	hasContent?: boolean // For checkRulesDirectoryResult
-	items?: MarketplaceItem[]
-	organizationAllowList?: OrganizationAllowList
-	tab?: string
-	marketplaceItems?: MarketplaceItem[]
-	organizationMcps?: MarketplaceItem[]
-	marketplaceInstalledMetadata?: MarketplaceInstalledMetadata
 	errors?: string[]
-	visibility?: ShareVisibility
 	rulesFolderPath?: string
 	settings?: any
 	messageTs?: number
@@ -323,15 +301,10 @@ export type ExtensionState = Pick<
 	settingsImportedAt?: number
 	historyPreviewCollapsed?: boolean
 
-	organizationAllowList: OrganizationAllowList
-	organizationSettingsVersion?: number
-
 	isBrowserSessionActive: boolean // Actual browser session state
 
 	autoCondenseContext: boolean
 	autoCondenseContextPercent: number
-	marketplaceItems?: MarketplaceItem[]
-	marketplaceInstalledMetadata?: { project: Record<string, any>; global: Record<string, any> }
 	profileThresholds: Record<string, number>
 	hasOpenedModeSelector: boolean
 	messageQueue?: QueuedMessage[]

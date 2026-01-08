@@ -199,7 +199,6 @@ describe("mergeExtensionState", () => {
 			showRooIgnoredFiles: true,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,
-			organizationAllowList: { allowAll: true, providers: {} },
 			autoCondenseContext: true,
 			autoCondenseContextPercent: 100,
 			profileThresholds: {},

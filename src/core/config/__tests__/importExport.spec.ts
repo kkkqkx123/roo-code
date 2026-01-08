@@ -714,11 +714,6 @@ describe("importExport", () => {
 							id: "openai-compatible-id",
 							// Remove OpenAI Compatible settings from provider profile
 						},
-						"ollama-provider": {
-							apiProvider: "ollama" as ProviderName,
-							id: "ollama-id",
-							codebaseIndexOllamaBaseUrl: "http://localhost:11434",
-						},
 					},
 					modeApiConfigs: {},
 				}
@@ -729,7 +724,7 @@ describe("importExport", () => {
 						codebaseIndexEnabled: true,
 						codebaseIndexEmbedderProvider: "openai-compatible" as const,
 						codebaseIndexEmbedderModelId: "text-embedding-3-small",
-						codebaseIndexEmbedderBaseUrl: "http://localhost:11434", // Wrong URL from Ollama
+						codebaseIndexEmbedderBaseUrl: "https://custom-openai-api.example.com/v1",
 						// OpenAI Compatible settings are now stored directly in codebaseIndexConfig
 						codebaseIndexOpenAiCompatibleBaseUrl: "https://custom-openai-api.example.com/v1",
 						codebaseIndexEmbedderModelDimension: 1536,

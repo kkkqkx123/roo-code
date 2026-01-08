@@ -5,11 +5,7 @@ import {
 	type ProviderSettings,
 	type PromptComponent,
 	type ModeConfig,
-	type InstallMarketplaceItemOptions,
-	type MarketplaceItem,
-	type ShareVisibility,
 	type QueuedMessage,
-	marketplaceItemSchema,
 } from "@roo-code/types"
 
 import { Mode } from "./modes"
@@ -135,14 +131,6 @@ export interface WebviewMessage {
 		| "indexCleared"
 		| "focusPanelRequest"
 		| "openExternal"
-		| "filterMarketplaceItems"
-		| "marketplaceButtonClicked"
-		| "installMarketplaceItem"
-		| "installMarketplaceItemWithParameters"
-		| "cancelMarketplaceInstall"
-		| "removeInstalledMarketplaceItem"
-		| "marketplaceInstallResult"
-		| "fetchMarketplaceData"
 		| "switchTab"
 		| "shareTaskSuccess"
 		| "exportMode"
@@ -179,7 +167,7 @@ export interface WebviewMessage {
 		| "requestClaudeCodeRateLimits"
 	text?: string
 	editedMessageContent?: string
-	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
+	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "cloud"
 	disabled?: boolean
 	context?: string
 	dataUri?: string
@@ -219,10 +207,7 @@ export interface WebviewMessage {
 	filters?: { type?: string; search?: string; tags?: string[] }
 	settings?: any
 	url?: string // For openExternal
-	mpItem?: MarketplaceItem
-	mpInstallOptions?: InstallMarketplaceItemOptions
 	config?: Record<string, any> // Add config to the payload
-	visibility?: ShareVisibility // For share visibility
 	hasContent?: boolean // For checkRulesDirectoryResult
 	checkOnly?: boolean // For deleteCustomMode check
 	upsellId?: string // For dismissUpsell
@@ -301,21 +286,11 @@ export interface ConfigUpgradeStatusPayload {
 	}>
 }
 
-export const installMarketplaceItemWithParametersPayloadSchema = z.object({
-	item: marketplaceItemSchema,
-	parameters: z.record(z.string(), z.any()),
-})
-
-export type InstallMarketplaceItemWithParametersPayload = z.infer<
-	typeof installMarketplaceItemWithParametersPayloadSchema
->
-
 export type WebViewMessagePayload =
 	| CheckpointDiffPayload
 	| CheckpointRestorePayload
 	| IndexingStatusPayload
 	| IndexClearedPayload
 	| ConfigUpgradeStatusPayload
-	| InstallMarketplaceItemWithParametersPayload
 	| UpdateTodoListPayload
 	| EditQueuedMessagePayload

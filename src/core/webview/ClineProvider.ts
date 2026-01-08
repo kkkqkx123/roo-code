@@ -6,8 +6,6 @@ import path from "path"
 import {
 	type TaskProviderLike,
 	type TaskProviderEvents,
-	type GlobalState,
-	type ProviderName,
 	type ProviderSettings,
 	type ProviderSettingsEntry,
 	type RooCodeSettings,
@@ -19,42 +17,27 @@ import {
 	type CreateTaskOptions,
 	type TokenUsage,
 	type ToolUsage,
-	type ClineMessage,
-	type TodoItem,
-	type ModeConfig,
+	type GitProperties,
 	RooCodeEventName,
-	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
-	DEFAULT_WRITE_DELAY_MS,
-	ORGANIZATION_ALLOW_ALL,
-	DEFAULT_MODES,
-	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	getModelId,
 } from "@roo-code/types"
 
 import { Package } from "../../shared/package"
-import { WebviewMessage } from "../../shared/WebviewMessage"
 import type { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } from "../../shared/ExtensionMessage"
 import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
-import { Mode, defaultModeSlug, getModeBySlug } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import { t } from "../../i18n"
-import { experimentDefault } from "../../shared/experiments"
-import { formatLanguage } from "../../shared/language"
 import { findLast } from "../../shared/array"
-import { GlobalFileNames } from "../../shared/globalFileNames"
+import { getWorkspaceGitInfo } from "../../utils/git"
 import os from "os"
 
 import WorkspaceTracker from "../../integrations/workspace/WorkspaceTracker"
 import { McpHub } from "../../services/mcp/McpHub"
 import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { MarketplaceManager } from "../../services/marketplace"
-import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckpointService"
 import { CodeIndexManager } from "../../services/code-index/manager"
-import type { UpgradeProgress } from "../../services/code-index/vector-storage-presets"
 
 import { getWorkspacePath } from "../../utils/path"
-import { OrganizationAllowListViolationError } from "../../utils/errors"
-import { getWorkspaceGitInfo, getGitRepositoryInfo } from "../../utils/git"
-import { getTheme } from "../../integrations/theme/getTheme"
 import { getSettingsDirectoryPath } from "../../utils/storage"
 
 import { ContextProxy } from "../config/ContextProxy"
@@ -62,7 +45,6 @@ import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { Task } from "../task/Task"
 
-import { webviewMessageHandler } from "./webviewMessageHandler"
 import { TaskManager } from "../task/TaskManager"
 import { WebviewCoordinator } from "./WebviewCoordinator"
 import { ProviderCoordinator } from "../providers/ProviderCoordinator"
@@ -112,7 +94,8 @@ export class ClineProvider
 	private configUpgradeStatusSubscription?: vscode.Disposable
 	private codeIndexManager?: CodeIndexManager
 	private recentTasksCache?: string[]
-	
+	private cachedGitProperties: GitProperties | undefined
+
 	// Other properties
 	public isViewLaunched = false
 	
@@ -249,7 +232,12 @@ export class ClineProvider
 		
 		this.marketplaceManager = new MarketplaceManager(this.context, this._customModesManager)
 		this.logger.debug("MarketplaceManager initialized")
-		
+
+		// Initialize git properties asynchronously
+		this.initializeGitProperties().catch((error) => {
+			this.logger.warn(`Failed to initialize git properties during startup: ${error}`)
+		})
+
 		// Initialize WebviewCoordinator with provider and marketplaceManager
 		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this, this.marketplaceManager)
 		this.logger.debug("WebviewCoordinator initialized")
@@ -507,9 +495,9 @@ export class ClineProvider
 	public async setMode(mode: string): Promise<void> {
 		const modeConfig = getModeBySlug(mode)
 		if (!modeConfig) {
-			throw new Error(`Invalid mode: ${mode}`)
+			throw new Error(t("common:errors.invalid_mode", { mode }))
 		}
-		
+
 		await this.stateCoordinator.updateGlobalState("mode", mode)
 		await this.providerCoordinator.updateTaskApiHandlerIfNeeded(modeConfig)
 		await this.postStateToWebview()
@@ -804,8 +792,22 @@ export class ClineProvider
 	 * Resets state
 	 */
 	public async resetState(): Promise<void> {
+		const answer = await vscode.window.showInformationMessage(
+			t("common:confirmation.reset_state"),
+			{ modal: true },
+			t("common:answers.yes"),
+		)
+
+		if (answer !== t("common:answers.yes")) {
+			return
+		}
+
 		await this.stateCoordinator.resetState()
+		await this.providerSettingsManager.resetAllConfigs()
+		await this.customModesManager.resetCustomModes()
+		await this.taskManager.clearTask()
 		await this.postStateToWebview()
+		await this.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
 	}
 
 	/**
@@ -987,11 +989,17 @@ export class ClineProvider
 	/**
 	 * Gets git properties
 	 */
-	public get gitProperties(): Record<string, string> | undefined {
+	public get gitProperties(): GitProperties | undefined {
+		// Return cached git properties if available, otherwise fall back to basic properties
+		if (this.cachedGitProperties) {
+			return this.cachedGitProperties
+		}
+
 		const cwd = this.cwd
 		if (!cwd) return undefined
 
 		try {
+			// Fallback to basic git properties if cache is not available
 			return {
 				gitExecutablePath: "git",
 				gitDir: cwd,
@@ -999,6 +1007,41 @@ export class ClineProvider
 			}
 		} catch {
 			return undefined
+		}
+	}
+
+	/**
+	 * Initializes git properties asynchronously
+	 */
+	private async initializeGitProperties(): Promise<void> {
+		const cwd = this.cwd
+		if (!cwd) {
+			this.cachedGitProperties = undefined
+			return
+		}
+
+		try {
+			const gitInfo = await getWorkspaceGitInfo()
+
+			// Combine git info with basic properties
+			this.cachedGitProperties = {
+				gitExecutablePath: gitInfo.repositoryUrl ? "git" : undefined,
+				gitVersion: undefined, // Would require executing git --version
+				gitDir: cwd,
+				workingDirectory: cwd,
+				// Add any additional git info if available
+				...(gitInfo.repositoryUrl && { repositoryUrl: gitInfo.repositoryUrl }),
+				...(gitInfo.repositoryName && { repositoryName: gitInfo.repositoryName }),
+				...(gitInfo.defaultBranch && { defaultBranch: gitInfo.defaultBranch }),
+			}
+		} catch (error) {
+			this.logger.warn(`Failed to initialize git properties: ${error}`)
+			// Still set basic properties as fallback
+			this.cachedGitProperties = {
+				gitExecutablePath: "git",
+				gitDir: cwd,
+				workingDirectory: cwd,
+			}
 		}
 	}
 
@@ -1054,7 +1097,7 @@ export class ClineProvider
 
 		const { supportPrompt } = require("../../shared/support-prompt")
 		const { customSupportPrompts } = await visibleProvider.stateCoordinator.getState()
-		
+
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "addToContext") {
@@ -1067,7 +1110,13 @@ export class ClineProvider
 			return
 		}
 
-		await visibleProvider.createTask(prompt)
+		try {
+			await visibleProvider.createTask(prompt)
+		} catch (error) {
+			if (error instanceof Error) {
+				vscode.window.showErrorMessage(error.message)
+			}
+		}
 	}
 
 	/**
@@ -1085,7 +1134,7 @@ export class ClineProvider
 
 		const { supportPrompt } = require("../../shared/support-prompt")
 		const { customSupportPrompts } = await visibleProvider.stateCoordinator.getState()
-		
+
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "terminalAddToContext") {
@@ -1101,7 +1150,7 @@ export class ClineProvider
 		try {
 			await visibleProvider.createTask(prompt)
 		} catch (error) {
-			if (error instanceof OrganizationAllowListViolationError) {
+			if (error instanceof Error) {
 				vscode.window.showErrorMessage(error.message)
 			}
 		}

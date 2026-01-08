@@ -7,9 +7,9 @@ import {
 	type ProviderSettings,
 	type ModelInfo,
 	type ReasoningEffort,
-	type OrganizationAllowList,
 	azureOpenAiDefaultApiVersion,
 	openAiModelInfoSaneDefaults,
+	openAiNativeDefaultModelId,
 } from "@roo-code/types"
 
 import { ExtensionMessage } from "@roo/ExtensionMessage"
@@ -26,16 +26,12 @@ import { ThinkingBudget } from "../ThinkingBudget"
 type OpenAICompatibleProps = {
 	apiConfiguration: ProviderSettings
 	setApiConfigurationField: (field: keyof ProviderSettings, value: ProviderSettings[keyof ProviderSettings]) => void
-	organizationAllowList: OrganizationAllowList
-	modelValidationError?: string
 	simplifySettings?: boolean
 }
 
 export const OpenAICompatible = ({
 	apiConfiguration,
 	setApiConfigurationField,
-	organizationAllowList,
-	modelValidationError,
 	simplifySettings,
 }: OpenAICompatibleProps) => {
 	const { t } = useAppTranslation()
@@ -142,13 +138,11 @@ export const OpenAICompatible = ({
 			<ModelPicker
 				apiConfiguration={apiConfiguration}
 				setApiConfigurationField={setApiConfigurationField}
-				defaultModelId="gpt-4o"
+				defaultModelId={openAiNativeDefaultModelId}
 				models={openAiModels}
 				modelIdKey="openAiModelId"
 				serviceName="OpenAI"
 				serviceUrl="https://platform.openai.com"
-				organizationAllowList={organizationAllowList}
-				errorMessage={modelValidationError}
 				simplifySettings={simplifySettings}
 			/>
 			<R1FormatSetting

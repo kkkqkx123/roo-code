@@ -1,7 +1,6 @@
 // npx vitest run __tests__/extension.spec.ts
 
 import type * as vscode from "vscode"
-import type { AuthState } from "@roo-code/types"
 
 vi.mock("vscode", () => ({
 	window: {
@@ -171,7 +170,7 @@ vi.mock("../api/providers/fetchers/modelCache", () => ({
 describe("extension.ts", () => {
 	let mockContext: vscode.ExtensionContext
 	let authStateChangedHandler:
-		| ((data: { state: AuthState; previousState: AuthState }) => void | Promise<void>)
+		| ((data: { state: any; previousState: any }) => void | Promise<void>)
 		| undefined
 
 	beforeEach(() => {
