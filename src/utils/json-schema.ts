@@ -96,7 +96,7 @@ const TypeFieldSchema = z.union([JsonSchemaTypeSchema, z.array(JsonSchemaTypeSch
  * This schema performs three key transformations:
  * 1. Sets `additionalProperties: false` by default (required by OpenAI strict mode)
  * 2. Converts deprecated `type: ["T", "null"]` array syntax to `anyOf` format
- *    (required by Claude on Bedrock which enforces JSON Schema draft 2020-12)
+ *    (required by providers that enforce JSON Schema draft 2020-12)
  * 3. Strips unsupported `format` values (e.g., "uri") for OpenAI Structured Outputs compatibility
  *
  * Uses recursive parsing so transformations apply to all nested schemas automatically.

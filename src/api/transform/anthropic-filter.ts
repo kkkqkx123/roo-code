@@ -16,7 +16,7 @@ export const VALID_ANTHROPIC_BLOCK_TYPES = new Set([
 ])
 
 /**
- * Filters out non-Anthropic content blocks from messages before sending to Anthropic/Vertex API.
+ * Filters out non-Anthropic content blocks from messages before sending to Anthropic API.
  * Uses an allowlist approach - only blocks with types in VALID_ANTHROPIC_BLOCK_TYPES are kept.
  * This automatically filters out:
  * - Internal "reasoning" blocks (Roo Code's internal representation)

@@ -1115,6 +1115,47 @@ describe("QdrantVectorStore", () => {
 			})
 		})
 
+		it("should handle Windows-style paths and convert to POSIX format", async () => {
+			const mockPoints = [
+				{
+					id: "test-id-1",
+					vector: [0.1, 0.2, 0.3],
+					payload: {
+						filePath: "src\\components\\Button.tsx",
+						content: "export const Button = () => {}",
+						startLine: 1,
+						endLine: 3,
+					},
+				},
+			]
+
+			mockQdrantClientInstance.upsert.mockResolvedValue({} as any)
+
+			await vectorStore.upsertPoints(mockPoints)
+
+			expect(mockQdrantClientInstance.upsert).toHaveBeenCalledTimes(1)
+			expect(mockQdrantClientInstance.upsert).toHaveBeenCalledWith(expectedCollectionName, {
+				points: [
+					{
+						id: "test-id-1",
+						vector: [0.1, 0.2, 0.3],
+						payload: {
+							filePath: "src/components/Button.tsx",
+							content: "export const Button = () => {}",
+							startLine: 1,
+							endLine: 3,
+							pathSegments: {
+								"0": "src",
+								"1": "components",
+								"2": "Button.tsx",
+							},
+						},
+					},
+				],
+				wait: true,
+			})
+		})
+
 		it("should handle points without filePath in payload", async () => {
 			const mockPoints = [
 				{

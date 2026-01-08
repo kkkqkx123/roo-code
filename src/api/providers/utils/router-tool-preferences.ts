@@ -1,7 +1,7 @@
 import type { ModelInfo } from "@roo-code/types"
 
 /**
- * Apply tool preferences for models accessed through dynamic routers (OpenRouter, Requesty).
+ * Apply tool preferences for models accessed through dynamic routers.
  *
  * Different model families perform better with specific tools:
  * - OpenAI models: Better results with apply_patch instead of apply_diff/write_to_file

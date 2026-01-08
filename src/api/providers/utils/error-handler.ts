@@ -84,7 +84,7 @@ export function handleProviderError(
 		if (anyErr.code !== undefined) {
 			;(wrapped as any).code = anyErr.code
 		}
-		// Preserve AWS-specific metadata if present (for Bedrock)
+		// Preserve AWS-specific metadata if present
 		if (anyErr.$metadata !== undefined) {
 			;(wrapped as any).$metadata = anyErr.$metadata
 		}

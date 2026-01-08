@@ -34,7 +34,7 @@ describe("get-relative-path", () => {
 			const workspaceRoot = path.join(path.sep, "custom", "workspace")
 			const absolutePath = path.join(workspaceRoot, "src", "file.ts")
 			const result = generateRelativeFilePath(absolutePath, workspaceRoot)
-			expect(result).toBe(path.join("src", "file.ts"))
+			expect(result).toBe("src/file.ts")
 		})
 
 		it("should handle paths outside workspace", () => {
@@ -58,7 +58,25 @@ describe("get-relative-path", () => {
 			const absolutePath = path.join(path.sep, "Users", "test", "admin", ".prettierrc.json")
 			const result = generateRelativeFilePath(absolutePath, workspaceRoot)
 			// Should generate a valid relative path, not throw an error
-			expect(result).toBe(path.join("..", "admin", ".prettierrc.json"))
+			expect(result).toBe("../admin/.prettierrc.json")
+		})
+
+		it("should normalize paths to POSIX format", () => {
+			const workspaceRoot = path.join(path.sep, "custom", "workspace")
+			const absolutePath = path.join(workspaceRoot, "src", "components", "Button.tsx")
+			const result = generateRelativeFilePath(absolutePath, workspaceRoot)
+			// Should always use forward slashes regardless of OS
+			expect(result).toBe("src/components/Button.tsx")
+			expect(result).not.toContain("\\")
+		})
+
+		it("should handle Windows-style paths and convert to POSIX", () => {
+			const workspaceRoot = "C:\\Users\\test\\project"
+			const absolutePath = "C:\\Users\\test\\project\\src\\utils\\helpers.ts"
+			const result = generateRelativeFilePath(absolutePath, workspaceRoot)
+			// Should convert Windows backslashes to forward slashes
+			expect(result).toBe("src/utils/helpers.ts")
+			expect(result).not.toContain("\\")
 		})
 	})
 })

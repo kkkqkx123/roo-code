@@ -223,7 +223,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 	test("generates system prompt with diff disabled", async () => {
 		vi.spyOn(provider, "getState").mockResolvedValue({
 			apiConfiguration: {
-				apiProvider: "openrouter",
+				apiProvider: "anthropic",
 				apiModelId: "test-model",
 			},
 			customModePrompts: {},

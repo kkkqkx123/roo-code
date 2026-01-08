@@ -113,7 +113,6 @@ export class WebviewCoordinator {
 
 		const nonce = getNonce()
 
-		// Get the OpenRouter base URL from configuration
 		const state = await this.provider.getStateToPostToWebview()
 		const stylesUri = getUri(webview, this.context.extensionUri, ["webview-ui", "build", "assets", "index.css"])
 		const codiconsUri = getUri(webview, this.context.extensionUri, ["assets", "codicons", "codicon.css"])

@@ -21,16 +21,11 @@ export interface SingleCompletionHandler {
 export interface ApiHandlerCreateMessageMetadata {
 	/**
 	 * Task ID used for tracking and provider-specific features:
-	 * - DeepInfra: Used as prompt_cache_key for caching
 	 * - Roo: Sent as X-Roo-Task-ID header
-	 * - Requesty: Sent as trace_id
-	 * - Unbound: Sent in unbound_metadata
 	 */
 	taskId: string
 	/**
 	 * Current mode slug for provider-specific tracking:
-	 * - Requesty: Sent in extra metadata
-	 * - Unbound: Sent in unbound_metadata
 	 */
 	mode?: string
 	suppressPreviousResponseId?: boolean

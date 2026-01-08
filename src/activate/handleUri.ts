@@ -12,11 +12,6 @@ export const handleUri = async (uri: vscode.Uri) => {
 	}
 
 	switch (path) {
-		case "/requesty": {
-			const code = query.get("code")
-			const baseUrl = query.get("baseUrl")
-			break
-		}
 		default:
 			break
 	}
