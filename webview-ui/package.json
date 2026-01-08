@@ -98,7 +98,7 @@
 		"@types/shell-quote": "^1.7.5",
 		"@types/vscode-webview": "^1.57.5",
 		"@vitejs/plugin-react": "^4.3.4",
-		"@vitest/ui": "^3.2.3",
+		"@vitest/ui": "^4.0.16",
 		"identity-obj-proxy": "^3.0.0",
 		"jsdom": "^26.0.0",
 		"typescript": "5.8.3",
