@@ -51,7 +51,6 @@ import { useEscapeKey } from "@src/hooks/useEscapeKey"
 
 // Default URLs for providers
 const DEFAULT_QDRANT_URL = "http://localhost:6333"
-const DEFAULT_OLLAMA_URL = "http://localhost:11434"
 
 interface CodeIndexPopoverProps {
 	children: React.ReactNode

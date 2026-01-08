@@ -1,5 +1,3 @@
-import type { ProviderSettings } from "@roo-code/types"
-
 // Mock i18next to return translation keys with interpolated values
 vi.mock("i18next", () => ({
 	default: {

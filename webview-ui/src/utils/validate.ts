@@ -1,13 +1,6 @@
 import i18next from "i18next"
 
-import {
-	type ProviderSettings,
-	type ProviderName,
-	modelIdKeysByProvider,
-	isProviderName,
-	isFauxProvider,
-	isCustomProvider,
-} from "@roo-code/types"
+import { type ProviderSettings } from "@roo-code/types"
 
 export function validateApiConfiguration(apiConfiguration: ProviderSettings): string | undefined {
 	const keysAndIdsPresentErrorMessage = validateModelsAndKeysProvided(apiConfiguration)
@@ -55,14 +48,6 @@ function validateModelsAndKeysProvided(apiConfiguration: ProviderSettings): stri
 	}
 
 	return undefined
-}
-
-function getModelIdForProvider(apiConfiguration: ProviderSettings, provider: ProviderName): string | undefined {
-	if (isCustomProvider(provider) || isFauxProvider(provider)) {
-		return apiConfiguration.apiModelId
-	}
-
-	return apiConfiguration[modelIdKeysByProvider[provider]]
 }
 
 /**
