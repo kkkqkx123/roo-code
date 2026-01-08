@@ -4,13 +4,32 @@ import { OpenAiEmbedder } from "../embedders/openai"
 import { OpenAICompatibleEmbedder } from "../embedders/openai-compatible"
 import { GeminiEmbedder } from "../embedders/gemini"
 import { QdrantVectorStore } from "../vector-store/qdrant-client"
+import { VectorStorageConfigManager } from "../vector-storage-config-manager"
+import { CollectionSizeEstimator } from "../vector-store/collection-size-estimator"
+import { CollectionConfigUpgradeService } from "../vector-store/collection-config-upgrade-service"
+
+// Mock vscode module
+vitest.mock("vscode", () => ({
+	EventEmitter: vitest.fn().mockImplementation(() => ({
+		event: vitest.fn(),
+		fire: vitest.fn(),
+		dispose: vitest.fn(),
+	})),
+	workspace: {
+		getConfiguration: vitest.fn().mockReturnValue({
+			get: vitest.fn(),
+		}),
+	},
+}))
 
 // Mock the embedders and vector store
 vitest.mock("../embedders/openai")
-vitest.mock("../embedders/ollama")
 vitest.mock("../embedders/openai-compatible")
 vitest.mock("../embedders/gemini")
 vitest.mock("../vector-store/qdrant-client")
+vitest.mock("../vector-storage-config-manager")
+vitest.mock("../vector-store/collection-size-estimator")
+vitest.mock("../vector-store/collection-config-upgrade-service")
 
 // Mock the embedding models module
 vitest.mock("../../../shared/embeddingModels", () => ({
@@ -22,6 +41,9 @@ const MockedOpenAiEmbedder = OpenAiEmbedder as MockedClass<typeof OpenAiEmbedder
 const MockedOpenAICompatibleEmbedder = OpenAICompatibleEmbedder as MockedClass<typeof OpenAICompatibleEmbedder>
 const MockedGeminiEmbedder = GeminiEmbedder as MockedClass<typeof GeminiEmbedder>
 const MockedQdrantVectorStore = QdrantVectorStore as MockedClass<typeof QdrantVectorStore>
+const MockedVectorStorageConfigManager = VectorStorageConfigManager as MockedClass<typeof VectorStorageConfigManager>
+const MockedCollectionSizeEstimator = CollectionSizeEstimator as MockedClass<typeof CollectionSizeEstimator>
+const MockedCollectionConfigUpgradeService = CollectionConfigUpgradeService as MockedClass<typeof CollectionConfigUpgradeService>
 
 // Import the mocked functions
 import { getDefaultModelId, getModelDimension } from "../../../shared/embeddingModels"
@@ -38,6 +60,7 @@ describe("CodeIndexServiceFactory", () => {
 
 		mockConfigManager = {
 			getConfig: vitest.fn(),
+			getContextProxy: vitest.fn(),
 		}
 
 		mockCacheManager = {}
@@ -102,21 +125,6 @@ describe("CodeIndexServiceFactory", () => {
 
 			// Act & Assert
 			expect(() => factory.createEmbedder()).toThrow("serviceFactory.openAiConfigMissing")
-		})
-
-		it("should throw error when Ollama base URL is missing", () => {
-			// Arrange
-			const testConfig = {
-				embedderProvider: "ollama",
-				modelId: "nomic-embed-text:latest",
-				ollamaOptions: {
-					ollamaBaseUrl: undefined,
-				},
-			}
-			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-
-			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.ollamaConfigMissing")
 		})
 
 		it("should pass model ID to OpenAI Compatible embedder when using OpenAI Compatible provider", () => {
@@ -313,31 +321,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				3072,
 				"test-key",
-			)
-		})
-
-		it("should use config.modelId for Ollama provider", () => {
-			// Arrange
-			const testModelId = "nomic-embed-text:latest"
-			const testConfig = {
-				embedderProvider: "ollama",
-				modelId: testModelId,
-				qdrantUrl: "http://localhost:6333",
-				qdrantApiKey: "test-key",
-			}
-			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			mockGetModelDimension.mockReturnValue(768)
-
-			// Act
-			factory.createVectorStore()
-
-			// Assert
-			expect(mockGetModelDimension).toHaveBeenCalledWith("ollama", testModelId)
-			expect(MockedQdrantVectorStore).toHaveBeenCalledWith(
-				"/test/workspace",
-				"http://localhost:6333",
-				768,
-				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -363,6 +347,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				3072,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -393,8 +378,9 @@ describe("CodeIndexServiceFactory", () => {
 			expect(MockedQdrantVectorStore).toHaveBeenCalledWith(
 				"/test/workspace",
 				"http://localhost:6333",
-				modelDimension, // Should use model's built-in dimension, not manual
+				modelDimension,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -424,8 +410,9 @@ describe("CodeIndexServiceFactory", () => {
 			expect(MockedQdrantVectorStore).toHaveBeenCalledWith(
 				"/test/workspace",
 				"http://localhost:6333",
-				manualDimension, // Should use manual dimension as fallback
+				manualDimension,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -455,6 +442,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				768,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -524,6 +512,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				3072,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -549,6 +538,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				3072,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 
@@ -573,6 +563,7 @@ describe("CodeIndexServiceFactory", () => {
 				"http://localhost:6333",
 				1536,
 				"test-key",
+				expect.any(MockedVectorStorageConfigManager),
 			)
 		})
 

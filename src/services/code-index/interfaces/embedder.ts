@@ -1,6 +1,6 @@
 /**
  * Interface for code index embedders.
- * This interface is implemented by both OpenAI and Ollama embedders.
+ * This interface is implemented by OpenAI embedders.
  */
 export interface IEmbedder {
 	/**
@@ -30,13 +30,8 @@ export interface EmbeddingResponse {
 
 export type AvailableEmbedders =
 	| "openai"
-	| "ollama"
 	| "openai-compatible"
 	| "gemini"
-	| "mistral"
-	| "vercel-ai-gateway"
-	| "bedrock"
-	| "openrouter"
 
 export interface EmbedderInfo {
 	name: AvailableEmbedders

@@ -811,11 +811,6 @@ describe("importExport", () => {
 							id: "openai-compatible-id",
 							// Remove OpenAI Compatible settings from provider profile
 						},
-						"ollama-provider": {
-							apiProvider: "ollama" as ProviderName,
-							id: "ollama-id",
-							codebaseIndexOllamaBaseUrl: "http://localhost:11434",
-						},
 						"anthropic-provider": {
 							apiProvider: "anthropic" as ProviderName,
 							id: "anthropic-id",

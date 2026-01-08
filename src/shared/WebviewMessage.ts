@@ -55,12 +55,6 @@ export interface WebviewMessage {
 		| "exportSettings"
 		| "resetState"
 		| "requestOpenAiModels"
-		| "requestOllamaModels"
-		| "requestLmStudioModels"
-		| "requestRooModels"
-		| "requestRooCreditBalance"
-		| "requestVsCodeLmModels"
-		| "requestHuggingFaceModels"
 		| "openImage"
 		| "saveImage"
 		| "openFile"
@@ -241,7 +235,6 @@ export interface WebviewMessage {
 		codebaseIndexQdrantUrl: string
 		codebaseIndexEmbedderProvider:
 			| "openai"
-			| "ollama"
 			| "openai-compatible"
 			| "gemini"
 		codebaseIndexEmbedderBaseUrl?: string

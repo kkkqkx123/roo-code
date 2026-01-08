@@ -15,10 +15,8 @@ export class CodeIndexConfigManager {
 	private modelId?: string
 	private modelDimension?: number
 	private openAiOptions?: ApiHandlerOptions
-	private ollamaOptions?: { ollamaBaseUrl?: string }
 	private openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 	private geminiOptions?: { apiKey: string }
-	private bedrockOptions?: { region: string; profile?: string }
 	private qdrantUrl?: string = "http://localhost:6333"
 	private qdrantApiKey?: string
 	private searchMinScore?: number
@@ -52,11 +50,8 @@ export class CodeIndexConfigManager {
 			codebaseIndexEmbedderModelId: "",
 			codebaseIndexSearchMinScore: undefined,
 			codebaseIndexSearchMaxResults: undefined,
-			codebaseIndexBedrockRegion: "us-east-1",
-			codebaseIndexBedrockProfile: "",
 			codebaseIndexOpenAiCompatibleBaseUrl: "",
 			codebaseIndexOpenAiCompatibleModelDimension: undefined,
-			codebaseIndexOpenRouterSpecificProvider: "",
 			codebaseIndexVectorStorageConfig: undefined,
 			codebaseIndexEmbedderModelDimension: undefined,
 			codebaseIndexRequireIndexingConfirmation: true,
@@ -78,8 +73,6 @@ export class CodeIndexConfigManager {
 		const openAiCompatibleBaseUrl = codebaseIndexConfig.codebaseIndexOpenAiCompatibleBaseUrl ?? ""
 		const openAiCompatibleApiKey = this.contextProxy?.getSecret("codebaseIndexOpenAiCompatibleApiKey") ?? ""
 		const geminiApiKey = this.contextProxy?.getSecret("codebaseIndexGeminiApiKey") ?? ""
-		const bedrockRegion = codebaseIndexConfig.codebaseIndexBedrockRegion ?? "us-east-1"
-		const bedrockProfile = codebaseIndexConfig.codebaseIndexBedrockProfile ?? ""
 		const vectorStorageConfig = codebaseIndexConfig.codebaseIndexVectorStorageConfig
 		const requireIndexingConfirmation = codebaseIndexConfig.codebaseIndexRequireIndexingConfirmation ?? true
 
@@ -121,10 +114,6 @@ export class CodeIndexConfigManager {
 
 		this.modelId = codebaseIndexEmbedderModelId || undefined
 
-		this.ollamaOptions = {
-			ollamaBaseUrl: codebaseIndexEmbedderBaseUrl,
-		}
-
 		this.openAiCompatibleOptions =
 			openAiCompatibleBaseUrl && openAiCompatibleApiKey
 				? {
@@ -134,9 +123,6 @@ export class CodeIndexConfigManager {
 				: undefined
 
 		this.geminiOptions = geminiApiKey ? { apiKey: geminiApiKey } : undefined
-		this.bedrockOptions = bedrockRegion
-			? { region: bedrockRegion, profile: bedrockProfile || undefined }
-			: undefined
 	}
 
 	/**
@@ -150,10 +136,8 @@ export class CodeIndexConfigManager {
 			modelId?: string
 			modelDimension?: number
 			openAiOptions?: ApiHandlerOptions
-			ollamaOptions?: { ollamaBaseUrl?: string }
 			openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
 			geminiOptions?: { apiKey: string }
-			bedrockOptions?: { region: string; profile?: string }
 			qdrantUrl?: string
 			qdrantApiKey?: string
 			searchMinScore?: number
@@ -168,12 +152,9 @@ export class CodeIndexConfigManager {
 			modelId: this.modelId,
 			modelDimension: this.modelDimension,
 			openAiKey: this.openAiOptions?.openAiNativeApiKey ?? "",
-			ollamaBaseUrl: this.ollamaOptions?.ollamaBaseUrl ?? "",
 			openAiCompatibleBaseUrl: this.openAiCompatibleOptions?.baseUrl ?? "",
 			openAiCompatibleApiKey: this.openAiCompatibleOptions?.apiKey ?? "",
 			geminiApiKey: this.geminiOptions?.apiKey ?? "",
-			bedrockRegion: this.bedrockOptions?.region ?? "",
-			bedrockProfile: this.bedrockOptions?.profile ?? "",
 			qdrantUrl: this.qdrantUrl ?? "",
 			qdrantApiKey: this.qdrantApiKey ?? "",
 		}
@@ -194,10 +175,8 @@ export class CodeIndexConfigManager {
 				modelId: this.modelId,
 				modelDimension: this.modelDimension,
 				openAiOptions: this.openAiOptions,
-				ollamaOptions: this.ollamaOptions,
 				openAiCompatibleOptions: this.openAiCompatibleOptions,
 				geminiOptions: this.geminiOptions,
-				bedrockOptions: this.bedrockOptions,
 				qdrantUrl: this.qdrantUrl,
 				qdrantApiKey: this.qdrantApiKey,
 				searchMinScore: this.currentSearchMinScore,
@@ -214,11 +193,6 @@ export class CodeIndexConfigManager {
 			const openAiKey = this.openAiOptions?.openAiNativeApiKey
 			const qdrantUrl = this.qdrantUrl
 			return !!(openAiKey && qdrantUrl)
-		} else if (this.embedderProvider === "ollama") {
-			// Ollama model ID has a default, so only base URL is strictly required for config
-			const ollamaBaseUrl = this.ollamaOptions?.ollamaBaseUrl
-			const qdrantUrl = this.qdrantUrl
-			return !!(ollamaBaseUrl && qdrantUrl)
 		} else if (this.embedderProvider === "openai-compatible") {
 			const baseUrl = this.openAiCompatibleOptions?.baseUrl
 			const apiKey = this.openAiCompatibleOptions?.apiKey
@@ -230,13 +204,7 @@ export class CodeIndexConfigManager {
 			const qdrantUrl = this.qdrantUrl
 			const isConfigured = !!(apiKey && qdrantUrl)
 			return isConfigured
-		} else if (this.embedderProvider === "bedrock") {
-			// Only region is required for Bedrock (profile is optional)
-			const region = this.bedrockOptions?.region
-			const qdrantUrl = this.qdrantUrl
-			const isConfigured = !!(region && qdrantUrl)
-			return isConfigured
-		}
+		} 
 		return false // Should not happen if embedderProvider is always set correctly
 	}
 
@@ -245,7 +213,7 @@ export class CodeIndexConfigManager {
 	 * Simplified logic: only restart for critical changes that affect service functionality.
 	 *
 	 * CRITICAL CHANGES (require restart):
-	 * - Provider changes (openai -> ollama, etc.)
+	 * - Provider changes 
 	 * - Authentication changes (API keys, base URLs)
 	 * - Vector dimension changes (model changes that affect embedding size)
 	 * - Qdrant connection changes (URL, API key)
@@ -264,13 +232,10 @@ export class CodeIndexConfigManager {
 		const prevConfigured = prev?.configured ?? false
 		const prevProvider = prev?.embedderProvider ?? "openai"
 		const prevOpenAiKey = prev?.openAiKey ?? ""
-		const prevOllamaBaseUrl = prev?.ollamaBaseUrl ?? ""
 		const prevOpenAiCompatibleBaseUrl = prev?.openAiCompatibleBaseUrl ?? ""
 		const prevOpenAiCompatibleApiKey = prev?.openAiCompatibleApiKey ?? ""
 		const prevModelDimension = prev?.modelDimension
 		const prevGeminiApiKey = prev?.geminiApiKey ?? ""
-		const prevBedrockRegion = prev?.bedrockRegion ?? ""
-		const prevBedrockProfile = prev?.bedrockProfile ?? ""
 		const prevQdrantUrl = prev?.qdrantUrl ?? ""
 		const prevQdrantApiKey = prev?.qdrantApiKey ?? ""
 
@@ -284,39 +249,37 @@ export class CodeIndexConfigManager {
 			return true
 		}
 
-		// 3. If wasn't ready before and isn't ready now, no restart needed
+		// 3. Check for provider changes when feature is enabled
+		// Provider changes require restart even if not fully configured
+		if (this.codebaseIndexEnabled && prevProvider !== this.embedderProvider) {
+			return true
+		}
+
+		// 4. If wasn't ready before and isn't ready now, no restart needed
 		if ((!prevEnabled || !prevConfigured) && (!this.codebaseIndexEnabled || !nowConfigured)) {
 			return false
 		}
 
-		// 4. CRITICAL CHANGES - Always restart for these
-		// Only check for critical changes if feature is enabled
+		// 5. CRITICAL CHANGES - Only check these if feature is enabled
 		if (!this.codebaseIndexEnabled) {
 			return false
 		}
 
-		// Provider change
+		// Provider change (already checked above, but keeping for completeness)
 		if (prevProvider !== this.embedderProvider) {
 			return true
 		}
 
 		// Authentication changes (API keys)
 		const currentOpenAiKey = this.openAiOptions?.openAiNativeApiKey ?? ""
-		const currentOllamaBaseUrl = this.ollamaOptions?.ollamaBaseUrl ?? ""
 		const currentOpenAiCompatibleBaseUrl = this.openAiCompatibleOptions?.baseUrl ?? ""
 		const currentOpenAiCompatibleApiKey = this.openAiCompatibleOptions?.apiKey ?? ""
 		const currentModelDimension = this.modelDimension
 		const currentGeminiApiKey = this.geminiOptions?.apiKey ?? ""
-		const currentBedrockRegion = this.bedrockOptions?.region ?? ""
-		const currentBedrockProfile = this.bedrockOptions?.profile ?? ""
 		const currentQdrantUrl = this.qdrantUrl ?? ""
 		const currentQdrantApiKey = this.qdrantApiKey ?? ""
 
 		if (prevOpenAiKey !== currentOpenAiKey) {
-			return true
-		}
-
-		if (prevOllamaBaseUrl !== currentOllamaBaseUrl) {
 			return true
 		}
 
@@ -328,10 +291,6 @@ export class CodeIndexConfigManager {
 		}
 
 		if (prevGeminiApiKey !== currentGeminiApiKey) {
-			return true
-		}
-
-		if (prevBedrockRegion !== currentBedrockRegion || prevBedrockProfile !== currentBedrockProfile) {
 			return true
 		}
 
@@ -388,10 +347,8 @@ export class CodeIndexConfigManager {
 			modelId: this.modelId,
 			modelDimension: this.modelDimension,
 			openAiOptions: this.openAiOptions,
-			ollamaOptions: this.ollamaOptions,
 			openAiCompatibleOptions: this.openAiCompatibleOptions,
 			geminiOptions: this.geminiOptions,
-			bedrockOptions: this.bedrockOptions,
 			qdrantUrl: this.qdrantUrl,
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,
@@ -416,7 +373,7 @@ export class CodeIndexConfigManager {
 	}
 
 	/**
-	 * Gets the current embedder type (openai or ollama)
+	 * Gets the current embedder type (openai)
 	 */
 	public get currentEmbedderProvider(): EmbedderProvider {
 		return this.embedderProvider

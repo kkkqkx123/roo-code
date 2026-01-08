@@ -8,6 +8,11 @@ vi.mock("vscode", () => {
 	const testPath = require("path")
 	const testWorkspacePath = testPath.join(testPath.sep, "test", "workspace")
 	return {
+		EventEmitter: vi.fn().mockImplementation(() => ({
+			event: vi.fn(),
+			fire: vi.fn(),
+			dispose: vi.fn(),
+		})),
 		window: {
 			activeTextEditor: null,
 		},

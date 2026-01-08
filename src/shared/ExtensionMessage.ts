@@ -99,7 +99,6 @@ export interface ExtensionMessage {
 		| "commitSearchResults"
 		| "listApiConfig"
 		| "openAiModels"
-		| "ollamaModels"
 		| "lmStudioModels"
 		| "vsCodeLmModels"
 		| "huggingFaceModels"
@@ -181,26 +180,6 @@ export interface ExtensionMessage {
 	}>
 	clineMessage?: ClineMessage
 	openAiModels?: string[]
-	ollamaModels?: ModelRecord
-	lmStudioModels?: ModelRecord
-	vsCodeLmModels?: { vendor?: string; family?: string; version?: string; id?: string }[]
-	huggingFaceModels?: Array<{
-		id: string
-		object: string
-		created: number
-		owned_by: string
-		providers: Array<{
-			provider: string
-			status: "live" | "staging" | "error"
-			supports_tools?: boolean
-			supports_structured_output?: boolean
-			context_length?: number
-			pricing?: {
-				input: number
-				output: number
-			}
-		}>
-	}>
 	mcpServers?: McpServer[]
 	commits?: GitCommit[]
 	listApiConfig?: ProviderSettingsEntry[]
