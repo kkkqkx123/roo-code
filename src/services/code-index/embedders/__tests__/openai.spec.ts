@@ -447,9 +447,8 @@ describe("OpenAiEmbedder", () => {
 
 				mockEmbeddingsCreate.mockRejectedValue(errorWithFailingToString)
 
-				// The test framework itself throws "toString failed" when trying to
-				// display the error, so we need to expect that specific error
-				await expect(embedder.createEmbeddings(testTexts)).rejects.toThrow("toString failed")
+				// The error handling code now catches toString failures and returns "Unknown error"
+				await expect(embedder.createEmbeddings(testTexts)).rejects.toThrow("Failed to create embeddings after 3 attempts: Unknown error")
 			})
 
 			it("should handle errors from response.status property", async () => {

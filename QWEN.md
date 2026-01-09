@@ -101,9 +101,8 @@ The extension supports multiple AI providers:
 
 ### Testing
 - Unit tests using Vitest
-- End-to-end tests in `apps/vscode-e2e`
-- Type checking with TypeScript
-- Linting with ESLint
+- Always use command like `cd "d:\项目\agent\Roo-Code\src" && pnpm test --run --dir services/code-index/vector-store/__tests__`, dont't run full test suite.
+- If consule log have some problems, add debug file to find issue.
 
 ### Internationalization
 The project supports multiple languages with i18n implementation in `src/i18n/`.

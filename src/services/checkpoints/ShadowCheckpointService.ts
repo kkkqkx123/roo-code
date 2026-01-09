@@ -125,6 +125,8 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 	}
 
 	public async initShadowGit(onInit?: () => Promise<void>) {
+		this.log(`[${this.constructor.name}#initShadowGit] starting initialization`)
+		
 		if (this.git) {
 			throw new Error("Shadow git repo already initialized")
 		}
@@ -145,23 +147,109 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		await fs.mkdir(this.checkpointsDir, { recursive: true })
 		const git = createSanitizedGit(this.checkpointsDir)
 		const gitVersion = await git.version()
-		this.log(`[${this.constructor.name}#create] git = ${gitVersion}`)
+		this.log(`[${this.constructor.name}#initShadowGit] git version = ${gitVersion}`)
 
 		let created = false
 		const startTime = Date.now()
 
 		if (await fileExistsAtPath(this.dotGitDir)) {
 			this.log(`[${this.constructor.name}#initShadowGit] shadow git repo already exists at ${this.dotGitDir}`)
-			const worktree = await this.getShadowGitConfigWorktree(git)
+			
+			// Check if the existing shadow repo is valid
+			try {
+				const worktree = await this.getShadowGitConfigWorktree(git)
 
-			if (worktree !== this.workspaceDir) {
-				throw new Error(
-					`Checkpoints can only be used in the original workspace: ${worktree} !== ${this.workspaceDir}`,
-				)
+				if (worktree !== this.workspaceDir) {
+					throw new Error(
+						`Checkpoints can only be used in the original workspace: ${worktree} !== ${this.workspaceDir}`,
+					)
+				}
+
+				await this.writeExcludeFile()
+				this.log(`[${this.constructor.name}#initShadowGit] attempting to get shadow repo HEAD`)
+				this.baseHash = await git.revparse(["HEAD"])
+				this.log(`[${this.constructor.name}#initShadowGit] got shadow repo HEAD: ${this.baseHash}`)
+			} catch (error) {
+				this.log(`[${this.constructor.name}#initShadowGit] existing shadow repo is invalid: ${error}`)
+				this.log(`[${this.constructor.name}#initShadowGit] removing invalid shadow repo and recreating`)
+				// Remove the invalid shadow repo and recreate it
+			await fs.rm(this.checkpointsDir, { recursive: true, force: true })
+			await fs.mkdir(this.checkpointsDir, { recursive: true })
+			// Continue with creating a new shadow repo using the existing logic
+			const hasGitRepo = await this.hasGitRepository(this.workspaceDir)
+			
+			if (hasGitRepo) {
+				this.log(`[${this.constructor.name}#initShadowGit] detected git repository, using alternates`)
+				
+				const gitObjectsPath = await this.getGitObjectsPath(this.workspaceDir)
+				
+				if (gitObjectsPath) {
+					await git.init()
+					await git.addConfig("core.worktree", this.workspaceDir)
+					await git.addConfig("commit.gpgSign", "false")
+					await git.addConfig("user.name", "Roo Code")
+					await git.addConfig("user.email", "noreply@example.com")
+					await git.addConfig("gc.auto", "0")
+					await git.addConfig("gc.autoDetach", "false")
+					await this.setupGitAlternates(gitObjectsPath)
+					
+					// Get the workspace repository's HEAD before we set up the shadow repo environment
+					try {
+						this.log(`[${this.constructor.name}#initShadowGit] attempting to get workspace HEAD from ${this.workspaceDir}`)
+						
+						// Temporarily clear GIT_DIR to ensure we access the workspace repository, not the external one
+						const originalGitDir = process.env.GIT_DIR
+						if (originalGitDir) {
+							delete process.env.GIT_DIR
+							this.log(`[${this.constructor.name}#initShadowGit] temporarily cleared GIT_DIR: ${originalGitDir}`)
+						}
+						
+						try {
+							const workspaceGit = simpleGit(this.workspaceDir)
+							this.log(`[${this.constructor.name}#initShadowGit] created workspace git instance`)
+							const workspaceHead = await workspaceGit.revparse(["HEAD"])
+							this.baseHash = workspaceHead
+							this.log(`[${this.constructor.name}#initShadowGit] using workspace HEAD: ${this.baseHash}`)
+						} finally {
+							// Restore GIT_DIR if it was set
+							if (originalGitDir) {
+								process.env.GIT_DIR = originalGitDir
+								this.log(`[${this.constructor.name}#initShadowGit] restored GIT_DIR: ${originalGitDir}`)
+							}
+						}
+					} catch (error) {
+						this.log(`[${this.constructor.name}#initShadowGit] failed to get workspace HEAD: ${error}`)
+						// If workspace doesn't have a HEAD, create an initial commit in the shadow repo
+						this.log(`[${this.constructor.name}#initShadowGit] creating initial commit in shadow repo`)
+						const { commit } = await git.commit("initial commit", { "--allow-empty": null })
+						this.baseHash = commit
+						this.log(`[${this.constructor.name}#initShadowGit] created initial commit: ${this.baseHash}`)
+					}
+					
+					await this.writeExcludeFile()
+				} else {
+					throw new Error("Could not determine git objects path")
+				}
+			} else {
+				// No git repository in workspace, create a standalone shadow repo
+				this.log(`[${this.constructor.name}#initShadowGit] no git repository detected, creating standalone shadow repo`)
+				await git.init()
+				await git.addConfig("core.worktree", this.workspaceDir)
+				await git.addConfig("commit.gpgSign", "false")
+				await git.addConfig("user.name", "Roo Code")
+				await git.addConfig("user.email", "noreply@example.com")
+				await git.addConfig("gc.auto", "0")
+				await git.addConfig("gc.autoDetach", "false")
+				
+				// Create an initial commit
+				this.log(`[${this.constructor.name}#initShadowGit] creating initial commit in shadow repo`)
+				const { commit } = await git.commit("initial commit", { "--allow-empty": null })
+				this.baseHash = commit
+				this.log(`[${this.constructor.name}#initShadowGit] created initial commit: ${this.baseHash}`)
+				
+				await this.writeExcludeFile()
 			}
-
-			await this.writeExcludeFile()
-			this.baseHash = await git.revparse(["HEAD"])
+			}
 		} else {
 			this.log(`[${this.constructor.name}#initShadowGit] creating shadow git repo at ${this.checkpointsDir}`)
 
@@ -184,11 +272,39 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 					await this.writeExcludeFile()
 
 					try {
-						this.baseHash = await git.revparse(["HEAD"])
-						this.log(`[${this.constructor.name}#initShadowGit] using existing HEAD: ${this.baseHash}`)
-					} catch {
+						// Get the workspace repository's HEAD before we set up the shadow repo environment
+						// This avoids potential git environment conflicts
+						this.log(`[${this.constructor.name}#initShadowGit] attempting to get workspace HEAD from ${this.workspaceDir}`)
+						
+						// Temporarily clear GIT_DIR to ensure we access the workspace repository, not the external one
+						const originalGitDir = process.env.GIT_DIR
+						if (originalGitDir) {
+							delete process.env.GIT_DIR
+							this.log(`[${this.constructor.name}#initShadowGit] temporarily cleared GIT_DIR: ${originalGitDir}`)
+						}
+						
+						try {
+							const workspaceGit = simpleGit(this.workspaceDir)
+							this.log(`[${this.constructor.name}#initShadowGit] created workspace git instance`)
+							const workspaceHead = await workspaceGit.revparse(["HEAD"])
+							this.baseHash = workspaceHead
+							this.log(`[${this.constructor.name}#initShadowGit] using workspace HEAD: ${this.baseHash}`)
+						} finally {
+							// Restore GIT_DIR if it was set
+							if (originalGitDir) {
+								process.env.GIT_DIR = originalGitDir
+								this.log(`[${this.constructor.name}#initShadowGit] restored GIT_DIR: ${originalGitDir}`)
+							}
+						}
+					} catch (error) {
+						this.log(`[${this.constructor.name}#initShadowGit] failed to get workspace HEAD: ${error}`)
+						this.log(`[${this.constructor.name}#initShadowGit] error type: ${error instanceof Error ? error.constructor.name : typeof error}`)
+						this.log(`[${this.constructor.name}#initShadowGit] error message: ${error instanceof Error ? error.message : String(error)}`)
+						// If workspace doesn't have a HEAD, create an initial commit in the shadow repo
+						this.log(`[${this.constructor.name}#initShadowGit] creating initial commit in shadow repo`)
 						const { commit } = await git.commit("initial commit", { "--allow-empty": null })
 						this.baseHash = commit
+						this.log(`[${this.constructor.name}#initShadowGit] created initial commit: ${this.baseHash}`)
 					}
 
 					created = true
@@ -211,6 +327,7 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		)
 
 		this.git = git
+		this.log(`[${this.constructor.name}#initShadowGit] set this.git instance: ${this.git ? 'SUCCESS' : 'FAILED'}`)
 
 		await onInit?.()
 
@@ -226,6 +343,7 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 			duration,
 		})
 
+		this.log(`[${this.constructor.name}#initShadowGit] initialization complete - git instance: ${this.git ? 'SET' : 'NOT SET'}, baseHash: ${this.baseHash}`)
 		return { created, duration }
 	}
 
@@ -384,6 +502,17 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 
 			const startTime = Date.now()
 			await this.stageAll(this.git)
+			
+			// Check if there are any changes to commit
+			const status = await this.git.status()
+			this.log(`[${this.constructor.name}#saveCheckpoint] git status: staged=${status.staged.length}, not_added=${status.not_added.length}, modified=${status.modified.length}, deleted=${status.deleted.length}`)
+			const hasChanges = status.staged.length > 0 || status.not_added.length > 0 || status.modified.length > 0 || status.deleted.length > 0
+			
+			if (!hasChanges && !options?.allowEmpty) {
+				this.log(`[${this.constructor.name}#saveCheckpoint] no changes to commit`)
+				return undefined
+			}
+			
 			const commitArgs = options?.allowEmpty ? { "--allow-empty": null } : undefined
 			const result = await this.git.commit(message, commitArgs)
 			const fromHash = this._checkpoints[this._checkpoints.length - 1] ?? this.baseHash!
@@ -449,14 +578,41 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 	}
 
 	public async getDiff({ from, to }: { from?: string; to?: string }): Promise<CheckpointDiff[]> {
+		this.log(`[${this.constructor.name}#getDiff] called with from=${from}, to=${to}, git=${this.git ? 'SET' : 'NOT SET'}, baseHash=${this.baseHash}`)
+		
 		if (!this.git) {
 			throw new Error("Shadow git repo not initialized")
 		}
 
 		const result = []
 
+		// If no 'from' is specified, use the baseHash which represents the initial state
 		if (!from) {
-			from = (await this.git.raw(["rev-list", "--max-parents=0", "HEAD"])).trim()
+			from = this.baseHash
+			if (!from) {
+				throw new Error("Base hash not set - cannot determine initial state")
+			}
+			this.log(`[${this.constructor.name}#getDiff] using baseHash as from: ${from}`)
+		}
+		
+		// Add detailed logging for the revision range
+		this.log(`[${this.constructor.name}#getDiff] attempting diff with range: ${from}..${to}`)
+		
+		// Verify that both commit hashes exist in the repository
+		this.log(`[${this.constructor.name}#getDiff] Verifying commit hashes exist in repository`)
+		try {
+			await this.git.show([from])
+			this.log(`[${this.constructor.name}#getDiff] From commit ${from} exists`)
+		} catch (error) {
+			this.log(`[${this.constructor.name}#getDiff] From commit ${from} does not exist: ${error}`)
+		}
+		if (to) {
+			try {
+				await this.git.show(to)
+				this.log(`[${this.constructor.name}#getDiff] To commit ${to} exists`)
+			} catch (error) {
+				this.log(`[${this.constructor.name}#getDiff] To commit ${to} does not exist: ${error}`)
+			}
 		}
 
 		// Stage all changes so that untracked files appear in diff summary.
@@ -470,12 +626,37 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		for (const file of files) {
 			const relPath = file.file
 			const absPath = path.join(cwdPath, relPath)
-			const before = await this.git.show([`${from}:${relPath}`]).catch(() => "")
+			
+			this.log(`[${this.constructor.name}#getDiff] processing file: ${relPath}`)
+			
+			// Get the content from the 'from' commit. If file doesn't exist there, it's empty.
+			let before = ""
+			try {
+				before = await this.git.show([`${from}:${relPath}`])
+				this.log(`[${this.constructor.name}#getDiff] got before content from ${from}:${relPath}: "${before}"`)
+			} catch (error) {
+				this.log(`[${this.constructor.name}#getDiff] file doesn't exist in from commit ${from}:${relPath}: ${error}`)
+				// File doesn't exist in the from commit, so it's empty (new file)
+				before = ""
+			}
 
-			const after = to
-				? await this.git.show([`${to}:${relPath}`]).catch(() => "")
-				: await fs.readFile(absPath, "utf8").catch(() => "")
+			// Get the content from the 'to' commit. If no 'to' specified, use current worktree.
+			let after = ""
+			if (to) {
+				try {
+					after = await this.git.show([`${to}:${relPath}`])
+					this.log(`[${this.constructor.name}#getDiff] got after content from ${to}:${relPath}: "${after}"`)
+				} catch (error) {
+					this.log(`[${this.constructor.name}#getDiff] file doesn't exist in to commit ${to}:${relPath}: ${error}`)
+					// File doesn't exist in the to commit, so it's empty (deleted file)
+					after = ""
+				}
+			} else {
+				// No 'to' specified, so diff against current worktree
+				after = await fs.readFile(absPath, "utf8").catch(() => "")
+			}
 
+			this.log(`[${this.constructor.name}#getDiff] final before: "${before}", after: "${after}"`)
 			result.push({ paths: { relative: relPath, absolute: absPath }, content: { before, after } })
 		}
 

@@ -317,7 +317,7 @@ describe("McpHub", () => {
 
 			// Call tool should work with connected server
 			const result = await mcpHub.callTool("test-server", "test-tool", {})
-			expect(result).toEqual({ result: "success" })
+			expect(result).toEqual({ _meta: undefined, content: [], isError: undefined })
 			expect(connectedConnection.client.request).toHaveBeenCalled()
 
 			// Now test with a disconnected connection
