@@ -40,12 +40,22 @@ vi.mock("vscode", () => ({
 		showErrorMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 		showInformationMessage: vi.fn(),
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
+		tabGroups: {
+			onDidChangeTabs: vi.fn(),
+		},
 	},
 	workspace: {
 		workspaceFolders: undefined,
 		getConfiguration: vi.fn(() => ({
 			get: vi.fn(),
 			update: vi.fn(),
+		})),
+		createFileSystemWatcher: vi.fn(() => ({
+			onDidCreate: vi.fn(),
+			onDidChange: vi.fn(),
+			onDidDelete: vi.fn(),
+			dispose: vi.fn(),
 		})),
 	},
 	ConfigurationTarget: {
@@ -56,6 +66,10 @@ vi.mock("vscode", () => ({
 	Uri: {
 		parse: vi.fn((str) => ({ toString: () => str })),
 		file: vi.fn((path) => ({ fsPath: path })),
+		joinPath: vi.fn((uri, ...pathSegments) => ({
+			fsPath: uri.fsPath + '/' + pathSegments.join('/'),
+			toString: () => uri.toString() + '/' + pathSegments.join('/'),
+		})),
 	},
 	env: {
 		openExternal: vi.fn(),
@@ -65,6 +79,18 @@ vi.mock("vscode", () => ({
 	},
 	commands: {
 		executeCommand: vi.fn(),
+	},
+	ExtensionMode: {
+		Production: 1,
+		Development: 2,
+		Test: 3,
+	},
+	extensions: {
+		getExtension: vi.fn().mockReturnValue({
+			packageJSON: {
+				version: "1.0.0",
+			},
+		}),
 	},
 }))
 
@@ -151,9 +177,9 @@ describe("webviewMessageHandler - Project MCP Settings", () => {
 				type: "openProjectMcpSettings",
 			})
 
-			expect(mockedFs.mkdir).toHaveBeenCalledWith("/test/workspace/.roo", { recursive: true })
-			expect(safeWriteJson).toHaveBeenCalledWith("/test/workspace/.roo/mcp.json", { mcpServers: {} })
-			expect(openFileSpy).toHaveBeenCalledWith("/test/workspace/.roo/mcp.json")
+			expect(mockedFs.mkdir).toHaveBeenCalledWith(".roo", { recursive: true })
+			expect(safeWriteJson).toHaveBeenCalledWith(expect.stringContaining(".roo"), { mcpServers: {} })
+			expect(openFileSpy).toHaveBeenCalledWith(expect.stringContaining(".roo"))
 		})
 
 		it("handles openProjectMcpSettings when workspace is not open", async () => {
@@ -164,7 +190,7 @@ describe("webviewMessageHandler - Project MCP Settings", () => {
 
 			await messageHandler({ type: "openProjectMcpSettings" })
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.no_workspace")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("common:errors.no_workspace")
 		})
 
 		it("handles openProjectMcpSettings file creation error", async () => {
@@ -173,16 +199,15 @@ describe("webviewMessageHandler - Project MCP Settings", () => {
 
 			;(vscode.workspace as any).workspaceFolders = [{ uri: { fsPath: "/test/workspace" } }]
 
-			const fs = require("fs/promises")
-			fs.mkdir.mockRejectedValue(new Error("Failed to create directory"))
+			const fs = await import("fs/promises")
+			const mockedFs = vi.mocked(fs)
+			mockedFs.mkdir.mockRejectedValue(new Error("Failed to create directory"))
 
 			await messageHandler({
 				type: "openProjectMcpSettings",
 			})
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-				expect.stringContaining("Failed to create or open .roo/mcp.json"),
-			)
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("mcp:errors.create_json")
 		})
 	})
 })

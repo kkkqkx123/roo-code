@@ -62,6 +62,13 @@ vi.mock("vscode", () => ({
 			dispose: vi.fn(),
 		})),
 	},
+	extensions: {
+		getExtension: vi.fn().mockReturnValue({
+			packageJSON: {
+				version: "1.0.0",
+			},
+		}),
+	},
 	env: {
 		uriScheme: "vscode",
 		language: "en",
@@ -201,27 +208,41 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 
 		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
 
-		// Mock providerSettingsManager
-		;(provider as any).providerSettingsManager = {
-			saveConfig: vi.fn().mockResolvedValue("test-id"),
-			listConfig: vi
-				.fn()
-				.mockResolvedValue([
-					{ name: "test-config", id: "test-id", apiProvider: "anthropic", modelId: "claude-3-5-sonnet-20241022" },
-				]),
-			setModeConfig: vi.fn(),
-			activateProfile: vi.fn().mockResolvedValue({
+		// Store providerSettings to use in activateProviderProfile mock
+		let lastProviderSettings: any = null
+
+		// Mock providerCoordinator
+		;(provider as any).providerCoordinator = {
+			getProviderProfiles: vi.fn().mockResolvedValue([
+				{ name: "test-config", id: "test-id", apiProvider: "anthropic", modelId: "claude-3-5-sonnet-20241022" },
+			]),
+			getProviderProfile: vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
 				apiProvider: "anthropic",
 				apiModelId: "claude-3-5-sonnet-20241022",
 			}),
-			getProfile: vi.fn().mockResolvedValue({
-				name: "test-config",
-				id: "test-id",
-				apiProvider: "anthropic",
-				apiModelId: "claude-3-5-sonnet-20241022",
+			upsertProviderProfile: vi.fn().mockImplementation(async (name, providerSettings, activate) => {
+				lastProviderSettings = providerSettings
+				if (activate) {
+					await provider.activateProviderProfile({ name })
+				}
+				return "test-id"
 			}),
+			activateProviderProfile: vi.fn().mockImplementation(async (args) => {
+				const name = 'name' in args ? args.name : 'test-config'
+				return {
+					name,
+					id: "test-id",
+					providerSettings: lastProviderSettings || {
+						apiProvider: "anthropic",
+						apiModelId: "claude-3-5-sonnet-20241022",
+					},
+				}
+			}),
+			deleteProviderProfile: vi.fn().mockResolvedValue(undefined),
+			hasProviderProfileEntry: vi.fn().mockReturnValue(true),
+			updateTaskApiHandlerIfNeeded: vi.fn().mockResolvedValue(undefined),
 		}
 
 		// Get the buildApiHandler mock
@@ -404,13 +425,15 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return same provider/model but different non-model setting
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any).providerCoordinator.activateProviderProfile = vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
-				apiProvider: "anthropic",
-				apiModelId: "claude-3-5-sonnet-20241022",
-				modelTemperature: 0.9,
-				rateLimitSeconds: 7,
+				providerSettings: {
+					apiProvider: "anthropic",
+					apiModelId: "claude-3-5-sonnet-20241022",
+					modelTemperature: 0.9,
+					rateLimitSeconds: 7,
+				},
 			})
 
 			await provider.activateProviderProfile({ name: "test-config" })
@@ -446,11 +469,13 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return different provider
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any).providerCoordinator.activateProviderProfile = vi.fn().mockResolvedValue({
 				name: "openai-config",
 				id: "openai-id",
-				apiProvider: "openai",
-				openAiModelId: "gpt-4-turbo",
+				providerSettings: {
+					apiProvider: "openai",
+					openAiModelId: "gpt-4-turbo",
+				},
 			})
 
 			await provider.activateProviderProfile({ name: "openai-config" })
@@ -485,11 +510,13 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return different model
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any).providerCoordinator.activateProviderProfile = vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
-				apiProvider: "anthropic",
-				apiModelId: "claude-3-5-haiku-20241022",
+				providerSettings: {
+					apiProvider: "anthropic",
+					apiModelId: "claude-3-5-haiku-20241022",
+				},
 			})
 
 			await provider.activateProviderProfile({ name: "test-config" })
@@ -526,11 +553,13 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// First switch: A -> B (anthropic -> openai)
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any).providerCoordinator.activateProviderProfile = vi.fn().mockResolvedValue({
 				name: "openai-config",
 				id: "openai-id",
-				apiProvider: "openai",
-				openAiModelId: "gpt-4-turbo",
+				providerSettings: {
+					apiProvider: "openai",
+					openAiModelId: "gpt-4-turbo",
+				},
 			})
 			await provider.activateProviderProfile({ name: "openai-config" })
 
@@ -540,11 +569,13 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 
 			// Second switch: B -> A (openai -> anthropic)
 			;(mockTask.updateApiConfiguration as any).mockClear()
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any).providerCoordinator.activateProviderProfile = vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
-				apiProvider: "anthropic",
-				apiModelId: "claude-3-5-sonnet-20241022",
+				providerSettings: {
+					apiProvider: "anthropic",
+					apiModelId: "claude-3-5-sonnet-20241022",
+				},
 			})
 			await provider.activateProviderProfile({ name: "test-config" })
 

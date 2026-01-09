@@ -12,6 +12,14 @@ const mockDisposable = {
 const mockUri = {
 	file: (path) => ({ fsPath: path, path, scheme: "file" }),
 	parse: (path) => ({ fsPath: path, path, scheme: "file" }),
+	joinPath: (base, ...pathSegments) => {
+		const joinedPath = pathSegments.join('/')
+		return { 
+			fsPath: joinedPath, 
+			path: joinedPath, 
+			scheme: "file" 
+		}
+	},
 }
 
 const mockRange = class {
@@ -82,6 +90,9 @@ export const window = {
 	}),
 	onDidCloseTerminal: () => mockDisposable,
 	createTextEditorDecorationType: () => ({ dispose: () => {} }),
+	tabGroups: {
+		onDidChangeTabs: () => mockDisposable,
+	},
 }
 
 export const commands = {
@@ -99,11 +110,26 @@ export const languages = {
 }
 
 export const extensions = {
-	getExtension: () => null,
+	getExtension: (extensionId) => {
+		if (extensionId === "roo-cline.roo-code") {
+			return {
+				packageJSON: {
+					version: "1.0.0",
+				},
+			}
+		}
+		return null
+	},
 }
 
 export const env = {
 	openExternal: () => Promise.resolve(),
+}
+
+export const ExtensionMode = {
+	Production: 1,
+	Development: 2,
+	Test: 3,
 }
 
 export const Uri = mockUri
@@ -150,7 +176,13 @@ export const CodeActionKind = {
 	RefactorRewrite: { value: "refactor.rewrite" },
 }
 
-export const EventEmitter = mockEventEmitter
+export const EventEmitter = class {
+	constructor() {
+		this.event = () => () => {}
+		this.fire = () => {}
+		this.dispose = () => {}
+	}
+}
 
 export default {
 	workspace,

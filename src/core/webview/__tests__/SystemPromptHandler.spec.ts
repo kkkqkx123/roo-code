@@ -5,6 +5,15 @@ import { Task } from "../../task/Task"
 import { ContextProxy } from "../../config/ContextProxy"
 import { defaultModeSlug } from "../../../shared/modes"
 import { experimentDefault } from "../../../shared/experiments"
+import { buildApiHandler } from "../../../api"
+import { generateSystemPrompt } from "../generateSystemPrompt"
+
+// Mock generateSystemPrompt
+vi.mock("../generateSystemPrompt", () => ({
+	generateSystemPrompt: vi.fn().mockResolvedValue("Mocked system prompt"),
+}))
+
+vi.mock("../../../api")
 
 describe("SystemPromptHandler - getSystemPrompt", () => {
 	let provider: ClineProvider
@@ -17,6 +26,20 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 
+		vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockReturnValue({
+			uri: { fsPath: '/test/workspace' } as vscode.Uri,
+			name: 'test-workspace',
+			index: 0,
+		})
+
+		vi.spyOn(vscode.workspace, 'workspaceFolders', 'get').mockReturnValue([
+			{
+				uri: { fsPath: '/test/workspace' } as vscode.Uri,
+				name: 'test-workspace',
+				index: 0,
+			},
+		])
+
 		const globalState: Record<string, string | undefined> = {
 			mode: "code",
 			currentApiConfigName: "test-config",
@@ -27,6 +50,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		mockContext = {
 			extensionPath: "/test/path",
 			extensionUri: {} as vscode.Uri,
+			extensionMode: vscode.ExtensionMode.Test,
 			globalState: {
 				get: vi.fn().mockImplementation((key: string) => globalState[key]),
 				update: vi
@@ -96,7 +120,16 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			getAllServers: vi.fn().mockReturnValue([]),
 		})
 
-		;(provider as any).customModesManager = mockCustomModesManager
+		vi.spyOn(provider, 'customModesManager', 'get').mockReturnValue(mockCustomModesManager as any)
+
+		vi.mocked(buildApiHandler).mockReturnValue({
+			getModel: () => ({
+				info: {
+					supportsImages: false,
+					isStealthModel: false,
+				},
+			}),
+		} as any)
 	})
 
 	const getMessageHandler = () => {
@@ -107,14 +140,24 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 
 	beforeEach(async () => {
 		mockPostMessage.mockClear()
+		
+		vi.spyOn(provider, 'postMessageToWebview').mockImplementation(async (message) => {
+			console.log("postMessageToWebview called with:", JSON.stringify(message, null, 2))
+			mockPostMessage(message)
+		})
+		
 		await provider.resolveWebviewView(mockWebviewView)
+		console.log("After resolveWebviewView, mockPostMessage calls:", mockPostMessage.mock.calls.length)
 	})
 
 	test("handles mcpEnabled setting correctly", async () => {
 		const handler = getMessageHandler()
 		expect(typeof handler).toBe("function")
 
-		vi.spyOn(provider, "getState").mockResolvedValueOnce({
+		console.log("provider.cwd:", provider.cwd)
+		console.log("vscode.workspace.workspaceFolders:", vscode.workspace.workspaceFolders)
+
+		vi.spyOn(provider, "getState").mockResolvedValue({
 			apiConfiguration: {
 				apiProvider: "anthropic" as const,
 			},
@@ -124,9 +167,23 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			experiments: experimentDefault,
 		} as any)
 
-		await handler({ type: "getSystemPrompt", mode: "code" })
+		const initialCallCount = mockPostMessage.mock.calls.length
+		console.log("Before handler call, mockPostMessage calls:", initialCallCount)
+		
+		try {
+			await handler({ type: "getSystemPrompt", mode: "code" })
+			console.log("Handler completed successfully")
+		} catch (error) {
+			console.error("Handler threw error:", error)
+			throw error // Re-throw to see the error in test output
+		}
+		
+		console.log("After handler call, mockPostMessage calls:", mockPostMessage.mock.calls.length)
+		console.log("All calls:", JSON.stringify(mockPostMessage.mock.calls, null, 2))
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCallCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -134,9 +191,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			}),
 		)
 
-		mockPostMessage.mockClear()
-
-		vi.spyOn(provider, "getState").mockResolvedValueOnce({
+		vi.spyOn(provider, "getState").mockResolvedValue({
 			apiConfiguration: {
 				apiProvider: "anthropic" as const,
 			},
@@ -146,9 +201,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			experiments: experimentDefault,
 		} as any)
 
+		const callCountBefore = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const callsAfter = mockPostMessage.mock.calls.slice(callCountBefore)
+		expect(callsAfter.length).toBe(1)
+		expect(callsAfter[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -158,13 +216,17 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 	})
 
 	test("handles errors gracefully", async () => {
-		const { SYSTEM_PROMPT } = await import("../../prompts/system")
-		vi.mocked(SYSTEM_PROMPT).mockRejectedValueOnce(new Error("Test error"))
+		const showErrorMessageSpy = vi.spyOn(vscode.window, "showErrorMessage")
+		
+		// Mock generateSystemPrompt to throw an error instead of mocking getState
+		vi.mocked(generateSystemPrompt).mockRejectedValueOnce(new Error("Test error"))
 
 		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
+		
+		// The error should be caught and showErrorMessage should be called
 		await messageHandler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.get_system_prompt")
+		expect(showErrorMessageSpy).toHaveBeenCalledWith("errors.get_system_prompt")
 	})
 
 	test("uses code mode custom instructions", async () => {
@@ -180,9 +242,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		} as any)
 
 		const handler = getMessageHandler()
+		const initialCount = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -209,9 +274,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		} as any)
 
 		const handler = getMessageHandler()
+		const initialCount = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -238,9 +306,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		} as any)
 
 		const handler = getMessageHandler()
+		const initialCount = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -265,9 +336,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		} as any)
 
 		const handler = getMessageHandler()
+		const initialCount = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "architect" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
@@ -288,17 +362,18 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			experiments: experimentDefault,
 		} as any)
 
+		const initialCount = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const newCalls = mockPostMessage.mock.calls.slice(initialCount)
+		expect(newCalls.length).toBe(1)
+		expect(newCalls[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),
 				mode: "code",
 			}),
 		)
-
-		mockPostMessage.mockClear()
 
 		vi.spyOn(provider, "getState").mockResolvedValueOnce({
 			apiConfiguration: {
@@ -309,9 +384,12 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 			experiments: experimentDefault,
 		} as any)
 
+		const callCountBefore = mockPostMessage.mock.calls.length
 		await handler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(mockPostMessage).toHaveBeenCalledWith(
+		const callsAfter = mockPostMessage.mock.calls.slice(callCountBefore)
+		expect(callsAfter.length).toBe(1)
+		expect(callsAfter[0][0]).toEqual(
 			expect.objectContaining({
 				type: "systemPrompt",
 				text: expect.any(String),

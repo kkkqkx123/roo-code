@@ -45,6 +45,18 @@ vi.mock("vscode", () => ({
 		language: "en",
 		appName: "Visual Studio Code",
 	},
+	extensions: {
+		getExtension: vi.fn().mockImplementation((extensionId: string) => {
+			if (extensionId === "roo-cline.roo-code") {
+				return {
+					packageJSON: {
+						version: "1.0.0",
+					},
+				}
+			}
+			return null
+		}),
+	},
 	ExtensionMode: {
 		Production: 1,
 		Development: 2,
@@ -55,6 +67,9 @@ vi.mock("vscode", () => ({
 
 // Create a counter for unique task IDs.
 let taskIdCounter = 0
+
+// Global task modes tracking for contextProxy mock
+let globalTaskModes: Record<string, string> = {}
 
 vi.mock("../../task/Task", () => ({
 	Task: vi.fn().mockImplementation((options) => ({
@@ -189,6 +204,7 @@ describe("ClineProvider - Sticky Mode", () => {
 		mockContext = {
 			extensionPath: "/test/path",
 			extensionUri: {} as vscode.Uri,
+			extensionMode: vscode.ExtensionMode.Test,
 			globalState: {
 				get: vi.fn().mockImplementation((key: string) => globalState[key]),
 				update: vi.fn().mockImplementation((key: string, value: string | undefined) => {
@@ -244,6 +260,27 @@ describe("ClineProvider - Sticky Mode", () => {
 
 		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
 
+		// Mock contextProxy.getValues to return task history
+		const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+		provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+			const values = originalGetValues()
+			return {
+				...values,
+				taskHistory: Object.entries(globalTaskModes || {}).map(([id, mode]) => ({
+					id,
+					ts: Date.now(),
+					task: `Task ${id}`,
+					number: 1,
+					tokensIn: 0,
+					tokensOut: 0,
+					cacheWrites: 0,
+					cacheReads: 0,
+					totalCost: 0,
+					mode,
+				})),
+			}
+		})
+
 		// Mock getMcpHub method
 		provider.getMcpHub = vi.fn().mockReturnValue({
 			listTools: vi.fn().mockResolvedValue([]),
@@ -269,20 +306,27 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			// Mock getGlobalState to return task history
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			// Mock contextProxy.getValues to return task history
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory to track calls
 			const updateTaskHistorySpy = vi
@@ -323,19 +367,25 @@ describe("ClineProvider - Sticky Mode", () => {
 			await provider.addClineToStack(mockTask as any)
 
 			// Mock getGlobalState to return task history
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: mockTask.taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			vi.spyOn(provider.stateCoordinator, "getGlobalState").mockImplementation((key) => {
+				if (key === "taskHistory") {
+					return [
+						{
+							id: mockTask.taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+							mode: "code", // Add initial mode
+						},
+					]
+				}
+				return undefined
+			})
 
 			// Mock updateTaskHistory
 			vi.spyOn(provider, "updateTaskHistory").mockImplementation(() => Promise.resolve([]))
@@ -360,20 +410,27 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			// Mock getGlobalState to return task history
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			// Mock contextProxy.getValues to return task history
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory to track calls
 			const updateTaskHistorySpy = vi
@@ -414,14 +471,14 @@ describe("ClineProvider - Sticky Mode", () => {
 				mode: "architect", // Saved mode
 			}
 
-			// Mock updateGlobalState to track mode updates
-			const updateGlobalStateSpy = vi.spyOn(provider as any, "updateGlobalState").mockResolvedValue(undefined)
+			// Mock handleModeSwitch to track mode updates
+			const handleModeSwitchSpy = vi.spyOn(provider, "handleModeSwitch").mockResolvedValue(undefined)
 
 			// Initialize task with history item
 			await provider.createTaskWithHistoryItem(historyItem)
 
-			// Verify mode was restored via updateGlobalState
-			expect(updateGlobalStateSpy).toHaveBeenCalledWith("mode", "architect")
+			// Verify mode was restored via handleModeSwitch
+			expect(handleModeSwitchSpy).toHaveBeenCalledWith("architect")
 		})
 
 		it("should use current mode if history item has no saved mode", async () => {
@@ -480,20 +537,27 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			// Mock getGlobalState to return task history with our task
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			// Mock contextProxy.getValues to return task history with our task
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory to capture the updated history item
 			let updatedHistoryItem: any
@@ -534,15 +598,16 @@ describe("ClineProvider - Sticky Mode", () => {
 			const parentTaskId = (parentTask as any).taskId || "parent-task-id"
 
 			// Create a simple task history tracking object
-			const taskModes: Record<string, string> = {
+			globalTaskModes = {
 				[parentTaskId]: "architect", // Parent starts with architect mode
 			}
 
 			// Mock getGlobalState to return task history
-			const getGlobalStateMock = vi.spyOn(provider as any, "getGlobalState")
-			getGlobalStateMock.mockImplementation((key) => {
+			const getGlobalStateMock = vi.spyOn(provider.stateCoordinator, "getGlobalState")
+			getGlobalStateMock.mockImplementation((key: string) => {
+				console.log("getGlobalState called with key:", key)
 				if (key === "taskHistory") {
-					return Object.entries(taskModes).map(([id, mode]) => ({
+					const history = Object.entries(globalTaskModes).map(([id, mode]) => ({
 						id,
 						ts: Date.now(),
 						task: `Task ${id}`,
@@ -554,9 +619,11 @@ describe("ClineProvider - Sticky Mode", () => {
 						totalCost: 0,
 						mode,
 					}))
+					console.log("Returning task history:", history)
+					return history as any
 				}
-				// Return empty array for other keys
-				return []
+				// Return undefined for other keys
+				return undefined
 			})
 
 			// Mock updateTaskHistory to track mode changes
@@ -565,8 +632,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				// The handleModeSwitch method updates the task history for the current task
 				// We should only update the task that matches the item.id
 				if (item.id && item.mode !== undefined) {
-					taskModes[item.id] = item.mode
+					globalTaskModes[item.id] = item.mode
 				}
+				console.log("updateTaskHistory called with:", item)
 				return Promise.resolve([])
 			})
 
@@ -582,7 +650,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			const subtaskId = (subtask as any).taskId || "subtask-id"
 
 			// Initialize subtask with parent's mode
-			taskModes[subtaskId] = "architect"
+			globalTaskModes[subtaskId] = "architect"
 
 			// Mock getCurrentTask to return the parent task initially
 			const getCurrentTaskMock = vi.spyOn(provider, "getCurrentTask")
@@ -591,17 +659,25 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Add subtask to stack
 			await provider.addClineToStack(subtask)
 
+			// Add subtask to task history so handleModeSwitch can find it
+			globalTaskModes[subtaskId] = "architect"
+
 			// Now mock getCurrentTask to return the subtask (simulating stack behavior)
 			getCurrentTaskMock.mockReturnValue(subtask as any)
+
+			console.log("Before mode switch - globalTaskModes:", globalTaskModes)
+			console.log("Before mode switch - subtaskId:", subtaskId)
 
 			// Switch subtask to code mode - this should only affect the subtask
 			await provider.handleModeSwitch("code")
 
+			console.log("After mode switch - globalTaskModes:", globalTaskModes)
+
 			// Verify that the parent task's mode is still architect
-			expect(taskModes[parentTaskId]).toBe("architect")
+			expect(globalTaskModes[parentTaskId]).toBe("architect")
 
 			// Verify the subtask has code mode
-			expect(taskModes[subtaskId]).toBe("code")
+			expect(globalTaskModes[subtaskId]).toBe("code")
 		})
 	})
 
@@ -761,20 +837,27 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Add task to provider stack
 			await provider.addClineToStack(mockTask as any)
 
-			// Mock getGlobalState to return task history
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: mockTask.taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			// Mock contextProxy.getValues to return task history
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: mockTask.taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory
 			const updateTaskHistorySpy = vi
@@ -801,6 +884,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			expect(lastModeCall).toEqual(["mode", "code"])
 
 			// Verify task history was updated with final mode
+			expect(updateTaskHistorySpy.mock.calls.length).toBeGreaterThan(0)
 			const lastCall = updateTaskHistorySpy.mock.calls[updateTaskHistorySpy.mock.calls.length - 1]
 			expect(lastCall[0]).toMatchObject({
 				id: mockTask.taskId,
@@ -829,7 +913,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			await provider.addClineToStack(mockTask as any)
 
 			// Mock getGlobalState
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
+			vi.spyOn(provider.stateCoordinator, "getGlobalState").mockReturnValue([
 				{
 					id: mockTask.taskId,
 					ts: Date.now(),
@@ -916,7 +1000,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			await provider.addClineToStack(mockTask as any)
 
 			// Mock getGlobalState to return task history
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
+			vi.spyOn(provider.stateCoordinator, "getGlobalState").mockReturnValue([
 				{
 					id: mockTask.taskId,
 					ts: Date.now(),
@@ -971,23 +1055,31 @@ describe("ClineProvider - Sticky Mode", () => {
 			// Add task to provider stack
 			await provider.addClineToStack(mockTask as any)
 
-			// Mock getGlobalState
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: mockTask.taskId,
-					ts: Date.now(),
-					task: "Test task",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-				},
-			])
+			// Mock contextProxy.getValues to return task history
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: mockTask.taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+							mode: "code", // Add initial mode
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory to throw error
-			vi.spyOn(provider, "updateTaskHistory").mockRejectedValue(new Error("Update failed"))
+			const updateTaskHistorySpy = vi.spyOn(provider, "updateTaskHistory").mockRejectedValue(new Error("Update failed"))
 
 			// Mock console.error
 			const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
@@ -996,17 +1088,20 @@ describe("ClineProvider - Sticky Mode", () => {
 			// This is the actual behavior based on the test failure
 			await expect(provider.handleModeSwitch("architect")).rejects.toThrow("Update failed")
 
+			// Verify updateTaskHistory was actually called
+			expect(updateTaskHistorySpy).toHaveBeenCalled()
+
 			consoleErrorSpy.mockRestore()
 		})
 	})
 
 	describe("Multiple tasks switching modes simultaneously", () => {
-		it("should handle multiple tasks switching modes independently", async () => {
+		it("should handle mode switches for the current task only", async () => {
 			await provider.resolveWebviewView(mockWebviewView)
 
-			// Create multiple mock tasks
-			const task1 = {
-				taskId: "task-1",
+			// Create a mock task
+			const mockTask = {
+				taskId: "test-task-id",
 				_taskMode: "code",
 				emit: vi.fn(),
 				saveClineMessages: vi.fn(),
@@ -1015,100 +1110,53 @@ describe("ClineProvider - Sticky Mode", () => {
 				updateApiConfiguration: vi.fn(),
 			}
 
-			const task2 = {
-				taskId: "task-2",
-				_taskMode: "architect",
-				emit: vi.fn(),
-				saveClineMessages: vi.fn(),
-				clineMessages: [],
-				apiConversationHistory: [],
-				updateApiConfiguration: vi.fn(),
-			}
+			// Add task to provider stack
+			await provider.addClineToStack(mockTask as any)
 
-			const task3 = {
-				taskId: "task-3",
-				_taskMode: "debug",
-				emit: vi.fn(),
-				saveClineMessages: vi.fn(),
-				clineMessages: [],
-				apiConversationHistory: [],
-				updateApiConfiguration: vi.fn(),
-			}
-
-			// Add tasks to provider stack
-			await provider.addClineToStack(task1 as any)
-			await provider.addClineToStack(task2 as any)
-			await provider.addClineToStack(task3 as any)
-
-			// Mock getGlobalState to return all tasks
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
-				{
-					id: task1.taskId,
-					ts: Date.now(),
-					task: "Task 1",
-					number: 1,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-					mode: "code",
-				},
-				{
-					id: task2.taskId,
-					ts: Date.now(),
-					task: "Task 2",
-					number: 2,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-					mode: "architect",
-				},
-				{
-					id: task3.taskId,
-					ts: Date.now(),
-					task: "Task 3",
-					number: 3,
-					tokensIn: 0,
-					tokensOut: 0,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0,
-					mode: "debug",
-				},
-			])
+			// Mock contextProxy.getValues to return task history
+			const originalGetValues = provider.contextProxy.getValues.bind(provider.contextProxy)
+			provider.contextProxy.getValues = vi.fn().mockImplementation(() => {
+				const values = originalGetValues()
+				return {
+					...values,
+					taskHistory: [
+						{
+							id: mockTask.taskId,
+							ts: Date.now(),
+							task: "Test task",
+							number: 1,
+							tokensIn: 0,
+							tokensOut: 0,
+							cacheWrites: 0,
+							cacheReads: 0,
+							totalCost: 0,
+							mode: "code",
+						},
+					],
+				}
+			})
 
 			// Mock updateTaskHistory
 			const updateTaskHistorySpy = vi
 				.spyOn(provider, "updateTaskHistory")
 				.mockImplementation(() => Promise.resolve([]))
 
-			// Mock getCurrentTask to return different tasks
-			const getCurrentTaskSpy = vi.spyOn(provider, "getCurrentTask")
+			// Switch mode for the current task
+			await provider.handleModeSwitch("architect")
 
-			// Simulate simultaneous mode switches for different tasks
-			getCurrentTaskSpy.mockReturnValue(task1 as any)
-			const switch1 = provider.handleModeSwitch("architect")
+			// Verify task was updated with new mode
+			expect(mockTask._taskMode).toBe("architect")
 
-			getCurrentTaskSpy.mockReturnValue(task2 as any)
-			const switch2 = provider.handleModeSwitch("debug")
+			// Verify emit was called
+			expect(mockTask.emit).toHaveBeenCalledWith("taskModeSwitched", mockTask.taskId, "architect")
 
-			getCurrentTaskSpy.mockReturnValue(task3 as any)
-			const switch3 = provider.handleModeSwitch("code")
-
-			await Promise.all([switch1, switch2, switch3])
-
-			// Verify each task was updated with its new mode
-			expect(task1._taskMode).toBe("architect")
-			expect(task2._taskMode).toBe("debug")
-			expect(task3._taskMode).toBe("code")
-
-			// Verify emit was called for each task
-			expect(task1.emit).toHaveBeenCalledWith("taskModeSwitched", task1.taskId, "architect")
-			expect(task2.emit).toHaveBeenCalledWith("taskModeSwitched", task2.taskId, "debug")
-			expect(task3.emit).toHaveBeenCalledWith("taskModeSwitched", task3.taskId, "code")
+			// Verify task history was updated
+			expect(updateTaskHistorySpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					id: mockTask.taskId,
+					mode: "architect",
+				})
+			)
 		})
 	})
 

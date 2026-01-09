@@ -173,8 +173,24 @@ export class WebviewCoordinator {
 		// Get the local path to main script run in the webview
 		const scriptUri = getUri(webview, this.context.extensionUri, ["out", "webview-ui", "main.js"])
 		const cssUri = getUri(webview, this.context.extensionUri, ["out", "webview-ui", "main.css"])
+		const codiconsUri = getUri(webview, this.context.extensionUri, ["assets", "codicons", "codicon.css"])
+		const imagesUri = getUri(webview, this.context.extensionUri, ["assets", "images"])
+		const audioUri = getUri(webview, this.context.extensionUri, ["webview-ui", "audio"])
+		const materialIconsUri = getUri(webview, this.context.extensionUri, ["assets", "vscode-material-icons", "icons"])
 
 		const nonce = getNonce()
+
+		const openRouterDomain = "https://openrouter.ai"
+
+		const csp = [
+			"default-src 'none'",
+			`font-src ${webview.cspSource} data:`,
+			`style-src ${webview.cspSource} 'unsafe-inline'`,
+			`img-src ${webview.cspSource} https://storage.googleapis.com https://img.clerk.com data:`,
+			`media-src ${webview.cspSource}`,
+			`script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' https://ph.roocode.com 'strict-dynamic'`,
+			`connect-src ${webview.cspSource} ${openRouterDomain} https://api.requesty.ai https://ph.roocode.com`,
+		]
 
 		// Use a nonce to only allow specific scripts to be run
 		return `<!DOCTYPE html>
@@ -182,8 +198,14 @@ export class WebviewCoordinator {
 			<head>
 				<meta charset="UTF-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}';">
+				<meta http-equiv="Content-Security-Policy" content="${csp.join("; ")}">
 				<link href="${cssUri}" rel="stylesheet">
+				<link href="${codiconsUri}" rel="stylesheet" />
+				<script nonce="${nonce}">
+					window.IMAGES_BASE_URI = "${imagesUri}"
+					window.AUDIO_BASE_URI = "${audioUri}"
+					window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
+				</script>
 				<title>Roo Code</title>
 			</head>
 			<body>

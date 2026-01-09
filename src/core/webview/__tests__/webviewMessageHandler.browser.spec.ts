@@ -9,6 +9,9 @@ import { ContextProxy } from "../../config/ContextProxy"
 // Mock the browser discovery module
 vi.mock("../../../services/browser/browserDiscovery", () => ({
 	discoverChromeHostUrl: vi.fn().mockResolvedValue("http://localhost:9222"),
+	tryChromeHostUrl: vi.fn().mockImplementation(async (url) => {
+		return url === "http://localhost:9222" || url === "http://test-url:9222"
+	}),
 }))
 
 // Mock the BrowserSession module
@@ -43,12 +46,22 @@ vi.mock("vscode", () => ({
 		showErrorMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 		showInformationMessage: vi.fn(),
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
+		tabGroups: {
+			onDidChangeTabs: vi.fn(),
+		},
 	},
 	workspace: {
 		workspaceFolders: undefined,
 		getConfiguration: vi.fn(() => ({
 			get: vi.fn(),
 			update: vi.fn(),
+		})),
+		createFileSystemWatcher: vi.fn(() => ({
+			onDidCreate: vi.fn(),
+			onDidChange: vi.fn(),
+			onDidDelete: vi.fn(),
+			dispose: vi.fn(),
 		})),
 	},
 	ConfigurationTarget: {
@@ -59,6 +72,10 @@ vi.mock("vscode", () => ({
 	Uri: {
 		parse: vi.fn((str) => ({ toString: () => str })),
 		file: vi.fn((path) => ({ fsPath: path })),
+		joinPath: vi.fn((uri, ...pathSegments) => ({
+			fsPath: (uri.fsPath || uri.toString().replace('file://', '')) + '/' + pathSegments.join('/'),
+			toString: () => uri.toString() + '/' + pathSegments.join('/'),
+		})),
 	},
 	env: {
 		openExternal: vi.fn(),
@@ -68,6 +85,18 @@ vi.mock("vscode", () => ({
 	},
 	commands: {
 		executeCommand: vi.fn(),
+	},
+	ExtensionMode: {
+		Production: 1,
+		Development: 2,
+		Test: 3,
+	},
+	extensions: {
+		getExtension: vi.fn().mockReturnValue({
+			packageJSON: {
+				version: "1.0.0",
+			},
+		}),
 	},
 }))
 
@@ -96,9 +125,18 @@ describe("webviewMessageHandler - Browser Connection Features", () => {
 				store: vi.fn().mockResolvedValue(undefined),
 				delete: vi.fn().mockResolvedValue(undefined),
 			},
-			extensionUri: vscode.Uri.parse("file:///test"),
-			globalStorageUri: vscode.Uri.parse("file:///test/storage"),
-			storageUri: vscode.Uri.parse("file:///test/storage"),
+			extensionUri: {
+				fsPath: "/test",
+				toString: () => "file:///test",
+			},
+			globalStorageUri: {
+				fsPath: "/test/storage",
+				toString: () => "file:///test/storage",
+			},
+			storageUri: {
+				fsPath: "/test/storage",
+				toString: () => "file:///test/storage",
+			},
 		} as any
 
 		mockOutputChannel = {

@@ -324,6 +324,31 @@ export class ClineProvider
 		rootTask?: string
 		parentTask?: string
 	}): Promise<Task> {
+		// If the history item has a mode, restore it (but only if the mode exists)
+		if (historyItem.mode) {
+			const { getModeBySlug } = await import("../../shared/modes")
+			const customModes = await this.customModesManager.getCustomModes()
+			const modeConfig = getModeBySlug(historyItem.mode, customModes)
+			if (modeConfig) {
+				try {
+					await this.handleModeSwitch(historyItem.mode)
+				} catch (error) {
+					this.log(`Failed to restore API configuration for mode '${historyItem.mode}': ${error}`)
+					// Continue with task restoration even if mode config loading fails
+				}
+			} else {
+				// Mode no longer exists, fall back to default mode
+				this.log(`Mode '${historyItem.mode}' from history no longer exists. Falling back to default mode 'code'.`)
+				historyItem.mode = "code"
+				try {
+					await this.handleModeSwitch("code")
+				} catch (error) {
+					this.log(`Failed to restore API configuration for mode 'code': ${error}`)
+					// Continue with task restoration even if mode config loading fails
+				}
+			}
+		}
+		
 		return await this.taskManager.createTaskWithHistoryItem(historyItem)
 	}
 
@@ -571,6 +596,9 @@ export class ClineProvider
 			await this._providerSettingsManager.setModeConfig(mode, id)
 		}
 
+		// Update the current API config name
+		await this.contextProxy.setValue("currentApiConfigName", name)
+
 		this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
 
 		await this.postStateToWebview()
@@ -716,8 +744,12 @@ export class ClineProvider
 		} else {
 			const currentApiConfigName = this.contextProxy.getValues().currentApiConfigName
 			if (currentApiConfigName) {
-				await this._providerSettingsManager.setModeConfig(newMode, currentApiConfigName)
-				this.logger.debug(`Set mode config for ${newMode} to ${currentApiConfigName}`)
+				// Find the config ID from the config name
+				const currentConfig = listApiConfig.find(({ name }) => name === currentApiConfigName)
+				if (currentConfig?.id) {
+					await this._providerSettingsManager.setModeConfig(newMode, currentConfig.id)
+					this.logger.debug(`Set mode config for ${newMode} to ${currentConfig.id}`)
+				}
 			}
 		}
 
