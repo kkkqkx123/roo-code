@@ -1,0 +1,6 @@
+
+>       Tests  12 failed | 832 passed | 6 skipped (850)
+     Start at  15:44:04
+     Duration  26.50s (transform 6.06s, setup 24.34s, collect 126.91s, tests 30.64s, environment 159.42s, prepare 20.26s)
+  
+

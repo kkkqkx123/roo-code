@@ -62,23 +62,24 @@ describe("ImageGenerationSettings", () => {
 	})
 
 	describe("Conditional Rendering", () => {
-		it("should render input fields when enabled is true and provider is roo", () => {
-			// Set provider to "roo" so the model field renders
-			const { getByPlaceholderText } = render(
-				<ImageGenerationSettings {...defaultProps} enabled={true} imageGenerationProvider="roo" />,
-			)
+		it("should render model dropdown when enabled is true and provider is roo", () => {
+		// Set provider to "roo" so the model field renders
+		const { getByText } = render(
+			<ImageGenerationSettings {...defaultProps} enabled={true} imageGenerationProvider="roo" />,
+		)
 
-			expect(
-				getByPlaceholderText("settings:experimental.IMAGE_GENERATION.modelPlaceholder"),
-			).toBeInTheDocument()
-		})
+		// Check for the model selection label instead of placeholder
+		expect(
+			getByText("settings:experimental.IMAGE_GENERATION.modelSelectionLabel"),
+		).toBeInTheDocument()
+	})
 
-		it("should not render input fields when enabled is false", () => {
-			const { queryByPlaceholderText } = render(<ImageGenerationSettings {...defaultProps} enabled={false} />)
+	it("should not render model dropdown when enabled is false", () => {
+		const { queryByText } = render(<ImageGenerationSettings {...defaultProps} enabled={false} />)
 
-			expect(
-				queryByPlaceholderText("settings:experimental.IMAGE_GENERATION.modelPlaceholder"),
-			).not.toBeInTheDocument()
-		})
+		expect(
+			queryByText("settings:experimental.IMAGE_GENERATION.modelSelectionLabel"),
+		).not.toBeInTheDocument()
+	})
 	})
 })

@@ -1,4 +1,4 @@
-import { memo, useRef, useState, useMemo } from "react"
+import { memo, useRef, useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
 	ChevronUp,
@@ -24,6 +24,7 @@ import { useSelectedModel } from "@/components/ui/hooks/useSelectedModel"
 import { vscode } from "@src/utils/vscode"
 
 import Thumbnails from "../common/Thumbnails"
+import DismissibleUpsell from "../common/DismissibleUpsell"
 
 import { TaskActions } from "./TaskActions"
 import { ContextWindowProgress } from "./ContextWindowProgress"
@@ -60,6 +61,7 @@ const TaskHeader = ({
 	const { apiConfiguration, currentTaskItem, clineMessages, isBrowserSessionActive } = useExtensionState()
 	const { id: modelId, info: model } = useSelectedModel(apiConfiguration)
 	const [isTaskExpanded, setIsTaskExpanded] = useState(false)
+	const [showUpsell, setShowUpsell] = useState(false)
 
 	const textContainerRef = useRef<HTMLDivElement>(null)
 	const textRef = useRef<HTMLDivElement>(null)
@@ -76,6 +78,33 @@ const TaskHeader = ({
 	}, [clineMessages])
 
 	const showBrowserGlobe = browserSessionStartIndex !== -1 || !!isBrowserSessionActive
+
+	// Determine if task is complete by checking for completion_result messages
+	const isTaskComplete = useMemo(() => {
+		if (!currentTaskItem || !clineMessages) return false
+		
+		// Look for completion_result messages, ignoring resume messages
+		const relevantMessages = clineMessages.filter((msg: any) => {
+			if (msg?.type === 'ask' && msg?.ask === 'completion_result') return true
+			return false
+		})
+		
+		return relevantMessages.length > 0
+	}, [currentTaskItem, clineMessages])
+
+	// Show upsell after 2 minutes if task is not complete and we have a current task
+	useEffect(() => {
+		if (!currentTaskItem || isTaskComplete) {
+			setShowUpsell(false)
+			return
+		}
+
+		const timer = setTimeout(() => {
+			setShowUpsell(true)
+		}, 120_000) // 2 minutes
+
+		return () => clearTimeout(timer)
+	}, [currentTaskItem, isTaskComplete])
 
 	const condenseButton = (
 		<LucideIconButton
@@ -368,6 +397,20 @@ const TaskHeader = ({
 				)}
 				{/* Todo list - always shown at bottom when todos exist */}
 				{hasTodos && <TodoListDisplay todos={todos ?? (task as any)?.tool?.todos ?? []} />}
+				
+				{/* Show upsell for long-running tasks */}
+				{showUpsell && (
+					<DismissibleUpsell
+						upsellId="longRunningTask"
+						variant="banner"
+						className="mt-2 mx-3"
+						onClick={() => {
+							// Handle upsell click - could navigate to cloud signup or show more info
+							vscode.postMessage({ type: "openExternal", url: "https://roocode.com" } as any)
+						}}>
+						{t("cloud:upsell.longRunningTask")}
+					</DismissibleUpsell>
+				)}
 			</div>
 		</div>
 	)

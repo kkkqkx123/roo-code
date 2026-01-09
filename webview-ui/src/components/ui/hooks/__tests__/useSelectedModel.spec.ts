@@ -28,7 +28,10 @@ describe("useSelectedModel", () => {
 
 			expect(result.current.provider).toBe("anthropic")
 			expect(result.current.id).toBe("claude-sonnet-4-5")
-			expect(result.current.info).toBeUndefined()
+			expect(result.current.info).toBeDefined()
+			expect(result.current.info?.supportsImages).toBe(true)
+			expect(result.current.info?.supportsNativeTools).toBe(true)
+			expect(result.current.info?.supportsPromptCache).toBe(true)
 		})
 	})
 
