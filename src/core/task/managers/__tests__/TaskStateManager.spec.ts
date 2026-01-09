@@ -78,7 +78,7 @@ describe("TaskStateManager", () => {
 			expect(manager.taskMode).toBe("code")
 		})
 
-		it("should throw error if task mode is accessed before initialization", () => {
+		it("should return default mode if accessed before initialization", () => {
 			const manager = new TaskStateManager({
 				taskId: "task-4",
 				taskNumber: 1,
@@ -88,7 +88,7 @@ describe("TaskStateManager", () => {
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
 
-			expect(() => manager.taskMode).toThrow("Task mode not initialized")
+			expect(manager.taskMode).toBe("architect")
 		})
 
 		it("should return default mode if provider state fails", async () => {

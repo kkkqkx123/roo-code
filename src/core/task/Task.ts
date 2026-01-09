@@ -136,6 +136,7 @@ import {
 	ConfigurationManager,
 	SubtaskManager,
 	TaskLifecycleManager,
+	StreamingManager,
 } from "./managers"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -248,7 +249,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	consecutiveMistakeLimit: number
 	consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map()
 	consecutiveNoToolUseCount: number = 0
-	toolUsage: ToolUsage = {}
 
 	// Checkpoints
 	enableCheckpoints: boolean
@@ -262,37 +262,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	// Message Queue Service
 	public readonly messageQueueService: MessageQueueService
 	private messageQueueStateChangedHandler: (() => void) | undefined
-
-	// Streaming
-	isWaitingForFirstChunk = false
-	isStreaming = false
-	currentStreamingContentIndex = 0
-	currentStreamingDidCheckpoint = false
-	assistantMessageContent: AssistantMessageContent[] = []
-	presentAssistantMessageLocked = false
-	presentAssistantMessageHasPendingUpdates = false
-	userMessageContent: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolResultBlockParam)[] = []
-	userMessageContentReady = false
-	didRejectTool = false
-	didAlreadyUseTool = false
-	didToolFailInCurrentTurn = false
-	didCompleteReadingStream = false
-	assistantMessageParser?: AssistantMessageParser
-	private providerProfileChangeListener?: (config: { name: string; provider?: string }) => void
-
-	// Native tool call streaming state (track which index each tool is at)
-	private streamingToolCallIndices: Map<string, number> = new Map()
-
-	// Cached model info for current streaming session (set at start of each API request)
-	// This prevents excessive getModel() calls during tool execution
-	cachedStreamingModel?: { id: string; info: ModelInfo }
-
-	// Token Usage Cache
-	private tokenUsageSnapshot?: TokenUsage
-	private tokenUsageSnapshotAt?: number
-
-	// Tool Usage Cache
-	private toolUsageSnapshot?: ToolUsage
 
 	// Cloud Sync Tracking
 	private cloudSyncedMessageTimestamps: Set<number> = new Set()
@@ -316,6 +285,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	private configurationManager: ConfigurationManager
 	private subtaskManager: SubtaskManager
 	private taskLifecycleManager: TaskLifecycleManager
+	private streamingManager: StreamingManager
 
 	constructor({
 		provider,
@@ -489,6 +459,17 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			api: this.api,
 			apiConfiguration,
 			cwd: this.cwd,
+			streamingManager: this.streamingManager,
+		})
+
+		this.streamingManager = new StreamingManager({
+			taskId: this.taskId,
+			onStreamingStateChange: (state) => {
+				this.emit(RooCodeEventName.TaskStreamingStateChanged, this.taskId, state)
+			},
+			onStreamingContentUpdate: (content) => {
+				this.emit(RooCodeEventName.TaskStreamingContentUpdated, this.taskId, content)
+			},
 		})
 
 		this.configurationManager = new ConfigurationManager({
@@ -521,13 +502,20 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			enableCheckpoints: this.enableCheckpoints,
 		})
 
-		// Sync task mode from state manager
-		this._taskMode = this.stateManager.taskMode
-		this._taskToolProtocol = this.stateManager.taskToolProtocol
+		// Sync task mode from state manager after initialization
+		this.stateManager.waitForModeInitialization().then(() => {
+			this._taskMode = this.stateManager.taskMode
+			this._taskToolProtocol = this.stateManager.taskToolProtocol
 
-		// Initialize the assistant message parser based on the locked tool protocol.
-		const effectiveProtocol = this._taskToolProtocol || "xml"
-		this.assistantMessageParser = effectiveProtocol !== "native" ? new AssistantMessageParser() : undefined
+			// Initialize the assistant message parser based on the locked tool protocol.
+			const effectiveProtocol = this._taskToolProtocol || "xml"
+			this.streamingManager.setAssistantMessageParser(effectiveProtocol !== "native" ? new AssistantMessageParser() : undefined)
+		}).catch((error) => {
+			console.error("[Task] Failed to initialize task mode:", error)
+			this._taskMode = defaultModeSlug
+			this._taskToolProtocol = "xml"
+			this.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
+		})
 
 		this.messageQueueService = new MessageQueueService()
 
@@ -626,14 +614,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public get tokenUsage(): TokenUsage | undefined {
-		if (this.tokenUsageSnapshot && this.tokenUsageSnapshotAt) {
-			return this.tokenUsageSnapshot
-		}
-
-		this.tokenUsageSnapshot = this.getTokenUsage()
-		this.tokenUsageSnapshotAt = this.clineMessages.at(-1)?.ts
-
-		return this.tokenUsageSnapshot
+		return this.usageTracker.getTokenUsage()
 	}
 
 	public cancelCurrentRequest(): void {
@@ -671,7 +652,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	private async addToClineMessages(message: ClineMessage) {
-		return this.taskMessageManager.addToClineMessages(message, this.providerRef, this.cloudSyncedMessageTimestamps)
+		await this.taskMessageManager.addToClineMessages(message, this.providerRef, this.cloudSyncedMessageTimestamps)
+		return this.saveClineMessages()
 	}
 
 	public async overwriteClineMessages(newMessages: ClineMessage[]) {
@@ -690,7 +672,25 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public async saveClineMessages() {
-		return this.taskMessageManager.saveClineMessages()
+		await this.taskMessageManager.saveClineMessages()
+		await this.updateTokenUsage()
+	}
+
+	private async updateTokenUsage() {
+		try {
+			const metadata = await taskMetadata({
+				taskId: this.taskId,
+				taskNumber: this.taskNumber,
+				messages: this.clineMessages,
+				globalStoragePath: this.globalStoragePath,
+				workspace: this.workspacePath,
+			})
+			if (metadata.tokenUsage) {
+				this.usageTracker.setTokenUsage(metadata.tokenUsage)
+			}
+		} catch (error) {
+			console.error("Failed to update token usage:", error)
+		}
 	}
 
 	private findMessageByTimestamp(ts: number): ClineMessage | undefined {
@@ -859,8 +859,25 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.usageTracker.getTokenUsage()
 	}
 
+	public get toolUsage(): ToolUsage {
+		return this.usageTracker.getToolUsage()
+	}
+
+	public set toolUsage(toolUsage: ToolUsage) {
+		this.usageTracker.setToolUsage(toolUsage)
+	}
+
+	public get tokenUsageSnapshot(): TokenUsage | undefined {
+		return this.usageTracker.getSnapshot().tokenUsage
+	}
+
+	public get toolUsageSnapshot(): ToolUsage | undefined {
+		return this.usageTracker.getSnapshot().toolUsage
+	}
+
 	// Task lifecycle methods
 	public async abortTask(isAbandoned = false) {
+		this.usageTracker.emitFinalTokenUsageUpdate()
 		this.taskLifecycleManager.abortTask(isAbandoned)
 	}
 
@@ -1277,12 +1294,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			let inputTokens = 0
 			let outputTokens = 0
 
-			if (this.userMessageContent.length > 0) {
-				inputTokens = await this.api.countTokens(this.userMessageContent)
+			const userMessageContent = this.streamingManager.getUserMessageContent()
+			if (userMessageContent.length > 0) {
+				inputTokens = await this.api.countTokens(userMessageContent)
 			}
 
-			if (this.assistantMessageContent.length > 0) {
-				const assistantContent = this.assistantMessageContent.map((block) => {
+			const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+			if (assistantMessageContent.length > 0) {
+				const assistantContent = assistantMessageContent.map((block) => {
 					if (block.type === "text") {
 						return { type: "text" as const, text: block.content }
 					} else if (block.type === "tool_use") {

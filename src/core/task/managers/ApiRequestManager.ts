@@ -20,6 +20,7 @@ import type { UserInteractionManager } from "./UserInteractionManager"
 import type { ContextManager } from "./ContextManager"
 import type { UsageTracker } from "./UsageTracker"
 import type { FileEditorManager } from "./FileEditorManager"
+import type { StreamingManager } from "./StreamingManager"
 import type { AssistantMessageContent } from "../../assistant-message"
 import delay from "delay"
 
@@ -37,6 +38,7 @@ export interface ApiRequestManagerOptions {
 	api: ApiHandler
 	apiConfiguration: ProviderSettings
 	cwd: string
+	streamingManager: StreamingManager
 }
 
 export class ApiRequestManager {
@@ -46,27 +48,11 @@ export class ApiRequestManager {
 	private contextManager: ContextManager
 	private usageTracker: UsageTracker
 	private fileEditorManager: FileEditorManager
+	private streamingManager: StreamingManager
 
 	api: ApiHandler
 	apiConfiguration: ProviderSettings
 	cwd: string
-
-	isStreaming = false
-	isWaitingForFirstChunk = false
-	currentStreamingContentIndex = 0
-	currentStreamingDidCheckpoint = false
-	assistantMessageContent: AssistantMessageContent[] = []
-	presentAssistantMessageLocked = false
-	presentAssistantMessageHasPendingUpdates = false
-	userMessageContent: any[] = []
-	userMessageContentReady = false
-	didRejectTool = false
-	didAlreadyUseTool = false
-	didToolFailInCurrentTurn = false
-	didCompleteReadingStream = false
-
-	private streamingToolCallIndices: Map<string, number> = new Map()
-	cachedStreamingModel?: { id: string; info: ModelInfo }
 
 	constructor(options: ApiRequestManagerOptions) {
 		this.stateManager = options.stateManager
@@ -75,6 +61,7 @@ export class ApiRequestManager {
 		this.contextManager = options.contextManager
 		this.usageTracker = options.usageTracker
 		this.fileEditorManager = options.fileEditorManager
+		this.streamingManager = options.streamingManager
 
 		this.api = options.api
 		this.apiConfiguration = options.apiConfiguration
@@ -175,22 +162,7 @@ export class ApiRequestManager {
 	}
 
 	private resetStreamingState(): void {
-		this.isStreaming = false
-		this.isWaitingForFirstChunk = false
-		this.currentStreamingContentIndex = 0
-		this.currentStreamingDidCheckpoint = false
-		this.assistantMessageContent = []
-		this.didCompleteReadingStream = false
-		this.userMessageContent = []
-		this.userMessageContentReady = false
-		this.didRejectTool = false
-		this.didAlreadyUseTool = false
-		this.didToolFailInCurrentTurn = false
-		this.presentAssistantMessageLocked = false
-		this.presentAssistantMessageHasPendingUpdates = false
-		this.streamingToolCallIndices.clear()
-		NativeToolCallParser.clearAllStreamingToolCalls()
-		NativeToolCallParser.clearRawChunkState()
+		this.streamingManager.resetStreamingState()
 	}
 
 	private async handleStreamChunk(chunk: any): Promise<void> {

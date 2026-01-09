@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { TaskLifecycleManager } from "../TaskLifecycleManager"
+import { StreamingManager } from "../StreamingManager"
 import { RooCodeEventName } from "@roo-code/types"
 import type { Task } from "../../Task"
 import type { ClineProvider } from "../../../webview/ClineProvider"
@@ -22,9 +23,14 @@ describe("TaskLifecycleManager", () => {
 	let mockTask: Partial<Task>
 	let mockProvider: Partial<ClineProvider>
 	let providerRef: WeakRef<ClineProvider>
+	let mockStreamingManager: StreamingManager
 	let lifecycleManager: TaskLifecycleManager
 
 	beforeEach(() => {
+		mockStreamingManager = new StreamingManager({
+			taskId: "task-1",
+		})
+
 		mockTask = {
 			taskId: "task-1",
 			taskMode: "code",
@@ -44,6 +50,7 @@ describe("TaskLifecycleManager", () => {
 			isStreaming: false,
 			diffViewProvider: { isEditing: false, revertChanges: vi.fn() },
 			api: { getModel: vi.fn().mockReturnValue({ info: {} }) },
+			streamingManager: mockStreamingManager,
 		} as any
 
 		mockProvider = {
@@ -166,7 +173,7 @@ describe("TaskLifecycleManager", () => {
 		})
 
 		it("should revert diff changes if streaming and editing", async () => {
-			mockTask.isStreaming = true
+			mockStreamingManager.setStreamingState(true)
 			if (mockTask.diffViewProvider) {
 				mockTask.diffViewProvider.isEditing = true
 			}

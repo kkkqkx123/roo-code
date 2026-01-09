@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ApiRequestManager } from "../ApiRequestManager"
+import { StreamingManager } from "../StreamingManager"
 import type { TaskStateManager } from "../TaskStateManager"
 import type { MessageManager } from "../MessageManager"
 import type { UserInteractionManager } from "../UserInteractionManager"
@@ -22,6 +23,7 @@ describe("ApiRequestManager", () => {
 	let mockUsageTracker: Partial<UsageTracker>
 	let mockFileEditorManager: Partial<FileEditorManager>
 	let mockApi: Partial<ApiHandler>
+	let mockStreamingManager: StreamingManager
 	let apiRequestManager: ApiRequestManager
 
 	beforeEach(() => {
@@ -56,6 +58,10 @@ describe("ApiRequestManager", () => {
 			createMessage: vi.fn(),
 		} as any
 
+		mockStreamingManager = new StreamingManager({
+			taskId: "task-1",
+		})
+
 		apiRequestManager = new ApiRequestManager({
 			stateManager: mockStateManager as TaskStateManager,
 			messageManager: mockMessageManager as MessageManager,
@@ -66,6 +72,7 @@ describe("ApiRequestManager", () => {
 			api: mockApi as ApiHandler,
 			apiConfiguration: { apiProvider: "anthropic" } as ProviderSettings,
 			cwd: "/workspace",
+			streamingManager: mockStreamingManager,
 		})
 	})
 
@@ -77,19 +84,20 @@ describe("ApiRequestManager", () => {
 		})
 
 		it("should initialize streaming state to default values", () => {
-			expect(apiRequestManager.isStreaming).toBe(false)
-			expect(apiRequestManager.isWaitingForFirstChunk).toBe(false)
-			expect(apiRequestManager.currentStreamingContentIndex).toBe(0)
-			expect(apiRequestManager.currentStreamingDidCheckpoint).toBe(false)
-			expect(apiRequestManager.assistantMessageContent).toEqual([])
-			expect(apiRequestManager.presentAssistantMessageLocked).toBe(false)
-			expect(apiRequestManager.presentAssistantMessageHasPendingUpdates).toBe(false)
-			expect(apiRequestManager.userMessageContent).toEqual([])
-			expect(apiRequestManager.userMessageContentReady).toBe(false)
-			expect(apiRequestManager.didRejectTool).toBe(false)
-			expect(apiRequestManager.didAlreadyUseTool).toBe(false)
-			expect(apiRequestManager.didToolFailInCurrentTurn).toBe(false)
-			expect(apiRequestManager.didCompleteReadingStream).toBe(false)
+			const streamingState = mockStreamingManager.getStreamingState()
+			expect(streamingState.isStreaming).toBe(false)
+			expect(streamingState.isWaitingForFirstChunk).toBe(false)
+			expect(streamingState.currentStreamingContentIndex).toBe(0)
+			expect(streamingState.currentStreamingDidCheckpoint).toBe(false)
+			expect(mockStreamingManager.getAssistantMessageContent()).toEqual([])
+			expect(mockStreamingManager.isPresentAssistantMessageLocked()).toBe(false)
+			expect(mockStreamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
+			expect(mockStreamingManager.getUserMessageContent()).toEqual([])
+			expect(mockStreamingManager.isUserMessageContentReady()).toBe(false)
+			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
+			expect(mockStreamingManager.didToolFail()).toBe(false)
+			expect(streamingState.didCompleteReadingStream).toBe(false)
 		})
 	})
 
@@ -190,32 +198,31 @@ describe("ApiRequestManager", () => {
 
 	describe("resetStreamingState", () => {
 		it("should reset all streaming state properties", () => {
-			apiRequestManager.isStreaming = true
-			apiRequestManager.isWaitingForFirstChunk = true
-			apiRequestManager.currentStreamingContentIndex = 5
-			apiRequestManager.currentStreamingDidCheckpoint = true
-			apiRequestManager.assistantMessageContent = [{ type: "text", content: "test", partial: false }]
-			apiRequestManager.presentAssistantMessageLocked = true
-			apiRequestManager.presentAssistantMessageHasPendingUpdates = true
-			apiRequestManager.userMessageContent = [{ type: "text", content: "user", partial: false }]
-			apiRequestManager.userMessageContentReady = true
-			apiRequestManager.didRejectTool = true
-			apiRequestManager.didAlreadyUseTool = true
-			apiRequestManager.didToolFailInCurrentTurn = true
+			mockStreamingManager.startStreaming()
+			mockStreamingManager.setStreamingDidCheckpoint(true)
+			mockStreamingManager.setAssistantContent([{ type: "text", content: "test", partial: false }])
+			mockStreamingManager.setPresentAssistantMessageLocked(true)
+			mockStreamingManager.setPresentAssistantMessageHasPendingUpdates(true)
+			mockStreamingManager.setUserMessageContent([{ type: "text", content: "user", partial: false }])
+			mockStreamingManager.setUserMessageContentReady(true)
+			mockStreamingManager.setDidRejectTool(true)
+			mockStreamingManager.setDidAlreadyUseTool(true)
+			mockStreamingManager.setDidToolFailInCurrentTurn(true)
 
 			apiRequestManager["resetStreamingState"]()
 
-			expect(apiRequestManager.currentStreamingContentIndex).toBe(0)
-			expect(apiRequestManager.currentStreamingDidCheckpoint).toBe(false)
-			expect(apiRequestManager.assistantMessageContent).toEqual([])
-			expect(apiRequestManager.didCompleteReadingStream).toBe(false)
-			expect(apiRequestManager.userMessageContent).toEqual([])
-			expect(apiRequestManager.userMessageContentReady).toBe(false)
-			expect(apiRequestManager.didRejectTool).toBe(false)
-			expect(apiRequestManager.didAlreadyUseTool).toBe(false)
-			expect(apiRequestManager.didToolFailInCurrentTurn).toBe(false)
-			expect(apiRequestManager.presentAssistantMessageLocked).toBe(false)
-			expect(apiRequestManager.presentAssistantMessageHasPendingUpdates).toBe(false)
+			const streamingState = mockStreamingManager.getStreamingState()
+			expect(streamingState.currentStreamingContentIndex).toBe(0)
+			expect(streamingState.currentStreamingDidCheckpoint).toBe(false)
+			expect(mockStreamingManager.getAssistantMessageContent()).toEqual([])
+			expect(streamingState.didCompleteReadingStream).toBe(false)
+			expect(mockStreamingManager.getUserMessageContent()).toEqual([])
+			expect(mockStreamingManager.isUserMessageContentReady()).toBe(false)
+			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
+			expect(mockStreamingManager.didToolFail()).toBe(false)
+			expect(mockStreamingManager.isPresentAssistantMessageLocked()).toBe(false)
+			expect(mockStreamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 		})
 	})
 
@@ -383,35 +390,37 @@ describe("ApiRequestManager", () => {
 
 	describe("streaming state management", () => {
 		it("should track streaming state correctly", () => {
-			expect(apiRequestManager.isStreaming).toBe(false)
-			apiRequestManager.isStreaming = true
-			expect(apiRequestManager.isStreaming).toBe(true)
+			const streamingState = mockStreamingManager.getStreamingState()
+			expect(streamingState.isStreaming).toBe(false)
+			mockStreamingManager.startStreaming()
+			const newState = mockStreamingManager.getStreamingState()
+			expect(newState.isStreaming).toBe(true)
 		})
 
 		it("should track assistant message content", () => {
-		const content: TextContent[] = [{ type: "text", content: "test", partial: false }]
-		apiRequestManager.assistantMessageContent = content
-		expect(apiRequestManager.assistantMessageContent).toEqual(content)
-	})
+			const content: TextContent[] = [{ type: "text", content: "test", partial: false }]
+			mockStreamingManager.setAssistantContent(content)
+			expect(mockStreamingManager.getAssistantMessageContent()).toEqual(content)
+		})
 
-	it("should track user message content", () => {
-		const content: TextContent[] = [{ type: "text", content: "user input", partial: false }]
-		apiRequestManager.userMessageContent = content
-		expect(apiRequestManager.userMessageContent).toEqual(content)
-	})
+		it("should track user message content", () => {
+			const content: TextContent[] = [{ type: "text", content: "user input", partial: false }]
+			mockStreamingManager.setUserMessageContent(content)
+			expect(mockStreamingManager.getUserMessageContent()).toEqual(content)
+		})
 
 		it("should track tool usage state", () => {
-			expect(apiRequestManager.didRejectTool).toBe(false)
-			apiRequestManager.didRejectTool = true
-			expect(apiRequestManager.didRejectTool).toBe(true)
+			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			mockStreamingManager.setDidRejectTool(true)
+			expect(mockStreamingManager.didToolRejected()).toBe(true)
 
-			expect(apiRequestManager.didAlreadyUseTool).toBe(false)
-			apiRequestManager.didAlreadyUseTool = true
-			expect(apiRequestManager.didAlreadyUseTool).toBe(true)
+			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
+			mockStreamingManager.setDidAlreadyUseTool(true)
+			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(true)
 
-			expect(apiRequestManager.didToolFailInCurrentTurn).toBe(false)
-			apiRequestManager.didToolFailInCurrentTurn = true
-			expect(apiRequestManager.didToolFailInCurrentTurn).toBe(true)
+			expect(mockStreamingManager.didToolFail()).toBe(false)
+			mockStreamingManager.setDidToolFailInCurrentTurn(true)
+			expect(mockStreamingManager.didToolFail()).toBe(true)
 		})
 	})
 })

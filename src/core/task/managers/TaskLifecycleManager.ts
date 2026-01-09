@@ -87,11 +87,11 @@ export class TaskLifecycleManager {
 		}
 
 		const shouldUseXmlParser = this.task.taskToolProtocol === "xml"
-		if (shouldUseXmlParser && !this.task.assistantMessageParser) {
+		if (shouldUseXmlParser && !this.task.streamingManager.getAssistantMessageParser()) {
 			const { AssistantMessageParser } = await import("../../assistant-message/AssistantMessageParser")
-			this.task.assistantMessageParser = new AssistantMessageParser()
+			this.task.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
 		} else if (!shouldUseXmlParser) {
-			this.task.assistantMessageParser = undefined
+			this.task.streamingManager.clearAssistantMessageParser()
 		}
 
 		if (lastApiReqStartedIndex !== -1) {
@@ -214,11 +214,11 @@ export class TaskLifecycleManager {
 		}
 
 		const shouldUseXmlParser = this.task.taskToolProtocol === "xml"
-		if (shouldUseXmlParser && !this.task.assistantMessageParser) {
+		if (shouldUseXmlParser && !this.task.streamingManager.getAssistantMessageParser()) {
 			const { AssistantMessageParser } = await import("../../assistant-message/AssistantMessageParser")
-			this.task.assistantMessageParser = new AssistantMessageParser()
+			this.task.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
 		} else if (!shouldUseXmlParser) {
-			this.task.assistantMessageParser = undefined
+			this.task.streamingManager.clearAssistantMessageParser()
 		}
 	}
 
@@ -282,7 +282,7 @@ export class TaskLifecycleManager {
 			if (this.task.rooProtectedController) {
 				this.task.rooProtectedController.dispose()
 			}
-			if (this.task.isStreaming && this.task.diffViewProvider.isEditing) {
+			if (this.task.streamingManager.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
 				this.task.diffViewProvider.revertChanges()
 			}
 		}

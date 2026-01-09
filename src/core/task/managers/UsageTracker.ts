@@ -77,12 +77,18 @@ export class UsageTracker {
 		return this.tokenUsage
 	}
 
+	setTokenUsage(tokenUsage: TokenUsage): void {
+		this.tokenUsage = tokenUsage
+		this.debouncedEmitTokenUsage(this.tokenUsage, this.toolUsage)
+	}
+
 	getToolUsage(): ToolUsage {
 		return this.toolUsage
 	}
 
 	setToolUsage(toolUsage: ToolUsage): void {
 		this.toolUsage = toolUsage
+		this.debouncedEmitTokenUsage(this.tokenUsage, this.toolUsage)
 	}
 
 	recordToolUsage(toolName: ToolName): void {

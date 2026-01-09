@@ -25,41 +25,30 @@ vi.mock("../../../api", () => ({
 }))
 
 // Mock task persistence to avoid disk writes
+const { taskMetadataMock } = vi.hoisted(() => {
+	return {
+		taskMetadataMock: vi.fn(),
+	}
+})
 vi.mock("../../task-persistence", () => ({
 	readApiMessages: vi.fn().mockResolvedValue([]),
 	saveApiMessages: vi.fn().mockResolvedValue(undefined),
 	readTaskMessages: vi.fn().mockResolvedValue([]),
 	saveTaskMessages: vi.fn().mockResolvedValue(undefined),
-	taskMetadata: vi.fn().mockResolvedValue({
-		historyItem: {
-			id: "test-task-id",
-			number: 1,
-			task: "Test task",
-			ts: Date.now(),
-			totalCost: 0.01,
-			tokensIn: 100,
-			tokensOut: 50,
-		},
-		tokenUsage: {
-			totalTokensIn: 100,
-			totalTokensOut: 50,
-			totalCost: 0.01,
-			contextTokens: 150,
-			totalCacheWrites: 0,
-			totalCacheReads: 0,
-		},
-	}),
+	taskMetadata: taskMetadataMock,
 }))
 
 describe("Task token usage throttling", () => {
 	let mockProvider: any
 	let mockApiConfiguration: ProviderSettings
 	let task: Task
+	let callCount = 0
 
 	beforeEach(() => {
 		// Reset all mocks
 		vi.clearAllMocks()
 		vi.useFakeTimers()
+		callCount = 0
 
 		// Mock provider
 		mockProvider = {
@@ -77,6 +66,30 @@ describe("Task token usage throttling", () => {
 			apiProvider: "anthropic",
 			apiKey: "test-key",
 		} as ProviderSettings
+
+		// Mock to return different token usage on each call
+		taskMetadataMock.mockImplementation(async () => {
+			callCount++
+			return {
+				historyItem: {
+					id: "test-task-id",
+					number: 1,
+					task: "Test task",
+					ts: Date.now(),
+					totalCost: 0.01 * callCount,
+					tokensIn: 100 * callCount,
+					tokensOut: 50 * callCount,
+				},
+				tokenUsage: {
+					totalTokensIn: 100 * callCount,
+					totalTokensOut: 50 * callCount,
+					totalCost: 0.01 * callCount,
+					contextTokens: 150 * callCount,
+					totalCacheWrites: 0,
+					totalCacheReads: 0,
+				},
+			}
+		})
 
 		// Create task instance without starting it
 		task = new Task({
@@ -114,33 +127,6 @@ describe("Task token usage throttling", () => {
 	})
 
 	test("should throttle subsequent emissions within 2 seconds", async () => {
-		const { taskMetadata } = await import("../../task-persistence")
-		let callCount = 0
-
-		// Mock to return different token usage on each call
-		vi.mocked(taskMetadata).mockImplementation(async () => {
-			callCount++
-			return {
-				historyItem: {
-					id: "test-task-id",
-					number: 1,
-					task: "Test task",
-					ts: Date.now(),
-					totalCost: 0.01 * callCount,
-					tokensIn: 100 * callCount,
-					tokensOut: 50 * callCount,
-				},
-				tokenUsage: {
-					totalTokensIn: 100 * callCount,
-					totalTokensOut: 50 * callCount,
-					totalCost: 0.01 * callCount,
-					contextTokens: 150 * callCount,
-					totalCacheWrites: 0,
-					totalCacheReads: 0,
-				},
-			}
-		})
-
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// First message - should emit
@@ -287,7 +273,7 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Get the initial snapshot
-		const initialSnapshot = (task as any).tokenUsageSnapshot
+		const initialSnapshot = task.tokenUsageSnapshot
 
 		// Add another message within throttle window
 		vi.advanceTimersByTime(500)
@@ -299,7 +285,7 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Snapshot should still be the same (throttled)
-		expect((task as any).tokenUsageSnapshot).toBe(initialSnapshot)
+		expect(task.tokenUsageSnapshot).toBe(initialSnapshot)
 
 		// Add message after throttle window
 		vi.advanceTimersByTime(1600) // Total: 2100ms
@@ -311,9 +297,9 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Snapshot should be updated now (new object reference)
-		expect((task as any).tokenUsageSnapshot).not.toBe(initialSnapshot)
+		expect(task.tokenUsageSnapshot).not.toBe(initialSnapshot)
 		// Values should be different
-		expect((task as any).tokenUsageSnapshot.totalTokensIn).toBeGreaterThan(initialSnapshot.totalTokensIn)
+		expect(task.tokenUsageSnapshot?.totalTokensIn).toBeGreaterThan(initialSnapshot?.totalTokensIn || 0)
 	})
 
 	test("should not emit if token usage has not changed even after throttle period", async () => {
@@ -447,9 +433,9 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Initially toolUsageSnapshot should be set to current toolUsage (empty object)
-		const initialSnapshot = (task as any).toolUsageSnapshot
+		const initialSnapshot = task.toolUsageSnapshot
 		expect(initialSnapshot).toBeDefined()
-		expect(Object.keys(initialSnapshot)).toHaveLength(0)
+		expect(Object.keys(initialSnapshot || {})).toHaveLength(0)
 
 		// Wait for throttle period
 		vi.advanceTimersByTime(2100)
@@ -469,18 +455,25 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Snapshot should be updated to match the new toolUsage
-		const newSnapshot = (task as any).toolUsageSnapshot
+		const newSnapshot = task.toolUsageSnapshot
 		expect(newSnapshot).not.toBe(initialSnapshot)
-		expect(newSnapshot.read_file).toEqual({ attempts: 3, failures: 0 })
-		expect(newSnapshot.write_to_file).toEqual({ attempts: 2, failures: 1 })
+		expect(newSnapshot?.read_file).toEqual({ attempts: 3, failures: 0 })
+		expect(newSnapshot?.write_to_file).toEqual({ attempts: 2, failures: 1 })
 	})
 
 	test("emitFinalTokenUsageUpdate should emit on tool usage change alone", async () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
-		// Set initial tool usage and simulate previous emission
-		;(task as any).tokenUsageSnapshot = task.getTokenUsage()
-		;(task as any).toolUsageSnapshot = {}
+		// Add a message to trigger initial emission
+		await (task as any).addToClineMessages({
+			ts: Date.now(),
+			type: "say",
+			say: "text",
+			text: "Message 1",
+		})
+
+		// Wait for throttle period
+		vi.advanceTimersByTime(2100)
 
 		// Change tool usage
 		task.toolUsage = {
