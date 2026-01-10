@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 
 import { SYSTEM_PROMPT } from "../../prompts/system"
-import { getModelId } from "@roo-code/types"
+import { getModelId, type ProviderSettings } from "@roo-code/types"
 import type { ModeConfig, CustomModePrompts, TodoItem } from "@roo-code/types"
 import { DiffStrategy } from "../../../shared/tools"
 import { McpHub } from "../../../services/mcp/McpHub"
@@ -32,7 +32,7 @@ export class PromptManager {
 	}
 
 	public async getSystemPrompt(
-		apiConfiguration?: { apiProvider?: string; todoListEnabled?: boolean },
+		apiConfiguration?: Partial<ProviderSettings>,
 		todoList?: TodoItem[],
 		diffEnabled?: boolean,
 	): Promise<string> {

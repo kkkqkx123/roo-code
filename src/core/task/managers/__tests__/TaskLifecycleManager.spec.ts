@@ -58,6 +58,10 @@ describe("TaskLifecycleManager", () => {
 			diffViewProvider: { isEditing: false, revertChanges: vi.fn() },
 			api: { getModel: vi.fn().mockReturnValue({ info: {} }) },
 			streamingManager: mockStreamingManager,
+			getStreamingState: () => mockStreamingManager.getStreamingState(),
+			getAssistantMessageParser: () => mockStreamingManager.getAssistantMessageParser(),
+			setAssistantMessageParser: vi.fn(),
+			clearAssistantMessageParser: vi.fn(),
 		} as any
 
 		mockProvider = {
@@ -157,6 +161,7 @@ describe("TaskLifecycleManager", () => {
 				messageQueueManager: mockMessageQueueManager,
 				rooIgnoreController: mockRooIgnoreController,
 				rooProtectedController: mockRooProtectedController,
+				getStreamingState: () => mockStreamingManager.getStreamingState(),
 			} as any
 
 			const lifecycleManagerWithServices = new TaskLifecycleManager({

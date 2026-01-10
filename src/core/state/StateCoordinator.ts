@@ -105,7 +105,7 @@ export class StateCoordinator {
 
 		const theme = getTheme()
 
-		const isBrowserSessionActive = this.taskManager?.getCurrentTask()?.browserSession?.isSessionActive() ?? false
+		const isBrowserSessionActive = this.taskManager?.getCurrentTask()?.getBrowserSession()?.isSessionActive() ?? false
 
 		return {
 			version: vscode.extensions.getExtension("roo-cline.roo-code")?.packageJSON?.version ?? "",

@@ -1,7 +1,7 @@
-import { Task } from "../task/Task"
+import { Task } from "../Task"
 import { ClineMessage } from "@roo-code/types"
-import { ApiMessage } from "../task-persistence/apiMessages"
-import { cleanupAfterTruncation } from "../condense"
+import { ApiMessage } from "../../task-persistence/apiMessages"
+import { cleanupAfterTruncation } from "../../condense"
 
 export interface RewindOptions {
 	includeTargetMessage?: boolean
@@ -19,7 +19,7 @@ export class ConversationRewindManager {
 	async rewindToTimestamp(ts: number, options: RewindOptions = {}): Promise<void> {
 		const { includeTargetMessage = false, skipCleanup = false } = options
 
-		const clineIndex = this.task.clineMessages.findIndex((m) => m.ts === ts)
+		const clineIndex = this.task.clineMessages.findIndex((m: ClineMessage) => m.ts === ts)
 		if (clineIndex === -1) {
 			throw new Error(`Message with timestamp ${ts} not found in clineMessages`)
 		}

@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { toolNamesSchema } from "./tool.js"
+
 /**
  * ClineAsk
  */
@@ -310,3 +312,62 @@ export const queuedMessageSchema = z.object({
 })
 
 export type QueuedMessage = z.infer<typeof queuedMessageSchema>
+
+/**
+ * TextContent
+ */
+
+export const textContentSchema = z.object({
+	type: z.literal("text"),
+	content: z.string(),
+	partial: z.boolean(),
+})
+
+export type TextContent = z.infer<typeof textContentSchema>
+
+/**
+ * ToolUse
+ */
+
+export const toolUseSchema = z.object({
+	type: z.literal("tool_use"),
+	id: z.string().optional(),
+	name: toolNamesSchema,
+	params: z.record(z.string()),
+})
+
+export type ToolUse = z.infer<typeof toolUseSchema>
+
+/**
+ * McpToolUse
+ */
+
+export const mcpToolUseSchema = z.object({
+	type: z.literal("mcp_tool_use"),
+	id: z.string().optional(),
+	name: z.string(),
+	serverName: z.string(),
+	params: z.record(z.unknown()),
+})
+
+export type McpToolUse = z.infer<typeof mcpToolUseSchema>
+
+/**
+ * StreamingState
+ */
+
+export const streamingStateSchema = z.object({
+	isStreaming: z.boolean(),
+	isWaitingForFirstChunk: z.boolean(),
+	currentStreamingContentIndex: z.number(),
+	currentStreamingDidCheckpoint: z.boolean(),
+	didCompleteReadingStream: z.boolean(),
+})
+
+export type StreamingState = z.infer<typeof streamingStateSchema>
+
+/**
+ * AssistantMessageContent
+ */
+
+export type AssistantMessageContent = TextContent | ToolUse | McpToolUse

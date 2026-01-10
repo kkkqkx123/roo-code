@@ -1,2 +1,2 @@
-export { type AssistantMessageContent, parseAssistantMessage } from "./parseAssistantMessage"
+export { parseAssistantMessage } from "./parseAssistantMessage"
 export { presentAssistantMessage } from "./presentAssistantMessage"

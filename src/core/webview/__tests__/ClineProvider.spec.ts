@@ -393,7 +393,7 @@ describe("ClineProvider", () => {
 			}
 
 			Object.defineProperty(task, "messageManager", {
-				get: () => new MessageManager(task),
+				get: () => new ConversationRewindManager(task),
 			})
 
 			return task

@@ -193,10 +193,8 @@ describe("BrowserSessionManager", () => {
 				providerRef: { deref: vi.fn().mockReturnValue(mockProvider) } as any,
 			})
 
-			const autoOpenSpy = vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockRestore()
-
 			expect(() => {
-				autoOpenSpy.call(manager)
+				;(manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 
@@ -207,10 +205,8 @@ describe("BrowserSessionManager", () => {
 				providerRef: { deref: vi.fn().mockReturnValue(mockProvider) } as any,
 			})
 
-			const autoOpenSpy = vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockRestore()
-
 			expect(() => {
-				autoOpenSpy.call(manager)
+				;(manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 
@@ -221,10 +217,8 @@ describe("BrowserSessionManager", () => {
 				providerRef: { deref: vi.fn().mockReturnValue(undefined) } as any,
 			})
 
-			const autoOpenSpy = vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockRestore()
-
 			expect(() => {
-				autoOpenSpy.call(manager)
+				;(manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 	})

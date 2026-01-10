@@ -1,5 +1,5 @@
 import type { ModelInfo } from "@roo-code/types"
-import type { AssistantMessageContent } from "../../assistant-message"
+import { type AssistantMessageContent } from "@roo-code/types"
 import { NativeToolCallParser } from "../../assistant-message/NativeToolCallParser"
 
 export interface StreamingState {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { PromptManager } from "../PromptManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import type { RooIgnoreController } from "../../../ignore/RooIgnoreController"
-import type { DiffStrategy } from "../../../integrations/misc/execute-command"
+import type { DiffStrategy } from "../../../shared/tools"
 
 describe("PromptManager", () => {
 	let mockProvider: Partial<ClineProvider>
@@ -29,7 +29,7 @@ describe("PromptManager", () => {
 				customModePrompts: {
 					code: {
 						roleDefinition: "Code mode role",
-						baseInstructions: "Code mode instructions",
+						customInstructions: "Code mode instructions",
 					},
 				},
 				customInstructions: "Custom instructions",
@@ -106,7 +106,7 @@ describe("PromptManager", () => {
 
 		it("should accept apiConfiguration parameter", async () => {
 			const apiConfiguration = {
-				apiProvider: "anthropic",
+				apiProvider: "anthropic" as const,
 				todoListEnabled: false,
 			}
 
@@ -117,8 +117,8 @@ describe("PromptManager", () => {
 
 		it("should accept todoList parameter", async () => {
 			const todoList = [
-				{ id: "1", content: "Todo 1", status: "pending" },
-				{ id: "2", content: "Todo 2", status: "completed" },
+				{ id: "1", content: "Todo 1", status: "pending" as const },
+				{ id: "2", content: "Todo 2", status: "completed" as const },
 			]
 
 			await promptManager.getSystemPrompt(undefined, todoList)
@@ -205,39 +205,39 @@ describe("PromptManager", () => {
 				customModePrompts: {
 					code: {
 						roleDefinition: "Code role",
-						baseInstructions: "Code instructions",
+						customInstructions: "Code instructions",
 					},
 				},
 			})
 		})
 
-		it("should throw error if provider reference is lost", () => {
+		it("should throw error if provider reference is lost", async () => {
 			const lostRefManager = new PromptManager({
 				taskId: "task-4",
 				providerRef: { deref: vi.fn().mockReturnValue(undefined) } as any,
 				workspacePath: "/workspace",
 			})
 
-			expect(() => lostRefManager.getPromptTemplate("code")).toThrow("Provider reference lost")
+			await expect(lostRefManager.getPromptTemplate("code")).rejects.toThrow("Provider reference lost")
 		})
 
-		it("should return empty string when customModePrompts is undefined", () => {
+		it("should return empty string when customModePrompts is undefined", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: undefined,
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("")
 		})
 
-		it("should return empty string when mode does not exist", () => {
-			const result = promptManager.getPromptTemplate("ask")
+		it("should return empty string when mode does not exist", async () => {
+			const result = await promptManager.getPromptTemplate("ask")
 
 			expect(result).toBe("")
 		})
 
-		it("should return role definition only", () => {
+		it("should return role definition only", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: {
 					code: {
@@ -246,69 +246,78 @@ describe("PromptManager", () => {
 				},
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("Code role definition")
 		})
 
-		it("should return base instructions only", () => {
+		it("should return base instructions only", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: {
 					code: {
-						baseInstructions: "Code base instructions",
+						customInstructions: "Code base instructions",
 					},
 				},
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("Code base instructions")
 		})
 
-		it("should return combined role definition and base instructions", () => {
-			const result = promptManager.getPromptTemplate("code")
+		it("should return combined role definition and base instructions", async () => {
+			mockProvider.getState = vi.fn().mockReturnValue({
+				customModePrompts: {
+					code: {
+						roleDefinition: "Code role",
+						customInstructions: "Code instructions",
+					},
+				},
+			})
+
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("Code role\n\nCode instructions")
 		})
 
-		it("should return empty string when both roleDefinition and baseInstructions are undefined", () => {
+		it("should return empty string when both roleDefinition and customInstructions are undefined", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: {
 					code: {},
 				},
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("")
 		})
 
-		it("should handle empty strings in roleDefinition and baseInstructions", () => {
+		it("should handle empty strings in roleDefinition and customInstructions", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: {
 					code: {
 						roleDefinition: "",
-						baseInstructions: "",
+						customInstructions: "",
 					},
 				},
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("")
 		})
 
-		it("should trim whitespace from combined result", () => {
+		it("should trim whitespace from combined result", async () => {
 			mockProvider.getState = vi.fn().mockReturnValue({
 				customModePrompts: {
 					code: {
 						roleDefinition: "  Role definition  ",
-						baseInstructions: "  Base instructions  ",
+						customInstructions: "  Base instructions  ",
 					},
 				},
 			})
 
-			const result = promptManager.getPromptTemplate("code")
+			const result = await promptManager.getPromptTemplate("code")
 
 			expect(result).toBe("Role definition  \n\n  Base instructions")
 		})
@@ -317,11 +326,11 @@ describe("PromptManager", () => {
 	describe("integration tests", () => {
 		it("should handle complete workflow with all parameters", async () => {
 			const apiConfiguration = {
-				apiProvider: "anthropic",
+				apiProvider: "anthropic" as const,
 				todoListEnabled: true,
 			}
 
-			const todoList = [{ id: "1", content: "Test todo", status: "pending" }]
+			const todoList = [{ id: "1", content: "Test todo", status: "pending" as const }]
 
 			const systemPrompt = await promptManager.getSystemPrompt(apiConfiguration, todoList, true)
 

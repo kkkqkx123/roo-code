@@ -2,7 +2,7 @@ import { z } from "zod"
 
 import { RooCodeEventName } from "./events.js"
 import type { RooCodeSettings } from "./global-settings.js"
-import type { ClineMessage, QueuedMessage, TokenUsage } from "./message.js"
+import type { ClineMessage, QueuedMessage, TokenUsage, StreamingState, AssistantMessageContent } from "./message.js"
 import type { ToolUsage, ToolName } from "./tool.js"
 import type { TodoItem } from "./todo.js"
 
@@ -184,6 +184,8 @@ export type TaskEvents = {
 	[RooCodeEventName.TaskModeSwitched]: [taskId: string, mode: string]
 	[RooCodeEventName.TaskAskResponded]: []
 	[RooCodeEventName.TaskUserMessage]: [taskId: string]
+	[RooCodeEventName.TaskStreamingStateChanged]: [taskId: string, state: StreamingState]
+	[RooCodeEventName.TaskStreamingContentUpdated]: [taskId: string, content: AssistantMessageContent[]]
 
 	// Task Analytics
 	[RooCodeEventName.TaskToolFailed]: [taskId: string, tool: ToolName, error: string]

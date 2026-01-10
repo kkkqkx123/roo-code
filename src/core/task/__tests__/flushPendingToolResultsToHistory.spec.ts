@@ -217,7 +217,7 @@ describe("flushPendingToolResultsToHistory", () => {
 		})
 
 		// Ensure userMessageContent is empty
-		task.userMessageContent = []
+		task.setUserMessageContent([])
 		const initialHistoryLength = task.apiConversationHistory.length
 
 		// Call flush
@@ -236,13 +236,13 @@ describe("flushPendingToolResultsToHistory", () => {
 		})
 
 		// Set up pending tool result in userMessageContent
-		task.userMessageContent = [
+		task.setUserMessageContent([
 			{
 				type: "tool_result",
 				tool_use_id: "tool-123",
 				content: "File written successfully",
 			},
-		]
+		])
 
 		await task.flushPendingToolResultsToHistory()
 
@@ -266,18 +266,18 @@ describe("flushPendingToolResultsToHistory", () => {
 		})
 
 		// Set up pending tool result
-		task.userMessageContent = [
+		task.setUserMessageContent([
 			{
 				type: "tool_result",
 				tool_use_id: "tool-456",
 				content: "Command executed",
 			},
-		]
+		])
 
 		await task.flushPendingToolResultsToHistory()
 
 		// userMessageContent should be cleared
-		expect(task.userMessageContent.length).toBe(0)
+		expect(task.getUserMessageContent().length).toBe(0)
 	})
 
 	it("should handle multiple tool results in a single flush", async () => {
@@ -289,7 +289,7 @@ describe("flushPendingToolResultsToHistory", () => {
 		})
 
 		// Set up multiple pending tool results
-		task.userMessageContent = [
+		task.setUserMessageContent([
 			{
 				type: "tool_result",
 				tool_use_id: "tool-1",
@@ -300,7 +300,7 @@ describe("flushPendingToolResultsToHistory", () => {
 				tool_use_id: "tool-2",
 				content: "Second result",
 			},
-		]
+		])
 
 		await task.flushPendingToolResultsToHistory()
 
@@ -322,13 +322,13 @@ describe("flushPendingToolResultsToHistory", () => {
 
 		const beforeTs = Date.now()
 
-		task.userMessageContent = [
+		task.setUserMessageContent([
 			{
 				type: "tool_result",
 				tool_use_id: "tool-ts",
 				content: "Result",
 			},
-		]
+		])
 
 		await task.flushPendingToolResultsToHistory()
 
