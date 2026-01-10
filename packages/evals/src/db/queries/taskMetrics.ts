@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 import { RecordNotFoundError, RecordNotCreatedError } from "./errors.js"
 import type { InsertTaskMetrics, UpdateTaskMetrics } from "../schema.js"
@@ -19,7 +19,14 @@ export const createTaskMetrics = async (args: InsertTaskMetrics) => {
 	const records = await db
 		.insert(taskMetrics)
 		.values({
-			...args,
+			duration: args.duration,
+			tokensIn: args.tokensIn,
+			tokensOut: args.tokensOut,
+			tokensContext: args.tokensContext,
+			cacheWrites: args.cacheWrites,
+			cacheReads: args.cacheReads,
+			cost: args.cost,
+			toolUsage: sql`${JSON.stringify(args.toolUsage)}`,
 			createdAt: new Date().toISOString(),
 		})
 		.returning()
@@ -34,7 +41,12 @@ export const createTaskMetrics = async (args: InsertTaskMetrics) => {
 }
 
 export const updateTaskMetrics = async (id: number, values: UpdateTaskMetrics) => {
-	const records = await db.update(taskMetrics).set(values).where(eq(taskMetrics.id, id)).returning()
+	const updateValues: any = { ...values }
+	if (values.toolUsage !== undefined) {
+		updateValues.toolUsage = sql`${JSON.stringify(values.toolUsage)}`
+	}
+
+	const records = await db.update(taskMetrics).set(updateValues).where(eq(taskMetrics.id, id)).returning()
 	const record = records[0]
 
 	if (!record) {

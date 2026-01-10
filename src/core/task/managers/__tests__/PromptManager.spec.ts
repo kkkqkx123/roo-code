@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { PromptManager } from "../PromptManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import type { RooIgnoreController } from "../../../ignore/RooIgnoreController"
-import type { DiffStrategy } from "../../../shared/tools"
+import type { DiffStrategy } from "../../../../shared/tools"
 
 describe("PromptManager", () => {
 	let mockProvider: Partial<ClineProvider>
@@ -16,7 +16,7 @@ describe("PromptManager", () => {
 		}
 
 		mockDiffStrategy = {
-			name: "test-strategy",
+			getName: vi.fn().mockReturnValue("test-strategy"),
 			getToolDescription: vi.fn().mockReturnValue("Test tool description"),
 		}
 

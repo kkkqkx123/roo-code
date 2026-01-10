@@ -1,7 +1,7 @@
 // npx vitest src/core/assistant-message/__tests__/AssistantMessageParser.spec.ts
 
+import { type AssistantMessageContent } from "@roo-code/types"
 import { AssistantMessageParser } from "../AssistantMessageParser"
-import { AssistantMessageContent } from "../parseAssistantMessage"
 import { TextContent, ToolUse } from "../../../shared/tools"
 
 /**
@@ -386,7 +386,8 @@ describe("AssistantMessageParser (streaming)", () => {
 			// To ensure the test is robust, we only assert after finalizeContentBlocks.
 			parser.finalizeContentBlocks()
 			blocks = parser.getContentBlocks()
-			expect(blocks[0].partial).toBe(false)
+			const textBlock = blocks.find((block) => block.type === "text") as TextContent
+			expect(textBlock?.partial).toBe(false)
 		})
 	})
 })

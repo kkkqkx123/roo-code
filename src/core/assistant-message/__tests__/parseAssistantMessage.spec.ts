@@ -1,8 +1,9 @@
 // npx vitest src/core/assistant-message/__tests__/parseAssistantMessage.spec.ts
 
+import { type AssistantMessageContent } from "@roo-code/types"
 import { TextContent, ToolUse } from "../../../shared/tools"
 
-import { AssistantMessageContent, parseAssistantMessage } from "../parseAssistantMessage"
+import { parseAssistantMessage } from "../parseAssistantMessage"
 
 const isEmptyTextContent = (block: AssistantMessageContent) =>
 	block.type === "text" && (block as TextContent).content === ""

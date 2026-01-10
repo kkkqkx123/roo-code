@@ -120,7 +120,7 @@ describe("getEnvironmentDetails", () => {
 				deref: vi.fn().mockReturnValue(mockProvider),
 				[Symbol.toStringTag]: "WeakRef",
 			} as unknown as WeakRef<ClineProvider>,
-			browserSession: {
+			browserSessionManager: {
 				isSessionActive: vi.fn().mockReturnValue(false),
 				getViewportSize: vi.fn().mockReturnValue({ width: 900, height: 600 }),
 			} as any,
@@ -468,8 +468,8 @@ describe("getEnvironmentDetails", () => {
 	})
 
 	it("should include Browser Session Status with current viewport when active", async () => {
-		;(mockCline.browserSession as any).isSessionActive = vi.fn().mockReturnValue(true)
-		;(mockCline.browserSession as any).getViewportSize = vi.fn().mockReturnValue({ width: 1280, height: 720 })
+		;(mockCline.browserSessionManager as any).isSessionActive = vi.fn().mockReturnValue(true)
+		;(mockCline.browserSessionManager as any).getViewportSize = vi.fn().mockReturnValue({ width: 1280, height: 720 })
 
 		const result = await getEnvironmentDetails(mockCline as Task)
 		expect(result).toContain("Active - A browser session is currently open and ready for browser_action commands")

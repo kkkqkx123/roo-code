@@ -119,6 +119,7 @@ export const runTask = async ({ run, task, publish, logger, jobToken }: RunTaskO
 		duration: 0,
 		cacheWrites: 0,
 		cacheReads: 0,
+		toolUsage: {},
 	})
 
 	await updateTask(task.id, { taskMetricsId: taskMetrics.id, startedAt: new Date().toISOString() })

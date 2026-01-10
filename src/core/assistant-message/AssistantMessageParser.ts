@@ -1,6 +1,5 @@
-import { type ToolName, toolNames } from "@roo-code/types"
+import { type ToolName, toolNames, type AssistantMessageContent } from "@roo-code/types"
 import { TextContent, ToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
-import { AssistantMessageContent } from "./parseAssistantMessage"
 
 /**
  * Parser for assistant messages. Maintains state between chunks
@@ -229,7 +228,7 @@ export class AssistantMessageParser {
 	public finalizeContentBlocks(): void {
 		// Mark all partial blocks as complete
 		for (const block of this.contentBlocks) {
-			if (block.partial) {
+			if (block.type === "text" && block.partial) {
 				block.partial = false
 			}
 			if (block.type === "text" && typeof block.content === "string") {

@@ -28,7 +28,7 @@ export const runs = sqliteTable("runs", {
 	timeout: integer().default(5).notNull(),
 	passed: integer().default(0).notNull(),
 	failed: integer().default(0).notNull(),
-	createdAt: text("created_at").notNull().default(("CURRENT_TIMESTAMP")), // SQLite uses text for timestamps
+	createdAt: text("created_at").notNull(), // SQLite uses text for timestamps
 })
 
 export const runsRelations = relations(runs, ({ one }) => ({
@@ -59,7 +59,7 @@ export const tasks = sqliteTable(
 		passed: integer(), // SQLite doesn't have boolean, use integer (0 or 1)
 		startedAt: text("started_at"),
 		finishedAt: text("finished_at"),
-		createdAt: text("created_at").notNull().default(("CURRENT_TIMESTAMP")),
+		createdAt: text("created_at").notNull(),
 	},
 	(table) => [
 		uniqueIndex("tasks_language_exercise_iteration_idx").on(
@@ -95,8 +95,8 @@ export const taskMetrics = sqliteTable("taskMetrics", {
 	cacheReads: integer("cache_reads").notNull(),
 	cost: real().notNull(),
 	duration: integer().notNull(),
-	toolUsage: text("tool_usage").$type<ToolUsage>(), // SQLite uses text for JSON storage
-	createdAt: text("created_at").notNull().default(("CURRENT_TIMESTAMP")),
+	toolUsage: text("tool_usage").notNull().$type<ToolUsage>(), // SQLite uses text for JSON storage
+	createdAt: text("created_at").notNull(),
 })
 
 export type TaskMetrics = typeof taskMetrics.$inferSelect

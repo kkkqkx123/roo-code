@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm"
+import { migrate } from "drizzle-orm/better-sqlite3/migrator"
 
 import { testDb, disconnect } from "./src/db/db.js"
 
@@ -11,6 +12,10 @@ async function resetTestDatabase() {
 	}
 
 	try {
+		// Run migrations to create tables
+		await migrate(db, { migrationsFolder: "./drizzle" })
+		console.log("[SQLite] Database migrations completed")
+
 		// For SQLite, we need to use a different approach
 		// Get all tables from sqlite_master
 		const tables = db.$client.prepare(`
