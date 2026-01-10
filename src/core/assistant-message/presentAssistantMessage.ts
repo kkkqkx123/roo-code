@@ -63,37 +63,40 @@ export async function presentAssistantMessage(cline: Task) {
 		throw new Error(`[Task#presentAssistantMessage] task ${cline.taskId}.${cline.instanceId} aborted`)
 	}
 
-	if (cline.presentAssistantMessageLocked) {
-		cline.presentAssistantMessageHasPendingUpdates = true
+	if (cline.isPresentAssistantMessageLocked()) {
+		cline.setPresentAssistantMessageHasPendingUpdates(true)
 		return
 	}
 
-	cline.presentAssistantMessageLocked = true
-	cline.presentAssistantMessageHasPendingUpdates = false
+	cline.setPresentAssistantMessageLocked(true)
+	cline.setPresentAssistantMessageHasPendingUpdates(false)
 
-	if (cline.currentStreamingContentIndex >= cline.assistantMessageContent.length) {
+	const currentStreamingContentIndex = cline.getCurrentStreamingContentIndex()
+	const assistantMessageContent = cline.getAssistantMessageContent()
+
+	if (currentStreamingContentIndex >= assistantMessageContent.length) {
 		// This may happen if the last content block was completed before
 		// streaming could finish. If streaming is finished, and we're out of
 		// bounds then this means we already  presented/executed the last
 		// content block and are ready to continue to next request.
-		if (cline.didCompleteReadingStream) {
-			cline.userMessageContentReady = true
+		if (cline.hasCompletedReadingStream()) {
+			cline.setUserMessageContentReady(true)
 		}
 
-		cline.presentAssistantMessageLocked = false
+		cline.setPresentAssistantMessageLocked(false)
 		return
 	}
 
 	let block: any
 	try {
-		block = cloneDeep(cline.assistantMessageContent[cline.currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
+		block = cloneDeep(assistantMessageContent[currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
 	} catch (error) {
 		console.error(`ERROR cloning block:`, error)
 		console.error(
 			`Block content:`,
-			JSON.stringify(cline.assistantMessageContent[cline.currentStreamingContentIndex], null, 2),
+			JSON.stringify(assistantMessageContent[currentStreamingContentIndex], null, 2),
 		)
-		cline.presentAssistantMessageLocked = false
+		cline.setPresentAssistantMessageLocked(false)
 		return
 	}
 
@@ -103,8 +106,9 @@ export async function presentAssistantMessage(cline: Task) {
 			// These are converted to the same execution path as use_mcp_tool but preserve
 			// their original name in API history
 			const mcpBlock = block as McpToolUse
+			const userMessageContent = cline.getUserMessageContent()
 
-			if (cline.didRejectTool) {
+			if (cline.getDidRejectTool()) {
 				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
 				const toolCallId = mcpBlock.id
 				const errorMessage = !mcpBlock.partial
@@ -112,7 +116,7 @@ export async function presentAssistantMessage(cline: Task) {
 					: `MCP tool ${mcpBlock.name} was interrupted and not executed due to user rejecting a previous tool.`
 
 				if (toolCallId) {
-					cline.userMessageContent.push({
+					userMessageContent.push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: errorMessage,
@@ -122,12 +126,12 @@ export async function presentAssistantMessage(cline: Task) {
 				break
 			}
 
-			if (cline.didAlreadyUseTool) {
+			if (cline.getDidAlreadyUseTool()) {
 				const toolCallId = mcpBlock.id
 				const errorMessage = `MCP tool [${mcpBlock.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message.`
 
 				if (toolCallId) {
-					cline.userMessageContent.push({
+					userMessageContent.push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: errorMessage,
@@ -164,19 +168,19 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 
 				if (toolCallId) {
-					cline.userMessageContent.push({
+					userMessageContent.push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: resultContent,
 					} as Anthropic.ToolResultBlockParam)
 
 					if (imageBlocks.length > 0) {
-						cline.userMessageContent.push(...imageBlocks)
+						userMessageContent.push(...imageBlocks)
 					}
 				}
 
 				hasToolResult = true
-				cline.didAlreadyUseTool = true
+				cline.setDidAlreadyUseTool(true)
 			}
 
 			const toolDescription = () => `[mcp_tool: ${mcpBlock.serverName}/${mcpBlock.toolName}]`
@@ -206,7 +210,7 @@ export async function presentAssistantMessage(cline: Task) {
 					} else {
 						pushToolResult(formatResponse.toolDenied(toolProtocol))
 					}
-					cline.didRejectTool = true
+					cline.setDidRejectTool(true)
 					return false
 				}
 
@@ -279,7 +283,7 @@ export async function presentAssistantMessage(cline: Task) {
 			break
 		}
 		case "text": {
-			if (cline.didRejectTool || cline.didAlreadyUseTool) {
+			if (cline.getDidRejectTool() || cline.getDidAlreadyUseTool()) {
 				break
 			}
 
@@ -435,7 +439,7 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 			}
 
-			if (cline.didRejectTool) {
+			if (cline.getDidRejectTool()) {
 				// Ignore any tool content after user has rejected tool once.
 				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
 				const toolCallId = block.id
@@ -445,7 +449,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 				if (toolCallId) {
 					// Native protocol: MUST send tool_result for every tool_use
-					cline.userMessageContent.push({
+					cline.getUserMessageContent().push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: errorMessage,
@@ -453,7 +457,7 @@ export async function presentAssistantMessage(cline: Task) {
 					} as Anthropic.ToolResultBlockParam)
 				} else {
 					// XML protocol: send as text
-					cline.userMessageContent.push({
+					cline.getUserMessageContent().push({
 						type: "text",
 						text: errorMessage,
 					})
@@ -462,7 +466,7 @@ export async function presentAssistantMessage(cline: Task) {
 				break
 			}
 
-			if (cline.didAlreadyUseTool) {
+			if (cline.getDidAlreadyUseTool()) {
 				// Ignore any content after a tool has already been used.
 				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
 				const toolCallId = block.id
@@ -470,7 +474,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 				if (toolCallId) {
 					// Native protocol: MUST send tool_result for every tool_use
-					cline.userMessageContent.push({
+					cline.getUserMessageContent().push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: errorMessage,
@@ -478,7 +482,7 @@ export async function presentAssistantMessage(cline: Task) {
 					} as Anthropic.ToolResultBlockParam)
 				} else {
 					// XML protocol: send as text
-					cline.userMessageContent.push({
+					cline.getUserMessageContent().push({
 						type: "text",
 						text: errorMessage,
 					})
@@ -529,7 +533,7 @@ export async function presentAssistantMessage(cline: Task) {
 					}
 
 					// Add tool_result with text content only
-					cline.userMessageContent.push({
+					cline.getUserMessageContent().push({
 						type: "tool_result",
 						tool_use_id: toolCallId,
 						content: resultContent,
@@ -537,21 +541,21 @@ export async function presentAssistantMessage(cline: Task) {
 
 					// Add image blocks separately after tool_result
 					if (imageBlocks.length > 0) {
-						cline.userMessageContent.push(...imageBlocks)
+						cline.getUserMessageContent().push(...imageBlocks)
 					}
 
 					hasToolResult = true
 				} else {
 					// For XML protocol, add as text blocks (legacy behavior)
-					cline.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
+					cline.getUserMessageContent().push({ type: "text", text: `${toolDescription()} Result:` })
 
 					if (typeof content === "string") {
-						cline.userMessageContent.push({
+						cline.getUserMessageContent().push({
 							type: "text",
 							text: content || "(tool did not return anything)",
 						})
 					} else {
-						cline.userMessageContent.push(...content)
+						cline.getUserMessageContent().push(...content)
 					}
 				}
 
@@ -562,10 +566,10 @@ export async function presentAssistantMessage(cline: Task) {
 					// Once a tool result has been collected, ignore all other tool
 					// uses since we should only ever present one tool result per
 					// message (XML protocol only).
-					cline.didAlreadyUseTool = true
+					cline.setDidAlreadyUseTool(true)
 				} else if (toolProtocol === TOOL_PROTOCOL.NATIVE && !isMultipleNativeToolCallsEnabled) {
 					// For native protocol with experimental flag disabled, enforce single tool per message
-					cline.didAlreadyUseTool = true
+					cline.setDidAlreadyUseTool(true)
 				}
 				// If toolProtocol is NATIVE and isMultipleNativeToolCallsEnabled is true,
 				// allow multiple tool calls in sequence (don't set didAlreadyUseTool)
@@ -597,7 +601,7 @@ export async function presentAssistantMessage(cline: Task) {
 					} else {
 						pushToolResult(formatResponse.toolDenied(toolProtocol))
 					}
-					cline.didRejectTool = true
+					cline.setDidRejectTool(true)
 					return false
 				}
 
@@ -683,12 +687,12 @@ export async function presentAssistantMessage(cline: Task) {
 				const sessionActive = hasStarted && !isClosed
 				// Only auto-close when no active browser session is present, and this isn't a browser_action
 				if (!sessionActive && block.name !== "browser_action") {
-					await cline.browserSession.closeBrowser()
+					await cline.getBrowserSession().closeBrowser()
 				}
 			} catch {
 				// On any unexpected error, fall back to conservative behavior
 				if (block.name !== "browser_action") {
-					await cline.browserSession.closeBrowser()
+					await cline.getBrowserSession().closeBrowser()
 				}
 			}
 
@@ -729,7 +733,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 					if (toolProtocol === TOOL_PROTOCOL.NATIVE && toolCallId) {
 						// For native protocol, push tool_result directly without setting didAlreadyUseTool
-						cline.userMessageContent.push({
+						cline.getUserMessageContent().push({
 							type: "tool_result",
 							tool_use_id: toolCallId,
 							content: typeof errorContent === "string" ? errorContent : "(validation error)",
@@ -760,7 +764,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 					if (response === "messageResponse") {
 						// Add user feedback to userContent.
-						cline.userMessageContent.push(
+						cline.getUserMessageContent().push(
 							{
 								type: "text" as const,
 								text: `Tool repetition limit reached. User feedback: ${text}`,
@@ -1055,7 +1059,7 @@ export async function presentAssistantMessage(cline: Task) {
 					// Push tool_result directly for native protocol WITHOUT setting didAlreadyUseTool
 					// This prevents the stream from being interrupted with "Response interrupted by tool use result"
 					if (toolProtocol === TOOL_PROTOCOL.NATIVE && toolCallId) {
-						cline.userMessageContent.push({
+						cline.getUserMessageContent().push({
 							type: "tool_result",
 							tool_use_id: toolCallId,
 							content: formatResponse.toolError(errorMessage, toolProtocol),
@@ -1081,16 +1085,18 @@ export async function presentAssistantMessage(cline: Task) {
 	// This needs to be placed here, if not then calling
 	// cline.presentAssistantMessage below would fail (sometimes) since it's
 	// locked.
-	cline.presentAssistantMessageLocked = false
+	cline.setPresentAssistantMessageLocked(false)
 
 	// NOTE: When tool is rejected, iterator stream is interrupted and it waits
 	// for `userMessageContentReady` to be true. Future calls to present will
 	// skip execution since `didRejectTool` and iterate until `contentIndex` is
 	// set to message length and it sets userMessageContentReady to true itself
 	// (instead of preemptively doing it in iterator).
-	if (!block.partial || cline.didRejectTool || cline.didAlreadyUseTool) {
+	if (!block.partial || cline.getDidRejectTool() || cline.getDidAlreadyUseTool()) {
 		// Block is finished streaming and executing.
-		if (cline.currentStreamingContentIndex === cline.assistantMessageContent.length - 1) {
+		const currentStreamingContentIndex = cline.getCurrentStreamingContentIndex()
+		const assistantMessageContent = cline.getAssistantMessageContent()
+		if (currentStreamingContentIndex === assistantMessageContent.length - 1) {
 			// It's okay that we increment if !didCompleteReadingStream, it'll
 			// just return because out of bounds and as streaming continues it
 			// will call `presentAssitantMessage` if a new block is ready. If
@@ -1098,16 +1104,16 @@ export async function presentAssistantMessage(cline: Task) {
 			// true when out of bounds. This gracefully allows the stream to
 			// continue on and all potential content blocks be presented.
 			// Last block is complete and it is finished executing
-			cline.userMessageContentReady = true // Will allow `pWaitFor` to continue.
+			cline.setUserMessageContentReady(true) // Will allow `pWaitFor` to continue.
 		}
 
 		// Call next block if it exists (if not then read stream will call it
 		// when it's ready).
 		// Need to increment regardless, so when read stream calls this function
 		// again it will be streaming the next block.
-		cline.currentStreamingContentIndex++
+		cline.setCurrentStreamingContentIndex(currentStreamingContentIndex + 1)
 
-		if (cline.currentStreamingContentIndex < cline.assistantMessageContent.length) {
+		if (cline.getCurrentStreamingContentIndex() < assistantMessageContent.length) {
 			// There are already more content blocks to stream, so we'll call
 			// this function ourselves.
 			presentAssistantMessage(cline)
@@ -1115,14 +1121,14 @@ export async function presentAssistantMessage(cline: Task) {
 		} else {
 			// CRITICAL FIX: If we're out of bounds and the stream is complete, set userMessageContentReady
 			// This handles the case where assistantMessageContent is empty or becomes empty after processing
-			if (cline.didCompleteReadingStream) {
-				cline.userMessageContentReady = true
+			if (cline.hasCompletedReadingStream()) {
+				cline.setUserMessageContentReady(true)
 			}
 		}
 	}
 
 	// Block is partial, but the read stream may have finished.
-	if (cline.presentAssistantMessageHasPendingUpdates) {
+	if (cline.hasPresentAssistantMessagePendingUpdates()) {
 		presentAssistantMessage(cline)
 	}
 }
@@ -1133,12 +1139,12 @@ export async function presentAssistantMessage(cline: Task) {
  * @returns
  */
 async function checkpointSaveAndMark(task: Task) {
-	if (task.currentStreamingDidCheckpoint) {
+	if (task.getStreamingDidCheckpoint()) {
 		return
 	}
 	try {
 		await task.checkpointSave(true)
-		task.currentStreamingDidCheckpoint = true
+		task.setStreamingDidCheckpoint(true)
 	} catch (error) {
 		console.error(`[Task#presentAssistantMessage] Error saving checkpoint: ${error.message}`, error)
 	}

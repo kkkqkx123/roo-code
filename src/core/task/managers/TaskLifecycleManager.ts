@@ -87,11 +87,11 @@ export class TaskLifecycleManager {
 		}
 
 		const shouldUseXmlParser = this.task.taskToolProtocol === "xml"
-		if (shouldUseXmlParser && !this.task.streamingManager.getAssistantMessageParser()) {
+		if (shouldUseXmlParser && !this.task.getAssistantMessageParser()) {
 			const { AssistantMessageParser } = await import("../../assistant-message/AssistantMessageParser")
-			this.task.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
+			this.task.setAssistantMessageParser(new AssistantMessageParser())
 		} else if (!shouldUseXmlParser) {
-			this.task.streamingManager.clearAssistantMessageParser()
+			this.task.clearAssistantMessageParser()
 		}
 
 		if (lastApiReqStartedIndex !== -1) {
@@ -214,11 +214,11 @@ export class TaskLifecycleManager {
 		}
 
 		const shouldUseXmlParser = this.task.taskToolProtocol === "xml"
-		if (shouldUseXmlParser && !this.task.streamingManager.getAssistantMessageParser()) {
+		if (shouldUseXmlParser && !this.task.getAssistantMessageParser()) {
 			const { AssistantMessageParser } = await import("../../assistant-message/AssistantMessageParser")
-			this.task.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
+			this.task.setAssistantMessageParser(new AssistantMessageParser())
 		} else if (!shouldUseXmlParser) {
-			this.task.streamingManager.clearAssistantMessageParser()
+			this.task.clearAssistantMessageParser()
 		}
 	}
 
@@ -271,8 +271,8 @@ export class TaskLifecycleManager {
 
 		const provider = this.providerRef.deref()
 
-		if (this.task.messageQueueService) {
-			this.task.messageQueueService.dispose()
+		if (this.task.messageQueueManager) {
+			this.task.messageQueueManager.dispose()
 		}
 
 		if (provider) {
@@ -282,7 +282,7 @@ export class TaskLifecycleManager {
 			if (this.task.rooProtectedController) {
 				this.task.rooProtectedController.dispose()
 			}
-			if (this.task.streamingManager.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
+			if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
 				this.task.diffViewProvider.revertChanges()
 			}
 		}

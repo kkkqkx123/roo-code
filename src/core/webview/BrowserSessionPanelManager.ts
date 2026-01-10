@@ -45,7 +45,7 @@ export class BrowserSessionPanelManager {
 			)
 			const browserSessionMessages =
 				browserSessionStartIndex !== -1 ? messages.slice(browserSessionStartIndex) : []
-			const isBrowserSessionActive = task.browserSession?.isSessionActive() ?? false
+			const isBrowserSessionActive = task.browserSessionManager?.isSessionActive() ?? false
 
 			await this.updateBrowserSession(browserSessionMessages, isBrowserSessionActive)
 		}

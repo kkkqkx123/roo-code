@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { TaskLifecycleManager } from "../TaskLifecycleManager"
 import { StreamingManager } from "../StreamingManager"
+import { MessageQueueManager } from "../MessageQueueManager"
 import { RooCodeEventName } from "@roo-code/types"
 import type { Task } from "../../Task"
 import type { ClineProvider } from "../../../webview/ClineProvider"
-import { MessageQueueService } from "../../../message-queue/MessageQueueService"
+import { MessageQueueService } from "../MessageQueueService"
 
 vi.mock("../../../ignore/RooIgnoreController", () => ({
 	RooIgnoreController: vi.fn().mockImplementation(() => ({
@@ -24,11 +25,17 @@ describe("TaskLifecycleManager", () => {
 	let mockProvider: Partial<ClineProvider>
 	let providerRef: WeakRef<ClineProvider>
 	let mockStreamingManager: StreamingManager
+	let mockMessageQueueManager: MessageQueueManager
 	let lifecycleManager: TaskLifecycleManager
 
 	beforeEach(() => {
 		mockStreamingManager = new StreamingManager({
 			taskId: "task-1",
+		})
+
+		mockMessageQueueManager = new MessageQueueManager({
+			taskId: "task-1",
+			providerRef: new WeakRef({} as ClineProvider),
 		})
 
 		mockTask = {
@@ -44,7 +51,7 @@ describe("TaskLifecycleManager", () => {
 			emit: vi.fn(),
 			abort: false,
 			currentRequestAbortController: undefined,
-			messageQueueService: new MessageQueueService(),
+			messageQueueManager: mockMessageQueueManager,
 			rooIgnoreController: undefined,
 			rooProtectedController: undefined,
 			isStreaming: false,
@@ -133,21 +140,21 @@ describe("TaskLifecycleManager", () => {
 			mockTask.currentRequestAbortController = new AbortController()
 			
 			// Create instances with dispose spies
-			const mockMessageQueueService = new MessageQueueService()
+			const mockMessageQueueManager = new MessageQueueService()
 			const { RooIgnoreController } = await import("../../../ignore/RooIgnoreController")
 			const { RooProtectedController } = await import("../../../protect/RooProtectedController")
 			const mockRooIgnoreController = new RooIgnoreController("/workspace")
 			const mockRooProtectedController = new RooProtectedController("/workspace")
 
 			// Spy on dispose methods
-			const disposeSpy = vi.spyOn(mockMessageQueueService, 'dispose')
+			const disposeSpy = vi.spyOn(mockMessageQueueManager, 'dispose')
 			const ignoreDisposeSpy = vi.spyOn(mockRooIgnoreController, 'dispose')
 			const protectedDisposeSpy = vi.spyOn(mockRooProtectedController, 'dispose')
 
 			// Create a new task with the mocked services
 			const taskWithServices = {
 				...mockTask,
-				messageQueueService: mockMessageQueueService,
+				messageQueueManager: mockMessageQueueManager,
 				rooIgnoreController: mockRooIgnoreController,
 				rooProtectedController: mockRooProtectedController,
 			} as any

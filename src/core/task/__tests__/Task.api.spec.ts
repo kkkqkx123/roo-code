@@ -367,10 +367,10 @@ describe("Cline - API Tests", () => {
 
 			const cancelSpy = vi.spyOn(task, "cancelCurrentRequest")
 
-			vi.spyOn(task.messageQueueService, "removeListener").mockImplementation(
-				() => task.messageQueueService as any,
+			vi.spyOn(task.messageQueueManager.getMessageQueueService(), "removeListener").mockImplementation(
+				() => task.messageQueueManager.getMessageQueueService() as any,
 			)
-			vi.spyOn(task.messageQueueService, "dispose").mockImplementation(() => {})
+			vi.spyOn(task.messageQueueManager, "dispose").mockImplementation(() => {})
 			vi.spyOn(task, "removeAllListeners").mockImplementation(() => task as any)
 
 			task.dispose()

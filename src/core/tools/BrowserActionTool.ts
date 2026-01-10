@@ -83,7 +83,7 @@ export async function browserActionTool(
 				// For example the api_req_finished message would interfere with the partial message, so we needed to remove that.
 
 				// Launch browser first (this triggers "Browser session opened" status message)
-				await cline.browserSession.launchBrowser()
+				await cline.browserSessionManager.getBrowserSession().launchBrowser()
 
 				// Create browser_action say message AFTER launching so status appears first
 				await cline.say(
@@ -96,7 +96,7 @@ export async function browserActionTool(
 					false,
 				)
 
-				browserActionResult = await cline.browserSession.navigateToUrl(url)
+				browserActionResult = await cline.browserSessionManager.getBrowserSession().navigateToUrl(url)
 			} else {
 				// Variables to hold validated and processed parameters
 				let processedCoordinate = coordinate
@@ -112,7 +112,7 @@ export async function browserActionTool(
 					}
 
 					// Get viewport dimensions from the browser session
-					const viewportSize = cline.browserSession.getViewportSize()
+					const viewportSize = cline.browserSessionManager.getViewportSize()
 					const viewportWidth = viewportSize.width || 900 // default to 900 if not available
 					const viewportHeight = viewportSize.height || 600 // default to 600 if not available
 
@@ -183,31 +183,31 @@ export async function browserActionTool(
 
 				switch (action) {
 					case "click":
-						browserActionResult = await cline.browserSession.click(processedCoordinate!)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().click(processedCoordinate!)
 						break
 					case "hover":
-						browserActionResult = await cline.browserSession.hover(processedCoordinate!)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().hover(processedCoordinate!)
 						break
 					case "type":
-						browserActionResult = await cline.browserSession.type(text!)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().type(text!)
 						break
 					case "press":
-						browserActionResult = await cline.browserSession.press(text!)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().press(text!)
 						break
 					case "scroll_down":
-						browserActionResult = await cline.browserSession.scrollDown()
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().scrollDown()
 						break
 					case "scroll_up":
-						browserActionResult = await cline.browserSession.scrollUp()
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().scrollUp()
 						break
 					case "resize":
-						browserActionResult = await cline.browserSession.resize(size!)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().resize(size!)
 						break
 					case "screenshot":
-						browserActionResult = await cline.browserSession.saveScreenshot(filePath!, cline.cwd)
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().saveScreenshot(filePath!, cline.cwd)
 						break
 					case "close":
-						browserActionResult = await cline.browserSession.closeBrowser()
+						browserActionResult = await cline.browserSessionManager.getBrowserSession().closeBrowser()
 						break
 				}
 			}

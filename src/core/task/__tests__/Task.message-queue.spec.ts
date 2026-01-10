@@ -212,7 +212,7 @@ describe("Cline - Queued message processing after condense", () => {
 		vi.spyOn(task as any, "getSystemPrompt").mockResolvedValue("system")
 		const submitSpy = vi.spyOn(task, "submitUserMessage").mockResolvedValue(undefined)
 
-		task.messageQueueService.addMessage("queued text", ["img1.png"])
+		task.messageQueueManager.getMessageQueueService().addMessage("queued text", ["img1.png"])
 
 		vi.useFakeTimers()
 		await task.condenseContext()
@@ -221,7 +221,7 @@ describe("Cline - Queued message processing after condense", () => {
 		vi.useRealTimers()
 
 		expect(submitSpy).toHaveBeenCalledWith("queued text", ["img1.png"])
-		expect(task.messageQueueService.isEmpty()).toBe(true)
+		expect(task.messageQueueManager.getMessageQueueService().isEmpty()).toBe(true)
 	})
 
 	it("does not cross-drain queues between separate tasks", async () => {
@@ -247,8 +247,8 @@ describe("Cline - Queued message processing after condense", () => {
 		const spyA = vi.spyOn(taskA, "submitUserMessage").mockResolvedValue(undefined)
 		const spyB = vi.spyOn(taskB, "submitUserMessage").mockResolvedValue(undefined)
 
-		taskA.messageQueueService.addMessage("A message")
-		taskB.messageQueueService.addMessage("B message")
+		taskA.messageQueueManager.getMessageQueueService().addMessage("A message")
+		taskB.messageQueueManager.getMessageQueueService().addMessage("B message")
 
 		vi.useFakeTimers()
 		await taskA.condenseContext()
@@ -257,7 +257,7 @@ describe("Cline - Queued message processing after condense", () => {
 
 		expect(spyA).toHaveBeenCalledWith("A message", undefined)
 		expect(spyB).not.toHaveBeenCalled()
-		expect(taskB.messageQueueService.isEmpty()).toBe(false)
+		expect(taskB.messageQueueManager.getMessageQueueService().isEmpty()).toBe(false)
 
 		vi.useFakeTimers()
 		await taskB.condenseContext()
@@ -265,6 +265,6 @@ describe("Cline - Queued message processing after condense", () => {
 		vi.useRealTimers()
 
 		expect(spyB).toHaveBeenCalledWith("B message", undefined)
-		expect(taskB.messageQueueService.isEmpty()).toBe(true)
+		expect(taskB.messageQueueManager.getMessageQueueService().isEmpty()).toBe(true)
 	})
 })

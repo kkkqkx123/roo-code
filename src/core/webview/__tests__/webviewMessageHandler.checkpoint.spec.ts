@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import { saveTaskMessages } from "../../task-persistence"
 import { handleCheckpointRestoreOperation } from "../checkpointRestoreHandler"
-import { MessageManager } from "../../message-manager"
+import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
 
 // Mock dependencies
 vi.mock("../../task-persistence")
@@ -41,7 +41,7 @@ describe("webviewMessageHandler - checkpoint operations", () => {
 			overwriteClineMessages: vi.fn(),
 			overwriteApiConversationHistory: vi.fn(),
 		}
-		mockCline.messageManager = new MessageManager(mockCline)
+		mockCline.conversationRewindManager = new ConversationRewindManager(mockCline)
 
 		// Setup mock provider
 		mockProvider = {

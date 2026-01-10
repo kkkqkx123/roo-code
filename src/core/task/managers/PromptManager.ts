@@ -3,9 +3,10 @@ import * as vscode from "vscode"
 import { SYSTEM_PROMPT } from "../../prompts/system"
 import { getModelId } from "@roo-code/types"
 import type { ModeConfig, CustomModePrompts, TodoItem } from "@roo-code/types"
-import { DiffStrategy } from "../../shared/tools"
-import { McpHub } from "../../services/mcp/McpHub"
-import { RooIgnoreController } from "../ignore/RooIgnoreController"
+import { DiffStrategy } from "../../../shared/tools"
+import { McpHub } from "../../../services/mcp/McpHub"
+import { RooIgnoreController } from "../../ignore/RooIgnoreController"
+import type { ClineProvider } from "../../webview/ClineProvider"
 
 export interface PromptManagerOptions {
 	providerRef: WeakRef<ClineProvider>
@@ -59,7 +60,7 @@ export class PromptManager {
 				mcpHub,
 				this.diffStrategy,
 				state?.browserViewportSize ?? "900x600",
-				state?.taskMode ?? "code",
+				state?.mode ?? "code",
 				state?.customModePrompts,
 				undefined,
 				state?.customInstructions,
@@ -88,7 +89,7 @@ export class PromptManager {
 			undefined,
 			this.diffStrategy,
 			state?.browserViewportSize ?? "900x600",
-			state?.taskMode ?? "code",
+			state?.mode ?? "code",
 			state?.customModePrompts,
 			undefined,
 			state?.customInstructions,
@@ -120,13 +121,13 @@ export class PromptManager {
 ${customPrompt}`
 	}
 
-	public getPromptTemplate(mode: string): string {
+	public async getPromptTemplate(mode: string): Promise<string> {
 		const provider = this.providerRef.deref()
 		if (!provider) {
 			throw new Error("Provider reference lost")
 		}
 
-		const state = provider.getState()
+		const state = await provider.getState()
 		const customModePrompts = state?.customModePrompts
 
 		if (!customModePrompts) {
@@ -138,14 +139,14 @@ ${customPrompt}`
 			return ""
 		}
 
-		const { roleDefinition, baseInstructions } = promptComponent
+		const { roleDefinition, customInstructions } = promptComponent
 
-		if (!roleDefinition && !baseInstructions) {
+		if (!roleDefinition && !customInstructions) {
 			return ""
 		}
 
 		return `${roleDefinition || ""}
 
-${baseInstructions || ""}`.trim()
+${customInstructions || ""}`.trim()
 	}
 }

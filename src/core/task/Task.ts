@@ -117,9 +117,7 @@ import {
 } from "../checkpoints"
 import { processUserContentMentions } from "../mentions/processUserContentMentions"
 import { getMessagesSinceLastSummary, summarizeConversation, getEffectiveApiHistory } from "../condense"
-import { MessageQueueService } from "../message-queue/MessageQueueService"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
-import { MessageManager } from "../message-manager"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 
 // Managers
@@ -127,6 +125,7 @@ import {
 	TaskStateManager,
 	ApiRequestManager,
 	MessageManager as TaskMessageManager,
+	ConversationRewindManager,
 	ToolExecutor,
 	UserInteractionManager,
 	FileEditorManager,
@@ -137,6 +136,10 @@ import {
 	SubtaskManager,
 	TaskLifecycleManager,
 	StreamingManager,
+	PromptManager,
+	MessageQueueManager,
+	BrowserSessionManager,
+	ConversationHistoryManager,
 } from "./managers"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -224,7 +227,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	terminalProcess?: RooTerminalProcess
 
 	// Computer User
-	browserSession: BrowserSession
+	browserSessionManager: BrowserSessionManager
 
 	// Editing
 	diffViewProvider: DiffViewProvider
@@ -249,6 +252,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	consecutiveMistakeLimit: number
 	consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map()
 	consecutiveNoToolUseCount: number = 0
+	didRejectTool = false
+	didAlreadyUseTool = false
+	didToolFailInCurrentTurn = false
+	didCompleteReadingStream = false
 
 	// Checkpoints
 	enableCheckpoints: boolean
@@ -259,18 +266,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	// Task Bridge
 	enableBridge: boolean
 
-	// Message Queue Service
-	public readonly messageQueueService: MessageQueueService
-	private messageQueueStateChangedHandler: (() => void) | undefined
-
 	// Cloud Sync Tracking
 	private cloudSyncedMessageTimestamps: Set<number> = new Set()
 
 	// Initial status for the task's history item (set at creation time to avoid race conditions)
 	private readonly initialStatus?: "active" | "delegated" | "completed"
 
-	// MessageManager for high-level message operations (lazy initialized)
-	private _messageManager?: MessageManager
+	// ConversationRewindManager for high-level message operations (lazy initialized)
+	private _conversationRewindManager?: ConversationRewindManager
 
 	// Managers
 	private stateManager: TaskStateManager
@@ -286,6 +289,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	private subtaskManager: SubtaskManager
 	private taskLifecycleManager: TaskLifecycleManager
 	private streamingManager: StreamingManager
+	private promptManager: PromptManager
+	public messageQueueManager: MessageQueueManager
+	private conversationHistoryManager: ConversationHistoryManager
 
 	constructor({
 		provider,
@@ -359,30 +365,24 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.api = buildApiHandler(apiConfiguration)
 		this.autoApprovalHandler = new AutoApprovalHandler()
 
-		this.urlContentFetcher = new UrlContentFetcher(provider.context)
-		this.browserSession = new BrowserSession(provider.context, (isActive: boolean) => {
-			this.say("browser_session_status", isActive ? "Browser session opened" : "Browser session closed")
-			this.broadcastBrowserSessionUpdate()
+		this.providerRef = new WeakRef(provider)
+		this.globalStoragePath = provider.context.globalStorageUri.fsPath
 
-			if (isActive) {
-				try {
-					const { BrowserSessionPanelManager } = require("../webview/BrowserSessionPanelManager")
-					const providerRef = this.providerRef.deref()
-					if (providerRef) {
-						BrowserSessionPanelManager.getInstance(providerRef)
-							.show()
-							.catch(() => {})
-					}
-				} catch (err) {
-					console.error("[Task] Failed to auto-open Browser Session panel:", err)
-				}
-			}
+		this.urlContentFetcher = new UrlContentFetcher(provider.context)
+		this.browserSessionManager = new BrowserSessionManager({
+			taskId: this.taskId,
+			context: provider.context,
+			providerRef: this.providerRef,
+			onStatusUpdate: (message: string) => {
+				this.say("browser_session_status", message)
+			},
+			onWebviewUpdate: (isActive: boolean) => {
+				this.broadcastBrowserSessionUpdate(isActive)
+			},
 		})
 		this.diffEnabled = enableDiff
 		this.fuzzyMatchThreshold = fuzzyMatchThreshold
 		this.consecutiveMistakeLimit = consecutiveMistakeLimit ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT
-		this.providerRef = new WeakRef(provider)
-		this.globalStoragePath = provider.context.globalStorageUri.fsPath
 		this.diffViewProvider = new DiffViewProvider(this.cwd, this)
 		this.enableCheckpoints = enableCheckpoints
 		this.checkpointTimeout = checkpointTimeout
@@ -449,6 +449,16 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			},
 		})
 
+		this.streamingManager = new StreamingManager({
+			taskId: this.taskId,
+			onStreamingStateChange: (state) => {
+				this.emit(RooCodeEventName.TaskStreamingStateChanged, this.taskId, state)
+			},
+			onStreamingContentUpdate: (content) => {
+				this.emit(RooCodeEventName.TaskStreamingContentUpdated, this.taskId, content)
+			},
+		})
+
 		this.apiRequestManager = new ApiRequestManager({
 			stateManager: this.stateManager,
 			messageManager: this.taskMessageManager,
@@ -462,14 +472,24 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			streamingManager: this.streamingManager,
 		})
 
-		this.streamingManager = new StreamingManager({
+		this.promptManager = new PromptManager({
 			taskId: this.taskId,
-			onStreamingStateChange: (state) => {
-				this.emit(RooCodeEventName.TaskStreamingStateChanged, this.taskId, state)
+			providerRef: this.providerRef,
+			workspacePath: this.cwd,
+			diffStrategy: this.diffStrategy,
+			rooIgnoreController: this.rooIgnoreController,
+		})
+
+		this.messageQueueManager = new MessageQueueManager({
+			taskId: this.taskId,
+			providerRef: this.providerRef,
+			onUserMessage: (taskId) => {
+				this.emit(RooCodeEventName.TaskUserMessage, taskId)
 			},
-			onStreamingContentUpdate: (content) => {
-				this.emit(RooCodeEventName.TaskStreamingContentUpdated, this.taskId, content)
-			},
+		})
+
+		this.conversationHistoryManager = new ConversationHistoryManager({
+			taskId: this.taskId,
 		})
 
 		this.configurationManager = new ConfigurationManager({
@@ -516,15 +536,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			this._taskToolProtocol = "xml"
 			this.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
 		})
-
-		this.messageQueueService = new MessageQueueService()
-
-		this.messageQueueStateChangedHandler = () => {
-			this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
-			this.providerRef.deref()?.postStateToWebview()
-		}
-
-		this.messageQueueService.on("stateChanged", this.messageQueueStateChangedHandler)
 
 		// Only set up diff strategy if diff is enabled.
 		if (this.diffEnabled) {
@@ -610,7 +621,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public get queuedMessages(): QueuedMessage[] {
-		return this.messageQueueService.messages
+		return this.messageQueueManager.queuedMessages
 	}
 
 	public get tokenUsage(): TokenUsage | undefined {
@@ -765,7 +776,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	// Context management - kept in Task class as it orchestrates multiple components
 	public async condenseContext(): Promise<void> {
-		const systemPrompt = await this.getSystemPrompt()
+		const systemPrompt = await this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled)
 
 		// Get condensing configuration
 		const state = await this.providerRef.deref()?.getState()
@@ -899,39 +910,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		mode?: string,
 		providerProfile?: string,
 	): Promise<void> {
-		try {
-			text = (text ?? "").trim()
-			images = images ?? []
-
-			if (text.length === 0 && images.length === 0) {
-				return
-			}
-
-			const provider = this.providerRef.deref()
-
-			if (provider) {
-				if (mode) {
-					await provider.setMode(mode)
-				}
-
-				if (providerProfile) {
-					await provider.setProviderProfile(providerProfile)
-
-					const newState = await provider.getState()
-					if (newState?.apiConfiguration) {
-						this.updateApiConfiguration(newState.apiConfiguration)
-					}
-				}
-
-				this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
-
-				provider.postMessageToWebview({ type: "invoke", invoke: "sendMessage", text, images })
-			} else {
-				console.error("[Task#submitUserMessage] Provider reference lost")
-			}
-		} catch (error) {
-			console.error("[Task#submitUserMessage] Failed to submit user message:", error)
-		}
+		return this.messageQueueManager.submitUserMessage(text, images, mode, providerProfile)
 	}
 
 	async handleTerminalOperation(terminalOperation: "continue" | "abort") {
@@ -951,14 +930,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public async processQueuedMessages(): Promise<void> {
-		if (!this.messageQueueService.isEmpty()) {
-			const queued = this.messageQueueService.dequeueMessage()
-			if (queued) {
-				setTimeout(() => {
-					this.submitUserMessage(queued.text, queued.images)
-				}, 100)
-			}
-		}
+		return this.messageQueueManager.processQueuedMessages()
 	}
 
 	public async recursivelyMakeClineRequests(
@@ -966,82 +938,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		includeFileDetails: boolean = false,
 	): Promise<boolean> {
 		return this.apiRequestManager.recursivelyMakeClineRequests(userContent, includeFileDetails)
-	}
-
-	private async getSystemPrompt(): Promise<string> {
-		const provider = this.providerRef.deref()
-		if (!provider) {
-			throw new Error("Provider reference lost")
-		}
-
-		const state = await provider.getState()
-		const mcpEnabled = state?.mcpEnabled ?? true
-
-		if (mcpEnabled) {
-			const mcpHub = provider.getMcpHub()
-			if (!mcpHub) {
-				throw new Error("MCP Hub not available")
-			}
-
-			const mcpServers = mcpHub.getServers()
-			const mcpTools = mcpServers.flatMap((server) => server.tools ?? [])
-
-			return SYSTEM_PROMPT(
-				provider.context,
-				this.cwd,
-				state?.browserToolEnabled ?? true,
-				mcpHub,
-				this.diffStrategy,
-				state?.browserViewportSize ?? "900x600",
-				await this.getTaskMode(),
-				state?.customModePrompts,
-				undefined,
-				state?.customInstructions,
-				this.diffEnabled,
-				state?.experiments,
-				state?.enableMcpServerCreation,
-				state?.language,
-				this.rooIgnoreController?.getInstructions(),
-				state?.maxReadFileLine !== -1,
-				{
-					maxConcurrentFileReads: state?.maxConcurrentFileReads ?? 5,
-					todoListEnabled: this.apiConfiguration?.todoListEnabled ?? true,
-					browserToolEnabled: state?.browserToolEnabled ?? true,
-					useAgentRules: vscode.workspace.getConfiguration(Package.name).get<boolean>("useAgentRules") ?? true,
-					newTaskRequireTodos: vscode.workspace.getConfiguration(Package.name).get<boolean>("newTaskRequireTodos") ?? false,
-				},
-				this.todoList ?? [],
-				getModelId(this.apiConfiguration),
-			)
-		}
-
-		return SYSTEM_PROMPT(
-			provider.context,
-			this.cwd,
-			state?.browserToolEnabled ?? true,
-			undefined,
-			this.diffStrategy,
-			state?.browserViewportSize ?? "900x600",
-			await this.getTaskMode(),
-			state?.customModePrompts,
-			undefined,
-			state?.customInstructions,
-			this.diffEnabled,
-			state?.experiments,
-			state?.enableMcpServerCreation,
-			state?.language,
-			this.rooIgnoreController?.getInstructions(),
-			state?.maxReadFileLine !== -1,
-			{
-				maxConcurrentFileReads: state?.maxConcurrentFileReads ?? 5,
-				todoListEnabled: this.apiConfiguration?.todoListEnabled ?? true,
-				browserToolEnabled: state?.browserToolEnabled ?? true,
-				useAgentRules: vscode.workspace.getConfiguration(Package.name).get<boolean>("useAgentRules") ?? true,
-				newTaskRequireTodos: vscode.workspace.getConfiguration(Package.name).get<boolean>("newTaskRequireTodos") ?? false,
-			},
-			this.todoList ?? [],
-			getModelId(this.apiConfiguration),
-		)
 	}
 
 	private async handleContextWindowExceededError(): Promise<void> {
@@ -1057,7 +953,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			listApiConfigMeta,
 		} = state ?? {}
 
-		const systemPrompt = await this.getSystemPrompt()
+		const systemPrompt = await this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled)
 		const { contextTokens } = this.getTokenUsage()
 
 		const modelInfo = this.api.getModel().info
@@ -1152,101 +1048,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.apiRequestManager.backoffAndAnnounce(retryAttempt, error)
 	}
 
-	private buildCleanConversationHistory(
-		messages: ApiMessage[],
-	): Array<
-		Anthropic.Messages.MessageParam | { type: "reasoning"; encrypted_content: string; id?: string; summary?: any[] }
-	> {
-		type ReasoningItemForRequest = {
-			type: "reasoning"
-			encrypted_content: string
-			id?: string
-			summary?: any[]
-		}
-
-		const cleanConversationHistory: (Anthropic.Messages.MessageParam | ReasoningItemForRequest)[] = []
-
-		for (const msg of messages) {
-			if (msg.type === "reasoning") {
-				if (msg.encrypted_content) {
-					cleanConversationHistory.push({
-						type: "reasoning",
-						summary: msg.summary,
-						encrypted_content: msg.encrypted_content!,
-						...(msg.id ? { id: msg.id } : {}),
-					})
-				}
-				continue
-			}
-
-			if (msg.role === "assistant") {
-				const rawContent = msg.content
-
-				const contentArray: Anthropic.Messages.ContentBlockParam[] = Array.isArray(rawContent)
-					? (rawContent as Anthropic.Messages.ContentBlockParam[])
-					: rawContent !== undefined
-						? ([
-								{ type: "text", text: rawContent } satisfies Anthropic.Messages.TextBlockParam,
-							] as Anthropic.Messages.ContentBlockParam[])
-						: []
-
-				const [first, ...rest] = contentArray
-
-				const msgWithDetails = msg
-				if (msgWithDetails.reasoning_details && Array.isArray(msgWithDetails.reasoning_details)) {
-					let assistantContent: Anthropic.Messages.MessageParam["content"]
-
-					if (contentArray.length === 0) {
-						assistantContent = ""
-					} else if (contentArray.length === 1 && contentArray[0].type === "text") {
-						assistantContent = (contentArray[0] as Anthropic.Messages.TextBlockParam).text
-					} else {
-						assistantContent = contentArray
-					}
-
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: assistantContent,
-						reasoning_details: msgWithDetails.reasoning_details,
-					} as any)
-
-					continue
-				}
-
-				const hasEncryptedReasoning =
-					first && (first as any).type === "reasoning" && typeof (first as any).encrypted_content === "string"
-
-				if (hasEncryptedReasoning) {
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: rest.length === 0 ? "" : rest,
-					})
-
-					continue
-				}
-
-				const hasThinkingBlock =
-					first && (first as any).type === "thinking" && typeof (first as any).thinking === "string"
-
-				if (hasThinkingBlock) {
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: rest.length === 0 ? "" : rest,
-					})
-
-					continue
-				}
-
-				cleanConversationHistory.push(msg as Anthropic.Messages.MessageParam)
-			} else if (msg.role) {
-				cleanConversationHistory.push(msg as Anthropic.Messages.MessageParam)
-			}
-		}
-
-		return cleanConversationHistory
-	}
-
-	private broadcastBrowserSessionUpdate(): void {
+	private broadcastBrowserSessionUpdate(isActive: boolean): void {
 		const provider = this.providerRef.deref()
 		if (!provider) {
 			return
@@ -1254,7 +1056,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		provider.postMessageToWebview({
 			type: "browserSessionUpdate",
-			isBrowserSessionActive: this.browserSession.isSessionActive(),
+			isBrowserSessionActive: isActive,
 		})
 	}
 
@@ -1278,11 +1080,119 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.workspacePath
 	}
 
-	get messageManager(): MessageManager {
-		if (!this._messageManager) {
-			this._messageManager = new MessageManager(this)
+	get conversationRewindManager(): ConversationRewindManager {
+		if (!this._conversationRewindManager) {
+			this._conversationRewindManager = new ConversationRewindManager(this)
 		}
-		return this._messageManager
+		return this._conversationRewindManager
+	}
+
+	public getAssistantMessageParser(): any {
+		return this.streamingManager.getAssistantMessageParser()
+	}
+
+	public setAssistantMessageParser(parser: any): void {
+		this.streamingManager.setAssistantMessageParser(parser)
+	}
+
+	public clearAssistantMessageParser(): void {
+		this.streamingManager.clearAssistantMessageParser()
+	}
+
+	public getStreamingState(): any {
+		return this.streamingManager.getStreamingState()
+	}
+
+	public isPresentAssistantMessageLocked(): boolean {
+		return this.streamingManager.isPresentAssistantMessageLocked()
+	}
+
+	public setPresentAssistantMessageLocked(locked: boolean): void {
+		this.streamingManager.setPresentAssistantMessageLocked(locked)
+	}
+
+	public hasPresentAssistantMessagePendingUpdates(): boolean {
+		return this.streamingManager.hasPresentAssistantMessagePendingUpdates()
+	}
+
+	public setPresentAssistantMessageHasPendingUpdates(hasUpdates: boolean): void {
+		this.streamingManager.setPresentAssistantMessageHasPendingUpdates(hasUpdates)
+	}
+
+	public getCurrentStreamingContentIndex(): number {
+		return this.streamingManager.currentStreamingContentIndex
+	}
+
+	public setCurrentStreamingContentIndex(index: number): void {
+		this.streamingManager.setCurrentStreamingContentIndex(index)
+	}
+
+	public getStreamingDidCheckpoint(): boolean {
+		return this.streamingManager.getStreamingDidCheckpoint()
+	}
+
+	public setStreamingDidCheckpoint(value: boolean): void {
+		this.streamingManager.setStreamingDidCheckpoint(value)
+	}
+
+	public getAssistantMessageContent(): any[] {
+		return this.streamingManager.getAssistantMessageContent()
+	}
+
+	public getUserMessageContent(): any[] {
+		return this.streamingManager.getUserMessageContent()
+	}
+
+	public setUserMessageContent(content: any[]): void {
+		this.streamingManager.setUserMessageContent(content)
+	}
+
+	public setUserMessageContentReady(ready: boolean): void {
+		this.streamingManager.setUserMessageContentReady(ready)
+	}
+
+	public isUserMessageContentReady(): boolean {
+		return this.streamingManager.isUserMessageContentReady()
+	}
+
+	public hasCompletedReadingStream(): boolean {
+		return this.streamingManager.hasCompletedReadingStream()
+	}
+
+	public setDidCompleteReadingStream(completed: boolean): void {
+		this.streamingManager.setDidCompleteReadingStream(completed)
+	}
+
+	public getDidRejectTool(): boolean {
+		return this.streamingManager.didToolRejected()
+	}
+
+	public setDidRejectTool(rejected: boolean): void {
+		this.streamingManager.setDidRejectTool(rejected)
+	}
+
+	public getDidAlreadyUseTool(): boolean {
+		return this.streamingManager.hasAlreadyUsedTool()
+	}
+
+	public setDidAlreadyUseTool(used: boolean): void {
+		this.streamingManager.setDidAlreadyUseTool(used)
+	}
+
+	public getBrowserSession() {
+		return this.browserSessionManager.getBrowserSession()
+	}
+
+	public isBrowserSessionActive(): boolean {
+		return this.browserSessionManager.isSessionActive()
+	}
+
+	public getBrowserViewportSize(): { width?: number; height?: number } {
+		return this.browserSessionManager.getViewportSize()
+	}
+
+	public disposeBrowserSession(): void {
+		this.browserSessionManager.dispose()
 	}
 
 	private isValidTokenCount(count: number | undefined): boolean {

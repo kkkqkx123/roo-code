@@ -192,8 +192,8 @@ export const webviewMessageHandler = async (
 					}
 				}
 
-				// Delete this message and all subsequent messages using MessageManager
-				await currentCline.messageManager.rewindToTimestamp(targetMessage.ts!, { includeTargetMessage: false })
+				// Delete this message and all subsequent messages using ConversationRewindManager
+				await currentCline.conversationRewindManager.rewindToTimestamp(targetMessage.ts!, { includeTargetMessage: false })
 
 				// Restore checkpoint associations for preserved messages
 				for (const [ts, checkpoint] of preservedCheckpoints) {
@@ -359,10 +359,10 @@ export const webviewMessageHandler = async (
 				}
 			}
 
-			// Delete the original (user) message and all subsequent messages using MessageManager
+			// Delete the original (user) message and all subsequent messages using ConversationRewindManager
 			const rewindTs = currentCline.clineMessages[deleteFromMessageIndex]?.ts
 			if (rewindTs) {
-				await currentCline.messageManager.rewindToTimestamp(rewindTs, { includeTargetMessage: false })
+				await currentCline.conversationRewindManager.rewindToTimestamp(rewindTs, { includeTargetMessage: false })
 			}
 
 			// Restore checkpoint associations for preserved messages
@@ -777,8 +777,8 @@ export const webviewMessageHandler = async (
 		case "killBrowserSession":
 			{
 				const task = provider.getCurrentTask()
-				if (task?.browserSession) {
-					await task.browserSession.closeBrowser()
+				if (task?.browserSessionManager) {
+					await task.browserSessionManager.getBrowserSession().closeBrowser()
 					await provider.postStateToWebview()
 				}
 			}
@@ -832,7 +832,7 @@ export const webviewMessageHandler = async (
 					)
 					const browserSessionMessages =
 						browserSessionStartIndex !== -1 ? messages.slice(browserSessionStartIndex) : []
-					const isBrowserSessionActive = task.browserSession?.isSessionActive() ?? false
+					const isBrowserSessionActive = task.browserSessionManager?.isSessionActive() ?? false
 					await panelManager.updateBrowserSession(browserSessionMessages, isBrowserSessionActive)
 				}
 			}
@@ -2418,17 +2418,17 @@ export const webviewMessageHandler = async (
 		 */
 
 		case "queueMessage": {
-			provider.getCurrentTask()?.messageQueueService.addMessage(message.text ?? "", message.images)
+			provider.getCurrentTask()?.messageQueueManager.getMessageQueueService().addMessage(message.text ?? "", message.images)
 			break
 		}
 		case "removeQueuedMessage": {
-			provider.getCurrentTask()?.messageQueueService.removeMessage(message.text ?? "")
+			provider.getCurrentTask()?.messageQueueManager.getMessageQueueService().removeMessage(message.text ?? "")
 			break
 		}
 		case "editQueuedMessage": {
 			if (message.payload) {
 				const { id, text, images } = message.payload as EditQueuedMessagePayload
-				provider.getCurrentTask()?.messageQueueService.updateMessage(id, text, images)
+				provider.getCurrentTask()?.messageQueueManager.getMessageQueueService().updateMessage(id, text, images)
 			}
 
 			break

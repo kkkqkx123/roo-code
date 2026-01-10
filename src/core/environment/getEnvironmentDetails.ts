@@ -258,7 +258,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	}
 
 	// Add browser session status - Only show when active to prevent cluttering context
-	const isBrowserActive = cline.browserSession.isSessionActive()
+	const isBrowserActive = cline.browserSessionManager.isSessionActive()
 
 	if (isBrowserActive) {
 		// Build viewport info for status (prefer actual viewport if available, else fallback to configured setting)
@@ -273,7 +273,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 		let actualWidth: number | undefined
 		let actualHeight: number | undefined
-		const vp = cline.browserSession.getViewportSize?.()
+		const vp = cline.browserSessionManager.getViewportSize?.()
 		if (vp) {
 			actualWidth = vp.width
 			actualHeight = vp.height

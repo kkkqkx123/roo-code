@@ -19,7 +19,7 @@ import { Task, TaskOptions } from "../../task/Task"
 import { safeWriteJson } from "../../../utils/safeWriteJson"
 
 import { ClineProvider } from "../ClineProvider"
-import { MessageManager } from "../../message-manager"
+import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
 
 // Mock setup must come before imports.
 vi.mock("../../prompts/sections/custom-instructions")

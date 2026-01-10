@@ -260,9 +260,9 @@ export async function checkpointRestore(
 				task.combineMessages(deletedMessages),
 			)
 
-			// Use MessageManager to properly handle context-management events
+			// Use ConversationRewindManager to properly handle context-management events
 			// This ensures orphaned Summary messages and truncation markers are cleaned up
-			await task.messageManager.rewindToTimestamp(ts, {
+			await task.conversationRewindManager.rewindToTimestamp(ts, {
 				includeTargetMessage: operation === "edit",
 			})
 
