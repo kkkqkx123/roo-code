@@ -20,7 +20,7 @@ export const createTaskMetrics = async (args: InsertTaskMetrics) => {
 		.insert(taskMetrics)
 		.values({
 			...args,
-			createdAt: new Date(),
+			createdAt: new Date().toISOString(),
 		})
 		.returning()
 

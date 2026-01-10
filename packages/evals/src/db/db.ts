@@ -1,45 +1,22 @@
-import { drizzle } from "drizzle-orm/postgres-js"
-import postgres from "postgres"
-
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import Database from "better-sqlite3"
 import * as schema from "./schema.js"
 
-const pgClient = postgres(process.env.DATABASE_URL!, { prepare: false })
-const client = drizzle({ client: pgClient, schema })
+const sqlite = new Database('./evals.db')
+const client = drizzle({ client: sqlite, schema })
 
 let testDb: typeof client | undefined = undefined
 
 if (process.env.NODE_ENV === "test") {
-	if (!process.env.DATABASE_URL!.includes("test") || !process.env.DATABASE_URL!.includes("localhost")) {
-		throw new Error("DATABASE_URL is not a test database")
-	}
-
-	testDb = client
+	// For tests, use an in-memory database
+	const testSqlite = new Database(':memory:')
+	testDb = drizzle({ client: testSqlite, schema })
 }
 
-let _productionPgClient: ReturnType<typeof postgres> | undefined = undefined
-let _productionClient: typeof client | undefined = undefined
-
-const getProductionClient = () => {
-	if (!process.env.PRODUCTION_DATABASE_URL) {
-		throw new Error("PRODUCTION_DATABASE_URL is not set")
-	}
-
-	if (!_productionClient) {
-		_productionPgClient = postgres(process.env.PRODUCTION_DATABASE_URL, { prepare: false })
-		_productionClient = drizzle({ client: _productionPgClient, schema })
-	}
-
-	return _productionClient
-}
-
-const disconnect = async () => {
-	await pgClient.end()
-
-	if (_productionPgClient) {
-		await _productionPgClient.end()
-	}
+const disconnect = () => {
+	sqlite.close()
 }
 
 type DatabaseOrTransaction = typeof client | Parameters<Parameters<typeof client.transaction>[0]>[0]
 
-export { client, testDb, getProductionClient, disconnect, type DatabaseOrTransaction }
+export { client, testDb, disconnect, type DatabaseOrTransaction }

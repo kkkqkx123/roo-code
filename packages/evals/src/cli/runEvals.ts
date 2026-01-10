@@ -3,9 +3,8 @@ import PQueue from "p-queue"
 import { findRun, finishRun, getTasks } from "../db/index.js"
 import { EVALS_REPO_PATH } from "../exercises/index.js"
 
-import { Logger, getTag, isDockerContainer, resetEvalsRepo, commitEvalsRepoChanges } from "./utils.js"
-import { startHeartbeat, stopHeartbeat } from "./redis.js"
-import { processTask, processTaskInContainer } from "./runTask.js"
+import { Logger, getTag, resetEvalsRepo, commitEvalsRepoChanges } from "./utils.js"
+import { processTask } from "./runTask.js"
 
 export const runEvals = async (runId: number) => {
 	const run = await findRun(runId)
@@ -20,21 +19,16 @@ export const runEvals = async (runId: number) => {
 		throw new Error(`Run ${run.id} has no tasks.`)
 	}
 
-	const containerized = isDockerContainer()
-
 	const logger = new Logger({
-		logDir: containerized ? `/var/log/evals/runs/${run.id}` : `/tmp/evals/runs/${run.id}`,
+		logDir: `/tmp/evals/runs/${run.id}`,
 		filename: `controller.log`,
 		tag: getTag("runEvals", { run }),
 	})
 
 	logger.info(`running ${tasks.length} task(s)`)
 
-	if (!containerized) {
-		await resetEvalsRepo({ run, cwd: EVALS_REPO_PATH })
-	}
+	await resetEvalsRepo({ run, cwd: EVALS_REPO_PATH })
 
-	const heartbeat = await startHeartbeat(run.id)
 	const queue = new PQueue({ concurrency: run.concurrency })
 
 	const STAGGER_DELAY_MS = 5000
@@ -42,11 +36,7 @@ export const runEvals = async (runId: number) => {
 
 	const createTaskRunner = (task: (typeof filteredTasks)[number]) => async () => {
 		try {
-			if (containerized) {
-				await processTaskInContainer({ taskId: task.id, jobToken: run.jobToken, logger })
-			} else {
-				await processTask({ taskId: task.id, jobToken: run.jobToken, logger })
-			}
+			await processTask({ taskId: task.id, logger })
 		} catch (error) {
 			logger.error("error processing task", error)
 		}
@@ -69,15 +59,10 @@ export const runEvals = async (runId: number) => {
 		const result = await finishRun(run.id)
 		logger.info("result ->", result)
 
-		// There's no need to commit the changes in the container since they
-		// will lost when the container is destroyed. I think we should
-		// store the diffs in the database instead.
-		if (!containerized) {
-			await commitEvalsRepoChanges({ run, cwd: EVALS_REPO_PATH })
-		}
+		// Commit changes for local runs
+		await commitEvalsRepoChanges({ run, cwd: EVALS_REPO_PATH })
 	} finally {
 		logger.info("cleaning up")
-		stopHeartbeat(run.id, heartbeat)
 		logger.close()
 	}
 }

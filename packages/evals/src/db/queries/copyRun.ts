@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm"
-import type { NodePgDatabase } from "drizzle-orm/node-postgres"
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 
 import type { InsertRun, InsertTask, InsertTaskMetrics, InsertToolError } from "../schema.js"
 import { schema } from "../schema.js"
@@ -11,8 +11,8 @@ export const copyRun = async ({
 	targetDb,
 	runId,
 }: {
-	sourceDb: NodePgDatabase<typeof schema>
-	targetDb: NodePgDatabase<typeof schema>
+	sourceDb: BetterSQLite3Database<typeof schema>
+	targetDb: BetterSQLite3Database<typeof schema>
 	runId: number
 }) => {
 	const sourceRun = await sourceDb.query.runs.findFirst({
@@ -42,7 +42,7 @@ export const copyRun = async ({
 			.insert(schema.taskMetrics)
 			.values({
 				...runTaskMetricsData,
-				createdAt: new Date(),
+				createdAt: new Date().toISOString(),
 			})
 			.returning()
 
@@ -69,7 +69,7 @@ export const copyRun = async ({
 
 	const newRuns = await targetDb
 		.insert(schema.runs)
-		.values({ ...runData, createdAt: new Date() })
+		.values({ ...runData, createdAt: new Date().toISOString() })
 		.returning()
 
 	const newRun = newRuns[0]
@@ -104,7 +104,7 @@ export const copyRun = async ({
 
 			const newTaskMetrics = await targetDb
 				.insert(schema.taskMetrics)
-				.values({ ...taskMetricsData, createdAt: new Date() })
+				.values({ ...taskMetricsData, createdAt: new Date().toISOString() })
 				.returning()
 
 			const createdTaskMetrics = newTaskMetrics[0]
@@ -128,7 +128,7 @@ export const copyRun = async ({
 
 		const newTasks = await targetDb
 			.insert(schema.tasks)
-			.values({ ...taskData, createdAt: new Date() })
+			.values({ ...taskData, createdAt: new Date().toISOString() })
 			.returning()
 
 		const newTask = newTasks[0]
@@ -155,7 +155,7 @@ export const copyRun = async ({
 
 			await targetDb.insert(schema.toolErrors).values({
 				...toolErrorData,
-				createdAt: new Date(),
+				createdAt: new Date().toISOString(),
 			})
 		}
 	}
@@ -176,7 +176,7 @@ export const copyRun = async ({
 			error: sourceToolError.error,
 		}
 
-		await targetDb.insert(schema.toolErrors).values({ ...toolErrorData, createdAt: new Date() })
+		await targetDb.insert(schema.toolErrors).values({ ...toolErrorData, createdAt: new Date().toISOString() })
 	}
 
 	return newRunId

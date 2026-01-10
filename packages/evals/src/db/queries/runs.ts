@@ -24,7 +24,7 @@ export const createRun = async (args: InsertRun) => {
 		.insert(schema.runs)
 		.values({
 			...args,
-			createdAt: new Date(),
+			createdAt: new Date().toISOString(),
 		})
 		.returning()
 
@@ -61,8 +61,8 @@ export const finishRun = async (runId: number) => {
 			cacheReads: sum(schema.taskMetrics.cacheReads).mapWith(Number),
 			cost: sum(schema.taskMetrics.cost).mapWith(Number),
 			duration: sum(schema.taskMetrics.duration).mapWith(Number),
-			passed: sql<number>`sum(CASE WHEN ${schema.tasks.passed} THEN 1 ELSE 0 END)`,
-			failed: sql<number>`sum(CASE WHEN ${schema.tasks.passed} THEN 0 ELSE 1 END)`,
+			passed: sql<number>`sum(CASE WHEN ${schema.tasks.passed} = 1 THEN 1 ELSE 0 END)`,
+			failed: sql<number>`sum(CASE WHEN ${schema.tasks.passed} = 0 OR ${schema.tasks.passed} IS NULL THEN 1 ELSE 0 END)`,
 		})
 		.from(schema.taskMetrics)
 		.innerJoin(schema.tasks, eq(schema.taskMetrics.id, schema.tasks.taskMetricsId))
@@ -175,13 +175,6 @@ export const deleteRunsByIds = async (runIds: number[]) => {
 
 	// Delete tool errors for runs
 	await db.delete(schema.toolErrors).where(inArray(schema.toolErrors.runId, runIds))
-
-	// Delete from tables that exist in DB but not in drizzle schema
-	// Using individual deletes since drizzle's sql template doesn't support custom table schemas
-	for (const runId of runIds) {
-		await db.execute(sql`DELETE FROM "cpuMetrics" WHERE run_id = ${runId}`)
-		await db.execute(sql`DELETE FROM "notes" WHERE run_id = ${runId}`)
-	}
 
 	// Delete runs
 	await db.delete(schema.runs).where(inArray(schema.runs.id, runIds))

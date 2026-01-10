@@ -22,7 +22,7 @@ export const createTask = async (args: InsertTask) => {
 		.insert(tasks)
 		.values({
 			...args,
-			createdAt: new Date(),
+			createdAt: new Date().toISOString(),
 		})
 		.returning()
 

@@ -8,7 +8,7 @@ export const createToolError = async (args: InsertToolError) => {
 		.insert(toolErrors)
 		.values({
 			...args,
-			createdAt: new Date(),
+			createdAt: new Date().toISOString(),
 		})
 		.returning()
 

@@ -11,20 +11,22 @@ async function resetTestDatabase() {
 	}
 
 	try {
-		const tables = await db.execute<{ table_name: string }>(sql`
-			SELECT table_name
-			FROM information_schema.tables
-			WHERE table_schema = 'public'
-			AND table_type = 'BASE TABLE';
-		`)
+		// For SQLite, we need to use a different approach
+		// Get all tables from sqlite_master
+		const tables = db.$client.prepare(`
+			SELECT name FROM sqlite_master 
+			WHERE type='table' 
+			AND name NOT LIKE 'sqlite_%'
+		`).all() as { name: string }[]
 
-		const tableNames = tables.map((t) => t.table_name)
+		const tableNames = tables.map((t) => t.name)
 
+		// Delete all data from tables (SQLite doesn't support TRUNCATE)
 		for (const tableName of tableNames) {
-			await db.execute(sql`TRUNCATE TABLE "${sql.raw(tableName)}" CASCADE;`)
+			db.$client.prepare(`DELETE FROM "${tableName}"`).run()
 		}
 
-		console.log(`[${process.env.DATABASE_URL}] TRUNCATE ${tableNames.join(", ")}`)
+		console.log(`[SQLite] Cleared tables: ${tableNames.join(", ")}`)
 	} catch (error) {
 		console.error("Error resetting database:", error)
 		throw error

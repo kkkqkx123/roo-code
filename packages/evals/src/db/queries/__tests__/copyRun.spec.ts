@@ -70,9 +70,9 @@ describe("copyRun", () => {
 			taskMetricsId: task1TaskMetrics.id,
 			language: "go",
 			exercise: "go/say",
-			passed: true,
-			startedAt: new Date("2023-01-01T10:00:00Z"),
-			finishedAt: new Date("2023-01-01T10:45:00Z"),
+			passed: 1, // SQLite uses integer (0 or 1) for boolean
+			startedAt: new Date("2023-01-01T10:00:00Z").toISOString(),
+			finishedAt: new Date("2023-01-01T10:45:00Z").toISOString(),
 		})
 
 		sourceTaskIds.push(task1.id)
@@ -98,9 +98,9 @@ describe("copyRun", () => {
 			taskMetricsId: task2TaskMetrics.id,
 			language: "python",
 			exercise: "python/hello-world",
-			passed: false,
-			startedAt: new Date("2023-01-01T11:00:00Z"),
-			finishedAt: new Date("2023-01-01T11:30:00Z"),
+			passed: 0, // SQLite uses integer (0 or 1) for boolean
+			startedAt: new Date("2023-01-01T11:00:00Z").toISOString(),
+			finishedAt: new Date("2023-01-01T11:30:00Z").toISOString(),
 		})
 
 		sourceTaskIds.push(task2.id)
@@ -110,9 +110,9 @@ describe("copyRun", () => {
 			taskMetricsId: null,
 			language: "rust",
 			exercise: "rust/hello-world",
-			passed: true,
-			startedAt: new Date("2023-01-01T12:00:00Z"),
-			finishedAt: new Date("2023-01-01T12:15:00Z"),
+			passed: 1, // SQLite uses integer (0 or 1) for boolean
+			startedAt: new Date("2023-01-01T12:00:00Z").toISOString(),
+			finishedAt: new Date("2023-01-01T12:15:00Z").toISOString(),
 		})
 
 		sourceTaskIds.push(task3.id)

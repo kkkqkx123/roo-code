@@ -31,9 +31,9 @@ describe("finishRun", () => {
 			).id,
 			language: "go",
 			exercise: "go/say",
-			passed: true,
-			startedAt: new Date(),
-			finishedAt: new Date(),
+			passed: 1, // SQLite uses integer (0 or 1) for boolean
+			startedAt: new Date().toISOString(),
+			finishedAt: new Date().toISOString(),
 		})
 
 		await createTask({
@@ -61,9 +61,9 @@ describe("finishRun", () => {
 			).id,
 			language: "go",
 			exercise: "go/octal",
-			passed: true,
-			startedAt: new Date(),
-			finishedAt: new Date(),
+			passed: 1, // SQLite uses integer (0 or 1) for boolean
+			startedAt: new Date().toISOString(),
+			finishedAt: new Date().toISOString(),
 		})
 
 		const { taskMetrics } = await finishRun(run.id)
