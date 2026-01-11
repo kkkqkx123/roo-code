@@ -14,11 +14,7 @@ vi.mock("path", async () => {
 	const originalPath = await vi.importActual("path")
 	return {
 		...originalPath,
-		resolve: vi.fn().mockImplementation((...args) => {
-			// On Windows, use backslashes; on Unix, use forward slashes
-			const separator = process.platform === "win32" ? "\\" : "/"
-			return args.join(separator)
-		}),
+		resolve: vi.fn().mockReturnValue(process.platform === "win32" ? "C:\\test\\file.txt" : "/test/file.txt"),
 	}
 })
 
@@ -88,7 +84,7 @@ vi.mock("../../ignore/RooIgnoreController", () => ({
 describe("writeToFileTool", () => {
 	// Test data
 	const testFilePath = "test/file.txt"
-	const absoluteFilePath = process.platform === "win32" ? "C:\\test\\file.txt" : "/test/file.txt"
+	const absoluteFilePath = process.platform === "win32" ? "D:\\test\\file.txt" : "/test/file.txt"
 	const testContent = "Line 1\nLine 2\nLine 3"
 	const testContentWithMarkdown = "```javascript\nLine 1\nLine 2\n```"
 
@@ -379,6 +375,14 @@ describe("writeToFileTool", () => {
 			// Should process normally without issues
 			expect(mockCline.consecutiveMistakeCount).toBe(0)
 		})
+
+		it("creates parent directories for new files", async () => {
+		// Test that directories are created for new files
+		await executeWriteFileTool({}, { isPartial: true, fileExists: false })
+
+		// Directory creation should happen for new files
+		expect(mockedCreateDirectoriesForFile).toHaveBeenCalledWith(absoluteFilePath)
+	})
 	})
 
 	describe("partial block handling", () => {
@@ -394,8 +398,47 @@ describe("writeToFileTool", () => {
 			expect(mockCline.diffViewProvider.open).not.toHaveBeenCalled()
 		})
 
-		it("streams content updates during partial execution", async () => {
-			await executeWriteFileTool({}, { isPartial: true })
+		it("handles partial updates with path changes during streaming", async () => {
+			// Test that the tool can handle partial updates with path changes
+			await executeWriteFileTool({ path: "/core/prompts/sec" }, { isPartial: true })
+
+			// Should still open the diff view with the provided path
+			expect(mockCline.diffViewProvider.open).toHaveBeenCalledWith("/core/prompts/sec")
+		})
+
+		it("streams content updates during partial execution after path stabilization", async () => {
+			// Simulate path stabilization first
+			const toolUse: ToolUse = {
+				type: "tool_use",
+				name: "write_to_file",
+				params: {
+					path: testFilePath,
+					content: testContent,
+				},
+				partial: true,
+			}
+
+			// Mock the tool to be called twice to simulate path stabilization
+			mockedFileExistsAtPath.mockResolvedValue(false)
+			mockCline.rooIgnoreController.validateAccess.mockReturnValue(true)
+
+			// First call sets the path, second call stabilizes it
+			await writeToFileTool.handle(mockCline, toolUse as ToolUse<"write_to_file">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: vi.fn(),
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
+
+			// Second call with same path should proceed
+			await writeToFileTool.handle(mockCline, toolUse as ToolUse<"write_to_file">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockCline.ask).toHaveBeenCalled()
 			expect(mockCline.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)

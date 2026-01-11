@@ -759,4 +759,12 @@ export class DiffViewProvider {
 			finalContent: content,
 		}
 	}
+
+	/**
+	 * Update the relative path without re-opening the diff view
+	 * This is used when path stabilization occurs during streaming
+	 */
+	setRelPath(relPath: string): void {
+		this.relPath = relPath
+	}
 }

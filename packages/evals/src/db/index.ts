@@ -7,3 +7,5 @@ export * from "./queries/toolErrors.js"
 export * from "./queries/copyRun.js"
 
 export * from "./db.js"
+
+export { client as db, testDb } from "./db.js"

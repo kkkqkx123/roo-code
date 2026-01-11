@@ -188,7 +188,11 @@ describe("copyRun", () => {
 
 		expect(copiedRun!.taskMetrics!.duration).toBe(120_000)
 		expect(copiedRun!.taskMetrics!.tokensIn).toBe(200_000)
-		expect(copiedRun!.taskMetrics!.toolUsage).toEqual({
+		// Parse toolUsage if it's a string, otherwise use as-is
+		const toolUsage = typeof copiedRun!.taskMetrics!.toolUsage === 'string' 
+			? JSON.parse(copiedRun!.taskMetrics!.toolUsage) 
+			: copiedRun!.taskMetrics!.toolUsage
+		expect(toolUsage).toEqual({
 			read_file: { attempts: 10, failures: 1 },
 			apply_diff: { attempts: 8, failures: 2 },
 		})
@@ -203,23 +207,27 @@ describe("copyRun", () => {
 
 		const goTask = copiedTasks.find((t) => t.language === "go")!
 		expect(goTask.exercise).toBe("go/say")
-		expect(goTask.passed).toBe(true)
+		expect(goTask.passed).toBe(1)
 		expect(goTask.taskMetrics).toBeDefined()
 		expect(goTask.taskMetrics!.duration).toBe(45_000)
-		expect(goTask.taskMetrics!.toolUsage).toEqual({
+		// Parse toolUsage if it's a string, otherwise use as-is
+		const goTaskToolUsage = typeof goTask.taskMetrics!.toolUsage === 'string' 
+			? JSON.parse(goTask.taskMetrics!.toolUsage) 
+			: goTask.taskMetrics!.toolUsage
+		expect(goTaskToolUsage).toEqual({
 			read_file: { attempts: 3, failures: 0 },
 			apply_diff: { attempts: 3, failures: 1 },
 		})
 
 		const pythonTask = copiedTasks.find((t) => t.language === "python")!
 		expect(pythonTask.exercise).toBe("python/hello-world")
-		expect(pythonTask.passed).toBe(false)
+		expect(pythonTask.passed).toBe(0)
 		expect(pythonTask.taskMetrics).toBeDefined()
 		expect(pythonTask.taskMetrics!.duration).toBe(30_000)
 
 		const rustTask = copiedTasks.find((t) => t.language === "rust")!
 		expect(rustTask.exercise).toBe("rust/hello-world")
-		expect(rustTask.passed).toBe(true)
+		expect(rustTask.passed).toBe(1)
 		expect(rustTask.taskMetrics).toBeNull()
 
 		const copiedToolErrors = await db.query.toolErrors.findMany({

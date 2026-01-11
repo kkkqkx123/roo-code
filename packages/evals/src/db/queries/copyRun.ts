@@ -27,21 +27,22 @@ export const copyRun = async ({
 	let newRunTaskMetricsId: number | null = null
 
 	if (sourceRun.taskMetrics) {
-		const runTaskMetricsData: InsertTaskMetrics = {
-			tokensIn: sourceRun.taskMetrics.tokensIn,
-			tokensOut: sourceRun.taskMetrics.tokensOut,
-			tokensContext: sourceRun.taskMetrics.tokensContext,
-			cacheWrites: sourceRun.taskMetrics.cacheWrites,
-			cacheReads: sourceRun.taskMetrics.cacheReads,
-			cost: sourceRun.taskMetrics.cost,
-			duration: sourceRun.taskMetrics.duration,
-			toolUsage: sourceRun.taskMetrics.toolUsage,
-		}
+		// Parse toolUsage if it's stored as a string, then stringify for storage
+		const toolUsage = typeof sourceRun.taskMetrics.toolUsage === 'string' 
+			? JSON.parse(sourceRun.taskMetrics.toolUsage) 
+			: sourceRun.taskMetrics.toolUsage
 
 		const newRunTaskMetrics = await targetDb
 			.insert(schema.taskMetrics)
 			.values({
-				...runTaskMetricsData,
+				tokensIn: sourceRun.taskMetrics.tokensIn,
+				tokensOut: sourceRun.taskMetrics.tokensOut,
+				tokensContext: sourceRun.taskMetrics.tokensContext,
+				cacheWrites: sourceRun.taskMetrics.cacheWrites,
+				cacheReads: sourceRun.taskMetrics.cacheReads,
+				cost: sourceRun.taskMetrics.cost,
+				duration: sourceRun.taskMetrics.duration,
+				toolUsage: JSON.stringify(toolUsage) as any,
 				createdAt: new Date().toISOString(),
 			})
 			.returning()
@@ -55,14 +56,30 @@ export const copyRun = async ({
 		newRunTaskMetricsId = createdRunTaskMetrics.id
 	}
 
+	// Handle settings field - parse if it's a string, keep as object for type safety
+	const settings = sourceRun.settings ? (
+		typeof sourceRun.settings === 'string' 
+			? JSON.parse(sourceRun.settings) 
+			: sourceRun.settings
+	) : undefined
+
+	// Copy all fields, ensuring required fields are provided
 	const runData: InsertRun = {
 		taskMetricsId: newRunTaskMetricsId,
 		model: sourceRun.model,
+		name: sourceRun.name,
 		description: sourceRun.description,
-		settings: sourceRun.settings,
+		contextWindow: sourceRun.contextWindow,
+		inputPrice: sourceRun.inputPrice,
+		outputPrice: sourceRun.outputPrice,
+		cacheWritesPrice: sourceRun.cacheWritesPrice,
+		cacheReadsPrice: sourceRun.cacheReadsPrice,
+		settings: settings,
+		jobToken: sourceRun.jobToken,
 		pid: sourceRun.pid,
 		socketPath: sourceRun.socketPath,
 		concurrency: sourceRun.concurrency,
+		timeout: sourceRun.timeout,
 		passed: sourceRun.passed,
 		failed: sourceRun.failed,
 	}
@@ -91,7 +108,12 @@ export const copyRun = async ({
 		let newTaskMetricsId: number | null = null
 
 		if (sourceTask.taskMetrics) {
-			const taskMetricsData: InsertTaskMetrics = {
+			// Parse toolUsage if it's stored as a string, keep as object for now
+			const toolUsage = typeof sourceTask.taskMetrics.toolUsage === 'string' 
+				? JSON.parse(sourceTask.taskMetrics.toolUsage) 
+				: sourceTask.taskMetrics.toolUsage
+
+			const taskMetricsData = {
 				tokensIn: sourceTask.taskMetrics.tokensIn,
 				tokensOut: sourceTask.taskMetrics.tokensOut,
 				tokensContext: sourceTask.taskMetrics.tokensContext,
@@ -99,12 +121,22 @@ export const copyRun = async ({
 				cacheReads: sourceTask.taskMetrics.cacheReads,
 				cost: sourceTask.taskMetrics.cost,
 				duration: sourceTask.taskMetrics.duration,
-				toolUsage: sourceTask.taskMetrics.toolUsage,
+				toolUsage: JSON.stringify(toolUsage),
 			}
 
 			const newTaskMetrics = await targetDb
 				.insert(schema.taskMetrics)
-				.values({ ...taskMetricsData, createdAt: new Date().toISOString() })
+				.values({
+					tokensIn: sourceTask.taskMetrics.tokensIn,
+					tokensOut: sourceTask.taskMetrics.tokensOut,
+					tokensContext: sourceTask.taskMetrics.tokensContext,
+					cacheWrites: sourceTask.taskMetrics.cacheWrites,
+					cacheReads: sourceTask.taskMetrics.cacheReads,
+					cost: sourceTask.taskMetrics.cost,
+					duration: sourceTask.taskMetrics.duration,
+					toolUsage: JSON.stringify(toolUsage) as any,
+					createdAt: new Date().toISOString(),
+				})
 				.returning()
 
 			const createdTaskMetrics = newTaskMetrics[0]
@@ -116,15 +148,18 @@ export const copyRun = async ({
 			newTaskMetricsId = createdTaskMetrics.id
 		}
 
-		const taskData: InsertTask = {
-			runId: newRunId,
-			taskMetricsId: newTaskMetricsId,
-			language: sourceTask.language,
-			exercise: sourceTask.exercise,
-			passed: sourceTask.passed,
-			startedAt: sourceTask.startedAt,
-			finishedAt: sourceTask.finishedAt,
-		}
+		// Filter out undefined values to avoid parameter binding issues
+		const taskData: InsertTask = Object.fromEntries(
+			Object.entries({
+				runId: newRunId,
+				taskMetricsId: newTaskMetricsId,
+				language: sourceTask.language,
+				exercise: sourceTask.exercise,
+				passed: sourceTask.passed,
+				startedAt: sourceTask.startedAt,
+				finishedAt: sourceTask.finishedAt,
+			}).filter(([_, value]) => value !== undefined)
+		) as InsertTask
 
 		const newTasks = await targetDb
 			.insert(schema.tasks)

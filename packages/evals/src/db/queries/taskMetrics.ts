@@ -12,6 +12,11 @@ export const findTaskMetrics = async (id: number) => {
 		throw new RecordNotFoundError()
 	}
 
+	// Parse toolUsage if it's stored as a string
+	if (typeof run.toolUsage === "string") {
+		run.toolUsage = JSON.parse(run.toolUsage)
+	}
+
 	return run
 }
 
@@ -37,6 +42,11 @@ export const createTaskMetrics = async (args: InsertTaskMetrics) => {
 		throw new RecordNotCreatedError()
 	}
 
+	// Parse toolUsage if it's stored as a string
+	if (typeof record.toolUsage === "string") {
+		record.toolUsage = JSON.parse(record.toolUsage)
+	}
+
 	return record
 }
 
@@ -51,6 +61,11 @@ export const updateTaskMetrics = async (id: number, values: UpdateTaskMetrics) =
 
 	if (!record) {
 		throw new RecordNotFoundError()
+	}
+
+	// Parse toolUsage if it's stored as a string
+	if (typeof record.toolUsage === "string") {
+		record.toolUsage = JSON.parse(record.toolUsage)
 	}
 
 	return record

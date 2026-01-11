@@ -698,6 +698,18 @@ export async function presentAssistantMessage(cline: Task) {
 
 			if (!block.partial) {
 				cline.recordToolUsage(block.name)
+
+				// Re-read fresh block data for non-partial tool_use blocks to ensure we use the final values
+				// This handles cases where partial streaming may have left stale data
+				const currentStreamingContentIndex = cline.getCurrentStreamingContentIndex()
+				const assistantMessageContent = cline.getAssistantMessageContent()
+				if (currentStreamingContentIndex < assistantMessageContent.length) {
+					const freshBlock = cloneDeep(assistantMessageContent[currentStreamingContentIndex])
+					if (freshBlock.type === "tool_use" && freshBlock.name === block.name) {
+						// Update block with fresh data to ensure we have the final values
+						Object.assign(block, freshBlock)
+					}
+				}
 			}
 
 			// Validate tool use before execution - ONLY for complete (non-partial) blocks.

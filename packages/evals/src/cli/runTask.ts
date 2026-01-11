@@ -72,6 +72,9 @@ export const processTask = async ({
 			eventName: passed ? RooCodeEventName.EvalPass : RooCodeEventName.EvalFail,
 			taskId: task.id,
 		})
+	} catch (error) {
+		logger.error(`Error processing task ${task.id}: ${error}`)
+		throw error
 	} finally {
 		// Cleanup (previously Redis-based runner deregistration)
 	}

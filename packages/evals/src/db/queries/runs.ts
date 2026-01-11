@@ -20,10 +20,16 @@ export const findRun = async (id: number) => {
 }
 
 export const createRun = async (args: InsertRun) => {
+	// Handle JSON serialization for settings field
+	const insertData = { ...args }
+	if (insertData.settings && typeof insertData.settings === 'object') {
+		insertData.settings = JSON.stringify(insertData.settings) as any
+	}
+	
 	const records = await db
 		.insert(schema.runs)
 		.values({
-			...args,
+			...insertData,
 			createdAt: new Date().toISOString(),
 		})
 		.returning()
@@ -31,7 +37,7 @@ export const createRun = async (args: InsertRun) => {
 	const record = records[0]
 
 	if (!record) {
-		throw new RecordNotCreatedError()
+		throw new RecordNotCreatedError("Failed to create run")
 	}
 
 	return record

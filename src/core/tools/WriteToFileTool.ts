@@ -26,6 +26,9 @@ interface WriteToFileParams {
 export class WriteToFileTool extends BaseTool<"write_to_file"> {
 	readonly name = "write_to_file" as const
 
+	// Track the last seen partial path to detect when paths stabilize during streaming
+	private lastSeenPartialPath: string | undefined
+
 	parseLegacy(params: Partial<Record<string, string>>): WriteToFileParams {
 		return {
 			path: params.path || "",
@@ -195,16 +198,24 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 			await handleError("writing file", error as Error)
 			await task.diffViewProvider.reset()
 			return
+		} finally {
+		// Always reset partial state after execution
+		this.resetPartialState()
 		}
 	}
 
+
 	override async handlePartial(task: Task, block: ToolUse<"write_to_file">): Promise<void> {
-		const relPath: string | undefined = block.params.path
+		const currentPath: string | undefined = block.params.path
 		let newContent: string | undefined = block.params.content
 
-		if (!relPath || newContent === undefined) {
+		if (!currentPath || newContent === undefined) {
 			return
 		}
+
+		// Track the path to detect when it stabilizes during streaming
+		const previousPath = this.lastSeenPartialPath
+		this.lastSeenPartialPath = currentPath
 
 		const provider = task.providerRef.deref()
 		const state = await provider?.getState()
@@ -217,8 +228,16 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 			return
 		}
 
+		// Check if this looks like a truncated path scenario
+		// If the previous path was a prefix of current path, it might be extending
+		const isExtendingPath = previousPath && currentPath.startsWith(previousPath) && currentPath.length > previousPath.length
+
+		// If we're in the middle of path extension, avoid creating directories prematurely
+		// Wait until the path stops changing to ensure we have the complete path
+		const shouldWaitForPathStabilization = isExtendingPath
+
 		let fileExists: boolean
-		const absolutePath = path.resolve(task.cwd, relPath)
+		const absolutePath = path.resolve(task.cwd, currentPath)
 
 		if (task.diffViewProvider.editType !== undefined) {
 			fileExists = task.diffViewProvider.editType === "modify"
@@ -228,18 +247,18 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		}
 
 		// Create parent directories early for new files to prevent ENOENT errors
-		// in subsequent operations (e.g., diffViewProvider.open)
-		if (!fileExists) {
+		// Skip directory creation if we suspect the path is still being extended (truncated)
+		if (!fileExists && !shouldWaitForPathStabilization) {
 			await createDirectoriesForFile(absolutePath)
 		}
 
-		const isWriteProtected = task.rooProtectedController?.isWriteProtected(relPath) || false
+		const isWriteProtected = task.rooProtectedController?.isWriteProtected(currentPath) || false
 		const fullPath = absolutePath
 		const isOutsideWorkspace = isPathOutsideWorkspace(fullPath)
 
 		const sharedMessageProps: ClineSayTool = {
 			tool: fileExists ? "editedExistingFile" : "newFileCreated",
-			path: getReadablePath(task.cwd, relPath),
+			path: getReadablePath(task.cwd, currentPath),
 			content: newContent || "",
 			isOutsideWorkspace,
 			isProtected: isWriteProtected,
@@ -250,7 +269,10 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 
 		if (newContent) {
 			if (!task.diffViewProvider.isEditing) {
-				await task.diffViewProvider.open(relPath)
+				await task.diffViewProvider.open(currentPath)
+			} else {
+				// Update the path if it has changed during streaming
+				task.diffViewProvider.setRelPath(currentPath)
 			}
 
 			await task.diffViewProvider.update(
@@ -258,6 +280,13 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 				false,
 			)
 		}
+	}
+
+	/**
+	 * Reset the partial state tracking to clean up after tool completion
+	 */
+	resetPartialState(): void {
+		this.lastSeenPartialPath = undefined
 	}
 }
 
