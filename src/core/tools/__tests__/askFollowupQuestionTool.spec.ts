@@ -43,6 +43,7 @@ describe("askFollowupQuestionTool", () => {
 		expect(mockCline.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining('"suggest":[{"answer":"Option 1"},{"answer":"Option 2"}]'),
+			undefined,
 			false,
 		)
 	})
@@ -71,6 +72,7 @@ describe("askFollowupQuestionTool", () => {
 			expect.stringContaining(
 				'"suggest":[{"answer":"Write code","mode":"code"},{"answer":"Debug issue","mode":"debug"}]',
 			),
+			undefined,
 			false,
 		)
 	})
@@ -99,6 +101,7 @@ describe("askFollowupQuestionTool", () => {
 			expect.stringContaining(
 				'"suggest":[{"answer":"Regular option"},{"answer":"Plan architecture","mode":"architect"}]',
 			),
+			undefined,
 			false,
 		)
 	})
@@ -127,7 +130,7 @@ describe("askFollowupQuestionTool", () => {
 			})
 
 			// During partial streaming, only the question should be sent (not JSON with suggestions)
-			expect(mockCline.ask).toHaveBeenCalledWith("followup", "What would you like to do?", true)
+		expect(mockCline.ask).toHaveBeenCalledWith("followup", "What would you like to do?", undefined, true)
 		})
 
 		it("should handle partial with question from params", async () => {
@@ -148,7 +151,7 @@ describe("askFollowupQuestionTool", () => {
 				toolProtocol: "xml",
 			})
 
-			expect(mockCline.ask).toHaveBeenCalledWith("followup", "Choose wisely", true)
+			expect(mockCline.ask).toHaveBeenCalledWith("followup", "Choose wisely", undefined, true)
 		})
 	})
 
