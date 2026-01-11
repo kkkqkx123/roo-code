@@ -115,6 +115,11 @@ vi.mock("../../task/Task", () => ({
 			updateApiConfiguration: vi.fn().mockImplementation(function (this: any, newConfig: any) {
 				this.apiConfiguration = newConfig
 			}),
+			getBrowserSession: vi.fn().mockReturnValue({
+				isSessionActive: vi.fn().mockReturnValue(false),
+			}),
+			isBrowserSessionActive: vi.fn().mockReturnValue(false),
+			getBrowserViewportSize: vi.fn().mockReturnValue({}),
 		}
 		// Define apiConfiguration as a property so tests can read it
 		Object.defineProperty(mockTask, "apiConfiguration", {

@@ -88,6 +88,11 @@ vi.mock("../../task/Task", () => ({
 		emit: vi.fn(),
 		parentTask: options.parentTask,
 		updateApiConfiguration: vi.fn(),
+		getBrowserSession: vi.fn().mockReturnValue({
+			isSessionActive: vi.fn().mockReturnValue(false),
+		}),
+		isBrowserSessionActive: vi.fn().mockReturnValue(false),
+		getBrowserViewportSize: vi.fn().mockReturnValue({}),
 	})),
 }))
 
@@ -361,6 +366,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			// Add task to provider stack
@@ -832,6 +842,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			// Add task to provider stack
@@ -907,6 +922,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			// Add task to provider stack
@@ -959,6 +979,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			// Add task to provider stack
@@ -1108,6 +1133,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			// Add task to provider stack
@@ -1220,6 +1250,11 @@ describe("ClineProvider - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}))
 
 			// Add all tasks to provider

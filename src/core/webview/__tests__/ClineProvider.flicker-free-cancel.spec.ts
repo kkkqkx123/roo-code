@@ -174,6 +174,11 @@ describe("ClineProvider flicker-free cancel", () => {
 			dispose: vi.fn(),
 			on: vi.fn(),
 			off: vi.fn(),
+			getBrowserSession: vi.fn().mockReturnValue({
+				isSessionActive: vi.fn().mockReturnValue(false),
+			}),
+			isBrowserSessionActive: vi.fn().mockReturnValue(false),
+			getBrowserViewportSize: vi.fn().mockReturnValue({}),
 		}
 
 		mockTask2 = {
@@ -182,6 +187,11 @@ describe("ClineProvider flicker-free cancel", () => {
 			emit: vi.fn(),
 			on: vi.fn(),
 			off: vi.fn(),
+			getBrowserSession: vi.fn().mockReturnValue({
+				isSessionActive: vi.fn().mockReturnValue(false),
+			}),
+			isBrowserSessionActive: vi.fn().mockReturnValue(false),
+			getBrowserViewportSize: vi.fn().mockReturnValue({}),
 		}
 
 		// Mock Task constructor

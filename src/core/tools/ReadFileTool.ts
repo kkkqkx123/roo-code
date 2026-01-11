@@ -341,52 +341,52 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					const isBinary = await isBinaryFileOptimized(fullPath)
 
 					if (isBinary) {
-						const fileExtension = path.extname(relPath).toLowerCase()
-						const supportedBinaryFormats = getSupportedBinaryFormats()
+					const fileExtension = path.extname(relPath).toLowerCase()
+					const supportedBinaryFormats = getSupportedBinaryFormats()
 
-						if (isSupportedImageFormat(fileExtension)) {
-							try {
-								const validationResult = await validateImageForProcessing(
-									fullPath,
-									supportsImages,
-									maxImageFileSize,
-									maxTotalImageSize,
-									imageMemoryTracker.getTotalMemoryUsed(),
-								)
+					if (isSupportedImageFormat(fileExtension) && supportsImages) {
+						try {
+							const validationResult = await validateImageForProcessing(
+								fullPath,
+								supportsImages,
+								maxImageFileSize,
+								maxTotalImageSize,
+								imageMemoryTracker.getTotalMemoryUsed(),
+							)
 
-								if (!validationResult.isValid) {
-									await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
-									updateFileResult(relPath, {
-										xmlContent: `<file><path>${relPath}</path>\n<notice>${validationResult.notice}</notice>\n</file>`,
-										nativeContent: `File: ${relPath}\nNote: ${validationResult.notice}`,
-									})
-									continue
-								}
-
-								const imageResult = await processImageFile(fullPath)
-								imageMemoryTracker.addMemoryUsage(imageResult.sizeInMB)
+							if (!validationResult.isValid) {
 								await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
-
 								updateFileResult(relPath, {
-									xmlContent: `<file><path>${relPath}</path>\n<notice>${imageResult.notice}</notice>\n</file>`,
-									nativeContent: `File: ${relPath}\nNote: ${imageResult.notice}`,
-									imageDataUrl: imageResult.dataUrl,
+									xmlContent: `<file><path>${relPath}</path>\n<notice>${validationResult.notice}</notice>\n</file>`,
+									nativeContent: `File: ${relPath}\nNote: ${validationResult.notice}`,
 								})
-								continue
-							} catch (error) {
-								const errorMsg = error instanceof Error ? error.message : String(error)
-								updateFileResult(relPath, {
-									status: "error",
-									error: `Error reading image file: ${errorMsg}`,
-									xmlContent: `<file><path>${relPath}</path><error>Error reading image file: ${errorMsg}</error></file>`,
-									nativeContent: `File: ${relPath}\nError: Error reading image file: ${errorMsg}`,
-								})
-								await task.say("error", `Error reading image file ${relPath}: ${errorMsg}`)
 								continue
 							}
-						}
 
-						if (supportedBinaryFormats && supportedBinaryFormats.includes(fileExtension)) {
+							const imageResult = await processImageFile(fullPath)
+							imageMemoryTracker.addMemoryUsage(imageResult.sizeInMB)
+							await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
+
+							updateFileResult(relPath, {
+								xmlContent: `<file><path>${relPath}</path>\n<notice>${imageResult.notice}</notice>\n</file>`,
+								nativeContent: `File: ${relPath}\nNote: ${imageResult.notice}`,
+								imageDataUrl: imageResult.dataUrl,
+							})
+							continue
+						} catch (error) {
+							const errorMsg = error instanceof Error ? error.message : String(error)
+							updateFileResult(relPath, {
+								status: "error",
+								error: `Error reading image file: ${errorMsg}`,
+								xmlContent: `<file><path>${relPath}</path><error>Error reading image file: ${errorMsg}</error></file>`,
+								nativeContent: `File: ${relPath}\nError: Error reading image file: ${errorMsg}`,
+							})
+							await task.say("error", `Error reading image file ${relPath}: ${errorMsg}`)
+							continue
+						}
+					}
+
+					if (supportedBinaryFormats && supportedBinaryFormats.includes(fileExtension)) {
 							try {
 								const content = await extractTextFromFile(fullPath)
 								const numberedContent = addLineNumbers(content)
@@ -616,6 +616,10 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				.filter((result) => result.imageDataUrl)
 				.map((result) => result.imageDataUrl as string)
 
+			// Debug: Check file results for image data
+			console.log("[ReadFileTool] File results with imageDataUrl:", fileResults.filter((result) => result.imageDataUrl).length)
+			console.log("[ReadFileTool] File results statuses:", fileResults.map((result) => ({ path: result.path, status: result.status, hasImageData: !!result.imageDataUrl })))
+
 			let statusMessage = ""
 			let feedbackImages: any[] = []
 
@@ -642,11 +646,21 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			const finalModelSupportsImages = task.api.getModel().info.supportsImages ?? false
 			const imagesToInclude = finalModelSupportsImages ? allImages : []
 
+			// Debug logging to help diagnose issues
+			console.log("[ReadFileTool] Image support:", finalModelSupportsImages)
+			console.log("[ReadFileTool] File image URLs:", fileImageUrls.length)
+			console.log("[ReadFileTool] Feedback images:", feedbackImages.length)
+			console.log("[ReadFileTool] Images to include:", imagesToInclude.length)
+			console.log("[ReadFileTool] Status message:", !!statusMessage)
+
 			if (statusMessage || imagesToInclude.length > 0) {
 				const result = formatResponse.toolResult(
 					statusMessage || finalResult,
 					imagesToInclude.length > 0 ? imagesToInclude : undefined,
 				)
+
+				console.log("[ReadFileTool] Format result type:", typeof result === "string" ? "string" : "array")
+				console.log("[ReadFileTool] Format result length:", typeof result === "string" ? result.length : result.length)
 
 				if (typeof result === "string") {
 					if (statusMessage) {

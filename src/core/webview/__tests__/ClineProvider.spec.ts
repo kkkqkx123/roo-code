@@ -235,6 +235,11 @@ vi.mock("../../task/Task", () => ({
 		setRootTask: vi.fn(),
 		taskId: options?.historyItem?.id || "test-task-id",
 		emit: vi.fn(),
+		getBrowserSession: vi.fn().mockReturnValue({
+			isSessionActive: vi.fn().mockReturnValue(false),
+		}),
+		isBrowserSessionActive: vi.fn().mockReturnValue(false),
+		getBrowserViewportSize: vi.fn().mockReturnValue({}),
 	})),
 }))
 
@@ -390,6 +395,11 @@ describe("ClineProvider", () => {
 				setRootTask: vi.fn(),
 				taskId: options?.historyItem?.id || "test-task-id",
 				emit: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
+				isBrowserSessionActive: vi.fn().mockReturnValue(false),
+				getBrowserViewportSize: vi.fn().mockReturnValue({}),
 			}
 
 			Object.defineProperty(task, "messageManager", {

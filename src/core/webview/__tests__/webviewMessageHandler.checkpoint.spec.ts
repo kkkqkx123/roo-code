@@ -40,6 +40,11 @@ describe("webviewMessageHandler - checkpoint operations", () => {
 			checkpointRestore: vi.fn(),
 			overwriteClineMessages: vi.fn(),
 			overwriteApiConversationHistory: vi.fn(),
+			getBrowserSession: vi.fn().mockReturnValue({
+				isSessionActive: vi.fn().mockReturnValue(false),
+			}),
+			isBrowserSessionActive: vi.fn().mockReturnValue(false),
+			getBrowserViewportSize: vi.fn().mockReturnValue({}),
 		}
 		mockCline.conversationRewindManager = new ConversationRewindManager(mockCline)
 

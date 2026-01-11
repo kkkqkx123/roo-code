@@ -63,6 +63,11 @@ describe("webviewMessageHandler delete functionality", () => {
 			overwriteClineMessages: vi.fn(async () => {}),
 			overwriteApiConversationHistory: vi.fn(async () => {}),
 			taskId: "test-task-id",
+			getBrowserSession: vi.fn().mockReturnValue({
+				isSessionActive: vi.fn().mockReturnValue(false),
+			}),
+			isBrowserSessionActive: vi.fn().mockReturnValue(false),
+			getBrowserViewportSize: vi.fn().mockReturnValue({}),
 		}
 		// Add conversationRewindManager using a real ConversationRewindManager instance (must be added after object creation
 		// to avoid circular reference issues with 'this')

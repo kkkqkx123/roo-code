@@ -192,7 +192,7 @@ describe("useMcpToolTool", () => {
 				toolProtocol: "xml",
 			})
 
-			expect(mockTask.ask).toHaveBeenCalledWith("use_mcp_server", expect.stringContaining("use_mcp_tool"), true)
+			expect(mockTask.ask).toHaveBeenCalledWith("use_mcp_server", expect.stringContaining("use_mcp_tool"), undefined, true)
 		})
 	})
 

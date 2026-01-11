@@ -238,6 +238,7 @@ Deploy application to production`,
 				command: "init",
 				args: "",
 			}),
+			undefined,
 			true,
 		)
 
