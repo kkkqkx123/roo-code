@@ -351,10 +351,13 @@ export class TaskManager extends EventEmitter<TaskProviderEvents> {
 	/**
 	 * Creates a task with history item
 	 */
-	public async createTaskWithHistoryItem(historyItem: HistoryItem & {
-		rootTask?: any
-		parentTask?: any
-	}): Promise<Task> {
+	public async createTaskWithHistoryItem(
+		historyItem: HistoryItem & {
+			rootTask?: any
+			parentTask?: any
+		},
+		options?: { startTask?: boolean },
+	): Promise<Task> {
 		const {
 			apiConfiguration,
 			diffEnabled: enableDiff,
@@ -393,7 +396,7 @@ export class TaskManager extends EventEmitter<TaskProviderEvents> {
 			taskNumber: historyItem.number,
 			workspacePath: historyItem.workspace,
 			onCreated: this.taskCreationCallback,
-			startTask: true,
+			startTask: options?.startTask ?? true,
 			enableBridge: false,
 			initialStatus: historyItem.status,
 		})

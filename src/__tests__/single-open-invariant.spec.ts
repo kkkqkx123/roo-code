@@ -34,10 +34,15 @@ describe("Single-open-task invariant", () => {
 	it("User-initiated create: closes existing before opening new", async () => {
 		const removeClineFromStack = vi.fn().mockResolvedValue(undefined)
 		const addClineToStack = vi.fn().mockResolvedValue(undefined)
+		const createTask = vi.fn().mockResolvedValue({ taskId: "new-1" })
 
 		const provider = {
-			// Simulate an existing task present in stack
-			clineStack: [{ taskId: "existing-1" }],
+			taskManager: {
+				createTask,
+				removeClineFromStack,
+				addClineToStack,
+			},
+			removeClineFromStack,
 			setValues: vi.fn(),
 			getState: vi.fn().mockResolvedValue({
 				apiConfiguration: { apiProvider: "anthropic", consecutiveMistakeLimit: 0 },
@@ -48,8 +53,6 @@ describe("Single-open-task invariant", () => {
 				fuzzyMatchThreshold: 1.0,
 				remoteControlEnabled: false,
 			}),
-			removeClineFromStack,
-			addClineToStack,
 			setProviderProfile: vi.fn(),
 			log: vi.fn(),
 			getStateToPostToWebview: vi.fn(),
@@ -68,18 +71,26 @@ describe("Single-open-task invariant", () => {
 		await (ClineProvider.prototype as any).createTask.call(provider, "New task")
 
 		expect(removeClineFromStack).toHaveBeenCalledTimes(1)
-		expect(addClineToStack).toHaveBeenCalledTimes(1)
+		expect(createTask).toHaveBeenCalledTimes(1)
 	})
 
 	it("History resume path always closes current before rehydration (non-rehydrating case)", async () => {
 		const removeClineFromStack = vi.fn().mockResolvedValue(undefined)
 		const addClineToStack = vi.fn().mockResolvedValue(undefined)
 		const updateGlobalState = vi.fn().mockResolvedValue(undefined)
+		const createTaskWithHistoryItem = vi.fn().mockImplementation(async (historyItem: any) => {
+			await addClineToStack({ taskId: historyItem.id })
+			return { taskId: historyItem.id }
+		})
 
 		const provider = {
-			getCurrentTask: vi.fn(() => undefined), // ensure not rehydrating
+			taskManager: {
+				removeClineFromStack,
+				addClineToStack,
+				createTaskWithHistoryItem,
+			},
 			removeClineFromStack,
-			addClineToStack,
+			getCurrentTask: vi.fn(() => undefined),
 			updateGlobalState,
 			log: vi.fn(),
 			customModesManager: { getCustomModes: vi.fn().mockResolvedValue([]) },
@@ -96,7 +107,6 @@ describe("Single-open-task invariant", () => {
 				experiments: {},
 				taskSyncEnabled: false,
 			}),
-			// Methods used by createTaskWithHistoryItem for pending edit cleanup
 			getPendingEditOperation: vi.fn().mockReturnValue(undefined),
 			clearPendingEditOperation: vi.fn(),
 			context: { extension: { packageJSON: {} }, globalStorageUri: { fsPath: "/tmp" } },
@@ -108,6 +118,7 @@ describe("Single-open-task invariant", () => {
 				getProviderSettings: vi.fn(() => ({})),
 			},
 			postStateToWebview: vi.fn(),
+			handleModeSwitch: vi.fn().mockResolvedValue(undefined),
 		} as unknown as ClineProvider
 
 		const historyItem = {

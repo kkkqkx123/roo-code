@@ -397,8 +397,10 @@ describe("getModelParams", () => {
 				reasoningEffort: undefined,
 				reasoningBudget: 128, // Default is 128 for Gemini 2.5 Pro
 				reasoning: {
-					max_tokens: 128,
+					thinkingBudget: 128,
+					includeThoughts: true,
 				},
+				verbosity: undefined,
 			})
 		})
 

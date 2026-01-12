@@ -1,11 +1,9 @@
 import * as path from "path"
-import * as vscode from "vscode"
 import os from "os"
 import crypto from "crypto"
 import EventEmitter from "events"
 
 import { Anthropic } from "@anthropic-ai/sdk"
-import { Package } from "../../shared/package"
 
 import {
 	type TaskLike,
@@ -638,15 +636,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	public emitFinalTokenUsageUpdate(): void {
 		this.usageTracker.emitFinalTokenUsageUpdate()
-	}
-
-	// API Messages - delegated to message manager
-	private async getSavedApiConversationHistory(): Promise<ApiMessage[]> {
-		return this.taskMessageManager.getSavedApiConversationHistory()
-	}
-
-	private async addToApiConversationHistory(message: Anthropic.MessageParam, reasoning?: string) {
-		return this.taskMessageManager.addToApiConversationHistory(message, reasoning, this.api)
 	}
 
 	async overwriteApiConversationHistory(newHistory: ApiMessage[]) {

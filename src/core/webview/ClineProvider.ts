@@ -18,6 +18,7 @@ import {
 	type TokenUsage,
 	type ToolUsage,
 	type GitProperties,
+	type TodoItem,
 	RooCodeEventName,
 	getModelId,
 } from "@roo-code/types"
@@ -45,6 +46,7 @@ import { CustomModesManager } from "../config/CustomModesManager"
 import { Task } from "../task/Task"
 
 import { TaskManager } from "../task/TaskManager"
+import { TaskDelegationCoordinator } from "../task/TaskDelegationCoordinator"
 import { WebviewCoordinator } from "./WebviewCoordinator"
 import { ProviderCoordinator } from "../providers/ProviderCoordinator"
 import { StateCoordinator } from "../state/StateCoordinator"
@@ -78,6 +80,7 @@ export class ClineProvider
 	
 	// Coordinator instances
 	public taskManager!: TaskManager
+	public taskDelegationCoordinator!: TaskDelegationCoordinator
 	public webviewCoordinator!: WebviewCoordinator
 	public providerCoordinator!: ProviderCoordinator
 	public stateCoordinator!: StateCoordinator
@@ -198,6 +201,21 @@ export class ClineProvider
 		this.stateCoordinator.setTaskManager(this.taskManager)
 		this.logger.debug("TaskManager set in StateCoordinator")
 		
+		// Initialize TaskDelegationCoordinator
+		this.taskDelegationCoordinator = new TaskDelegationCoordinator({
+			getCurrentTask: () => this.taskManager.getCurrentTask(),
+			removeClineFromStack: () => this.taskManager.removeClineFromStack(),
+			createTask: (prompt, images, parent, options) => this.taskManager.createTask(prompt, options),
+			createTaskWithHistoryItem: (historyItem, options) => this.taskManager.createTaskWithHistoryItem(historyItem, options),
+			getTaskWithId: (id) => this.taskManager.getTaskWithId(id),
+			updateTaskHistory: (item) => this.updateTaskHistory(item),
+			handleModeSwitch: (newMode) => this.handleModeSwitch(newMode),
+			log: (message) => this.log(message),
+			emit: (event, ...args) => this.emit(event as any, ...(args as any)),
+			globalStoragePath: this.contextProxy.globalStorageUri.fsPath,
+		})
+		this.logger.debug("TaskDelegationCoordinator initialized")
+		
 		// Initialize ProviderCoordinator
 		this.providerCoordinator = new ProviderCoordinator(this.context, this.contextProxy)
 		this.logger.debug("ProviderCoordinator initialized")
@@ -314,16 +332,37 @@ export class ClineProvider
 		if (configuration) {
 			await this.setValues(configuration)
 		}
+
+		// Single-open-task invariant: always enforce for user-initiated top-level tasks
+		if (!parentTask) {
+			try {
+				await this.removeClineFromStack()
+			} catch {
+				// Non-fatal
+			}
+		}
+
 		return await this.taskManager.createTask(text || "", options)
 	}
 
 	/**
 	 * Creates a task with history item
 	 */
-	public async createTaskWithHistoryItem(historyItem: HistoryItem & {
-		rootTask?: string
-		parentTask?: string
-	}): Promise<Task> {
+	public async createTaskWithHistoryItem(
+		historyItem: HistoryItem & {
+			rootTask?: string
+			parentTask?: string
+		},
+		options?: { startTask?: boolean },
+	): Promise<Task> {
+		// Check if we're rehydrating the current task to avoid flicker
+		const currentTask = this.getCurrentTask()
+		const isRehydratingCurrentTask = currentTask && currentTask.taskId === historyItem.id
+
+		if (!isRehydratingCurrentTask) {
+			await this.removeClineFromStack()
+		}
+
 		// If the history item has a mode, restore it (but only if the mode exists)
 		if (historyItem.mode) {
 			const { getModeBySlug } = await import("../../shared/modes")
@@ -349,7 +388,27 @@ export class ClineProvider
 			}
 		}
 		
-		return await this.taskManager.createTaskWithHistoryItem(historyItem)
+		return await this.taskManager.createTaskWithHistoryItem(historyItem, options)
+	}
+
+	/**
+	 * Delegates a parent task to a child task
+	 */
+	public async delegateParentAndOpenChild(params: {
+		parentTaskId: string
+		message: string
+		initialTodos: TodoItem[]
+		mode: string
+	}): Promise<Task> {
+		return this.taskDelegationCoordinator.delegateParentAndOpenChild(params)
+	}
+
+	public async reopenParentFromDelegation(params: {
+		parentTaskId: string
+		childTaskId: string
+		completionResultSummary: string
+	}): Promise<void> {
+		return this.taskDelegationCoordinator.reopenParentFromDelegation(params)
 	}
 
 	/**

@@ -1,6 +1,6 @@
 // npx vitest run __tests__/extension.spec.ts
 
-import type * as vscode from "vscode"
+import * as vscode from "vscode"
 
 vi.mock("vscode", () => ({
 	window: {
@@ -26,6 +26,7 @@ vi.mock("vscode", () => ({
 			dispose: vi.fn(),
 		}),
 		onDidChangeWorkspaceFolders: vi.fn(),
+		workspaceFolders: undefined,
 	},
 	languages: {
 		registerCodeActionsProvider: vi.fn(),
@@ -38,6 +39,17 @@ vi.mock("vscode", () => ({
 	},
 	ExtensionMode: {
 		Production: 1,
+	},
+	Uri: {
+		file: vi.fn().mockReturnValue({ fsPath: "/test/path" }),
+	},
+	RelativePattern: class {
+		constructor(base: any, pattern: string) {
+			this.base = base
+			this.pattern = pattern
+		}
+		base: any
+		pattern: string
 	},
 }))
 
@@ -78,8 +90,8 @@ vi.mock("../utils/outputChannelLogger", () => ({
 
 vi.mock("../shared/package", () => ({
 	Package: {
-		name: "test-extension",
-		outputChannel: "Test Output",
+		name: "roo-cline",
+		outputChannel: "Roo-Code",
 		version: "1.0.0",
 	},
 }))
@@ -110,9 +122,40 @@ vi.mock("../integrations/terminal/TerminalRegistry", () => ({
 	},
 }))
 
+vi.mock("../integrations/claude-code/oauth", () => ({
+	claudeCodeOAuthManager: {
+		initialize: vi.fn(),
+	},
+}))
+
+vi.mock("../core/webview/ClineProvider", () => {
+	const MockClineProvider = vi.fn().mockImplementation(() => ({
+		context: {
+			extensionPath: "/test/path",
+			globalState: {
+				get: vi.fn(),
+				update: vi.fn(),
+			},
+			subscriptions: [],
+		},
+		providerSettingsManager: {
+			saveConfig: vi.fn(),
+		},
+		contextProxy: {
+			setValues: vi.fn(),
+		},
+		customModesManager: {},
+	}))
+	;(MockClineProvider as any).sideBarId = "test-sidebar-id"
+	;(MockClineProvider as any).getActiveInstances = vi.fn().mockReturnValue(new Map())
+	return {
+		ClineProvider: MockClineProvider,
+	}
+})
+
 vi.mock("../services/mcp/McpServerManager", () => ({
 	McpServerManager: {
-		cleanup: vi.fn().mockResolvedValue(undefined),
+		cleanup: vi.fn().mockResolvedValue(undefined) as any,
 		getInstance: vi.fn().mockResolvedValue(null),
 		unregisterProvider: vi.fn(),
 	},
@@ -131,15 +174,17 @@ vi.mock("../services/mdm/MdmService", () => ({
 }))
 
 vi.mock("../utils/migrateSettings", () => ({
-	migrateSettings: vi.fn().mockResolvedValue(undefined),
+	migrateSettings: vi.fn().mockResolvedValue(undefined) as any,
 }))
 
 vi.mock("../utils/autoImportSettings", () => ({
-	autoImportSettings: vi.fn().mockResolvedValue(undefined),
+	autoImportSettings: vi.fn().mockResolvedValue(undefined) as any,
 }))
 
 vi.mock("../extension/api", () => ({
-	API: vi.fn().mockImplementation(() => ({})),
+	API: vi.fn().mockImplementation(() => ({
+		outputChannel: { appendLine: vi.fn() },
+	})),
 }))
 
 vi.mock("../activate", () => ({
@@ -187,5 +232,233 @@ describe("extension.ts", () => {
 		} as unknown as vscode.ExtensionContext
 
 		authStateChangedHandler = undefined
+	})
+
+	describe("activate", () => {
+		it("should initialize output channel and logger", async () => {
+			const { activate } = await import("../extension")
+
+			const api = await activate(mockContext)
+
+			expect(vscode.window.createOutputChannel).toHaveBeenCalledWith("Roo-Code")
+			expect(mockContext.subscriptions.length).toBeGreaterThan(0)
+			expect(api).toBeDefined()
+		})
+
+		it("should migrate settings on activation", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(mockContext.globalState.update).toHaveBeenCalled()
+		})
+
+		it("should initialize i18n with default language", async () => {
+			mockContext.globalState.get = vi.fn().mockReturnValue(undefined)
+
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(mockContext.globalState.get).toHaveBeenCalledWith("language")
+		})
+
+		it("should initialize i18n with saved language", async () => {
+			mockContext.globalState.get = vi.fn().mockReturnValue("en")
+
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(mockContext.globalState.get).toHaveBeenCalledWith("language")
+		})
+
+		it("should initialize TerminalRegistry", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			const { TerminalRegistry } = await import("../integrations/terminal/TerminalRegistry")
+			expect(TerminalRegistry.initialize).toHaveBeenCalled()
+		})
+
+		it("should initialize Claude Code OAuth manager", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			const { claudeCodeOAuthManager } = await import("../integrations/claude-code/oauth")
+			expect(claudeCodeOAuthManager.initialize).toHaveBeenCalledWith(mockContext)
+		})
+
+		it("should initialize default allowed commands", async () => {
+			mockContext.globalState.get = vi.fn().mockReturnValue(undefined)
+			vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
+				get: vi.fn().mockReturnValue(["command1", "command2"]),
+			})
+
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(mockContext.globalState.update).toHaveBeenCalledWith("allowedCommands", ["command1", "command2"])
+		})
+
+		it("should register webview view provider", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.window.registerWebviewViewProvider).toHaveBeenCalled()
+		})
+
+		it("should register text document content provider for diff view", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.workspace.registerTextDocumentContentProvider).toHaveBeenCalled()
+		})
+
+		it("should register URI handler", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.window.registerUriHandler).toHaveBeenCalled()
+		})
+
+		it("should register code actions provider", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.languages.registerCodeActionsProvider).toHaveBeenCalled()
+		})
+
+		it("should execute activation completed command", async () => {
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("roo-cline.activationCompleted")
+		})
+
+		it("should return API instance", async () => {
+			const { activate } = await import("../extension")
+
+			const api = await activate(mockContext)
+
+			expect(api).toBeDefined()
+		})
+
+		it("should handle workspace folders", async () => {
+			vi.spyOn(vscode.workspace, "workspaceFolders", "get").mockReturnValue([
+				{ uri: vscode.Uri.file("/workspace1"), name: "workspace1", index: 0 },
+			])
+
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			const { CodeIndexManager } = await import("../services/code-index/manager")
+			expect(CodeIndexManager.getInstance).toHaveBeenCalled()
+		})
+
+		it("should handle development mode file watching", async () => {
+			process.env.NODE_ENV = "development"
+
+			const { activate } = await import("../extension")
+
+			await activate(mockContext)
+
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalled()
+		})
+	})
+
+	describe("deactivate", () => {
+		it("should cleanup McpServerManager", async () => {
+			const { activate, deactivate } = await import("../extension")
+
+			await activate(mockContext)
+			await deactivate()
+
+			const { McpServerManager } = await import("../services/mcp/McpServerManager")
+			expect(McpServerManager.cleanup).toHaveBeenCalledWith(mockContext)
+		})
+
+		it("should cleanup TerminalRegistry", async () => {
+			const { activate, deactivate } = await import("../extension")
+
+			await activate(mockContext)
+			await deactivate()
+
+			const { TerminalRegistry } = await import("../integrations/terminal/TerminalRegistry")
+			expect(TerminalRegistry.cleanup).toHaveBeenCalled()
+		})
+
+		it("should dispose all ClineProvider instances", async () => {
+			const { activate, deactivate } = await import("../extension")
+
+			await activate(mockContext)
+			await deactivate()
+
+			const { ClineProvider } = await import("../core/webview/ClineProvider")
+			expect(ClineProvider.getActiveInstances).toHaveBeenCalled()
+		})
+	})
+
+	describe("error handling", () => {
+		it("should handle settings migration errors", async () => {
+			const { migrateSettings } = await import("../utils/migrateSettings") as any
+			migrateSettings.mockRejectedValueOnce(new Error("Migration failed"))
+
+			const { activate } = await import("../extension")
+
+			const api = await activate(mockContext)
+
+			expect(api).toBeDefined()
+			expect(migrateSettings).toHaveBeenCalled()
+		})
+
+		it("should handle auto import settings errors", async () => {
+			const { autoImportSettings } = await import("../utils/autoImportSettings") as any
+			autoImportSettings.mockRejectedValueOnce(new Error("Auto import failed"))
+
+			const { activate } = await import("../extension")
+
+			const api = await activate(mockContext)
+
+			expect(api).toBeDefined()
+			expect(autoImportSettings).toHaveBeenCalled()
+		})
+
+		it("should handle McpServerManager cleanup errors", async () => {
+			const { McpServerManager } = await import("../services/mcp/McpServerManager") as any
+			McpServerManager.cleanup.mockRejectedValueOnce(new Error("Cleanup failed"))
+
+			const { activate, deactivate } = await import("../extension")
+
+			await activate(mockContext)
+			await deactivate()
+
+			expect(McpServerManager.cleanup).toHaveBeenCalled()
+		})
+
+		it("should handle ClineProvider disposal errors", async () => {
+			const { ClineProvider } = await import("../core/webview/ClineProvider")
+			ClineProvider.getActiveInstances = vi.fn().mockReturnValue([
+				{
+					dispose: vi.fn().mockRejectedValue(new Error("Disposal failed")),
+				},
+			])
+
+			const { activate, deactivate } = await import("../extension")
+
+			await activate(mockContext)
+			await deactivate()
+
+			expect(ClineProvider.getActiveInstances).toHaveBeenCalled()
+		})
 	})
 })

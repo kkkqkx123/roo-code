@@ -103,7 +103,7 @@ describe("maybeRemoveImageBlocks", () => {
 		expect(apiHandler.getModel).toHaveBeenCalled()
 	})
 
-	it("should convert image blocks to text descriptions when API handler doesn't support images", () => {
+	it("should filter out image blocks when API handler doesn't support images", () => {
 		const apiHandler = createMockApiHandler(false)
 		const messages: ApiMessage[] = [
 			{
@@ -127,7 +127,7 @@ describe("maybeRemoveImageBlocks", () => {
 
 		const result = maybeRemoveImageBlocks(messages, apiHandler)
 
-		// Should convert image blocks to text descriptions
+		// Should filter out image blocks
 		expect(result).toEqual([
 			{
 				role: "user",
@@ -135,10 +135,6 @@ describe("maybeRemoveImageBlocks", () => {
 					{
 						type: "text",
 						text: "Check out this image:",
-					},
-					{
-						type: "text",
-						text: "[Referenced image in conversation]",
 					},
 				],
 			},
@@ -182,7 +178,7 @@ describe("maybeRemoveImageBlocks", () => {
 
 		const result = maybeRemoveImageBlocks(messages, apiHandler)
 
-		// Should convert all image blocks to text descriptions
+		// Should filter out all image blocks
 		expect(result).toEqual([
 			{
 				role: "user",
@@ -193,15 +189,7 @@ describe("maybeRemoveImageBlocks", () => {
 					},
 					{
 						type: "text",
-						text: "[Referenced image in conversation]",
-					},
-					{
-						type: "text",
 						text: "And another one:",
-					},
-					{
-						type: "text",
-						text: "[Referenced image in conversation]",
 					},
 				],
 			},
@@ -254,7 +242,7 @@ describe("maybeRemoveImageBlocks", () => {
 
 		const result = maybeRemoveImageBlocks(messages, apiHandler)
 
-		// Should convert all image blocks to text descriptions
+		// Should filter out all image blocks
 		expect(result).toEqual([
 			{
 				role: "user",
@@ -262,10 +250,6 @@ describe("maybeRemoveImageBlocks", () => {
 					{
 						type: "text",
 						text: "Here's an image:",
-					},
-					{
-						type: "text",
-						text: "[Referenced image in conversation]",
 					},
 				],
 			},
@@ -279,10 +263,6 @@ describe("maybeRemoveImageBlocks", () => {
 					{
 						type: "text",
 						text: "Here's another image:",
-					},
-					{
-						type: "text",
-						text: "[Referenced image in conversation]",
 					},
 				],
 			},
@@ -316,7 +296,7 @@ describe("maybeRemoveImageBlocks", () => {
 
 		const result = maybeRemoveImageBlocks(messages, apiHandler)
 
-		// Should convert image blocks to text descriptions while preserving additional properties
+		// Should filter out image blocks while preserving additional properties
 		expect(result).toEqual([
 			{
 				role: "user",
@@ -324,10 +304,6 @@ describe("maybeRemoveImageBlocks", () => {
 					{
 						type: "text",
 						text: "Here's an image:",
-					},
-					{
-						type: "text",
-						text: "[Referenced image in conversation]",
 					},
 				],
 				ts: 1620000000000,
