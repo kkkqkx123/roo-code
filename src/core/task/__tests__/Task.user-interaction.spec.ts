@@ -294,7 +294,8 @@ describe("Cline - User Interaction", () => {
 				startTask: false,
 			})
 
-			Object.defineProperty(task, "providerRef", {
+			// Mock the MessageQueueManager's providerRef instead of task.providerRef
+			Object.defineProperty(task.messageQueueManager, "providerRef", {
 				value: { deref: () => undefined },
 				writable: false,
 				configurable: true,
@@ -304,7 +305,7 @@ describe("Cline - User Interaction", () => {
 
 			task.submitUserMessage("test message")
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith("[Task#submitUserMessage] Provider reference lost")
+			expect(consoleErrorSpy).toHaveBeenCalledWith("[MessageQueueManager#submitUserMessage] Provider reference lost")
 			expect(mockProvider.postMessageToWebview).not.toHaveBeenCalled()
 
 			consoleErrorSpy.mockRestore()

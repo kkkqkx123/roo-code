@@ -39,6 +39,9 @@ export interface ApiRequestManagerOptions {
 	apiConfiguration: ProviderSettings
 	cwd: string
 	streamingManager: StreamingManager
+	getSystemPrompt: () => Promise<string>
+	getLastGlobalApiRequestTime: () => number | undefined
+	setLastGlobalApiRequestTime: (time: number) => void
 }
 
 export class ApiRequestManager {
@@ -49,6 +52,9 @@ export class ApiRequestManager {
 	private usageTracker: UsageTracker
 	private fileEditorManager: FileEditorManager
 	private streamingManager: StreamingManager
+	private getSystemPromptFn: () => Promise<string>
+	private getLastGlobalApiRequestTime: () => number | undefined
+	private setLastGlobalApiRequestTime: (time: number) => void
 
 	api: ApiHandler
 	apiConfiguration: ProviderSettings
@@ -62,6 +68,9 @@ export class ApiRequestManager {
 		this.usageTracker = options.usageTracker
 		this.fileEditorManager = options.fileEditorManager
 		this.streamingManager = options.streamingManager
+		this.getSystemPromptFn = options.getSystemPrompt
+		this.getLastGlobalApiRequestTime = options.getLastGlobalApiRequestTime
+		this.setLastGlobalApiRequestTime = options.setLastGlobalApiRequestTime
 
 		this.api = options.api
 		this.apiConfiguration = options.apiConfiguration
@@ -69,6 +78,28 @@ export class ApiRequestManager {
 	}
 
 	public async *attemptApiRequest(): ApiStream {
+		// Rate limiting logic
+		if (this.apiConfiguration.rateLimitSeconds && this.apiConfiguration.rateLimitSeconds > 0) {
+			const lastRequestTime = this.getLastGlobalApiRequestTime()
+			const now = performance.now()
+			
+			if (lastRequestTime) {
+				const timeSinceLastRequest = now - lastRequestTime
+				const requiredDelay = this.apiConfiguration.rateLimitSeconds * 1000
+				
+				if (timeSinceLastRequest < requiredDelay) {
+					// Call delay(1000) for each second of delay needed
+					const delayCalls = Math.ceil((requiredDelay - timeSinceLastRequest) / 1000)
+					for (let i = 0; i < delayCalls; i++) {
+						await delay(1000)
+					}
+				}
+			}
+			
+			// Update the global timestamp
+			this.setLastGlobalApiRequestTime(performance.now())
+		}
+
 		const systemPrompt = await this.getSystemPrompt()
 		const messages = this.messageManager.getApiConversationHistory()
 
@@ -83,7 +114,7 @@ export class ApiRequestManager {
 	}
 
 	async getSystemPrompt(): Promise<string> {
-		return ""
+		return this.getSystemPromptFn()
 	}
 
 	async recursivelyMakeClineRequests(

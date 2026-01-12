@@ -1,0 +1,5 @@
+[TEST] baseHash: 083cc667bf57f0dad32478927adbb86caa0ac3b0
+[TEST] commit.commit: b4ac3c2985c78b02300f0bfaf3eb254f05b5ae66
+[TEST] Error checking commits: Error: fatal: bad object 083cc667bf57f0dad32478927adbb86caa0ac3b0
+
+[TEST] Writing debug info to: D:\项目\agent\Roo-Code\src\services\checkpoints\__tests__\debug_git_dir_test.txt

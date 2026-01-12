@@ -471,6 +471,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			apiConfiguration,
 			cwd: this.cwd,
 			streamingManager: this.streamingManager,
+			getSystemPrompt: () => this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled),
+			getLastGlobalApiRequestTime: () => Task.lastGlobalApiRequestTime,
+			setLastGlobalApiRequestTime: (time: number) => { Task.lastGlobalApiRequestTime = time },
 		})
 
 		this.promptManager = new PromptManager({
@@ -651,7 +654,27 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public async flushPendingToolResultsToHistory(): Promise<void> {
-		return this.taskMessageManager.flushPendingToolResultsToHistory()
+		// Only flush if there's actually pending content to save
+		const userMessageContent = this.getUserMessageContent()
+		if (userMessageContent.length === 0) {
+			return
+		}
+
+		// Save the user message with tool_result blocks
+		const userMessage: Anthropic.MessageParam = {
+			role: "user",
+			content: userMessageContent,
+		}
+
+		// Validate and fix tool_result IDs against the previous assistant message
+		const validatedMessage = validateAndFixToolResultIds(userMessage, this.apiConversationHistory)
+		const userMessageWithTs = { ...validatedMessage, ts: Date.now() }
+		this.apiConversationHistory.push(userMessageWithTs as ApiMessage)
+
+		await this.saveApiConversationHistory()
+
+		// Clear the pending content since it's now saved
+		this.setUserMessageContent([])
 	}
 
 	private async saveApiConversationHistory() {
@@ -891,9 +914,26 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	public async abortTask(isAbandoned = false) {
 		this.usageTracker.emitFinalTokenUsageUpdate()
 		this.taskLifecycleManager.abortTask(isAbandoned)
+		
+		// Call dispose and handle any errors gracefully
+		try {
+			this.dispose()
+		} catch (error) {
+			console.error("Error during task disposal:", error)
+		}
 	}
 
 	public dispose(): void {
+		// Cancel any current request
+		this.cancelCurrentRequest()
+		
+		// Remove all event listeners first to prevent memory leaks
+		try {
+			this.removeAllListeners()
+		} catch (error) {
+			console.error("Error removing event listeners:", error)
+		}
+		
 		this.taskLifecycleManager.dispose()
 	}
 
@@ -1043,6 +1083,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	public async *attemptApiRequest(): ApiStream {
 		yield* this.apiRequestManager.attemptApiRequest()
+	}
+
+	// Public method for testing
+	public async getSystemPrompt(): Promise<string> {
+		return this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled)
 	}
 
 	private async backoffAndAnnounce(retryAttempt: number, error: any): Promise<void> {

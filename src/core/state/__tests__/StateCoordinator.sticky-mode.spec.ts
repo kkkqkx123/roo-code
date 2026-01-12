@@ -45,6 +45,13 @@ vi.mock("vscode", () => ({
 		language: "en",
 		appName: "Visual Studio Code",
 	},
+	extensions: {
+		getExtension: vi.fn().mockReturnValue({
+			packageJSON: {
+				version: "2.0.0",
+			},
+		}),
+	},
 	ExtensionMode: {
 		Production: 1,
 		Development: 2,
@@ -72,6 +79,10 @@ vi.mock("../../task/Task", () => ({
 		emit: vi.fn(),
 		parentTask: options.parentTask,
 		updateApiConfiguration: vi.fn(),
+		getBrowserSession: vi.fn().mockReturnValue({
+			isSessionActive: vi.fn().mockReturnValue(false),
+		}),
+		_taskMode: options.taskMode || "code",
 	})),
 }))
 
@@ -131,12 +142,35 @@ vi.mock("../../../shared/modes", () => ({
 			roleDefinition: "You are an architect",
 			groups: ["read", "edit"],
 		},
+		{
+			slug: "debug",
+			name: "Debug Mode",
+			roleDefinition: "You are a debugger",
+			groups: ["read", "edit", "browser"],
+		},
 	],
-	getModeBySlug: vi.fn().mockReturnValue({
-		slug: "code",
-		name: "Code Mode",
-		roleDefinition: "You are a code assistant",
-		groups: ["read", "edit", "browser"],
+	getModeBySlug: vi.fn().mockImplementation((slug: string) => {
+		const modes = [
+			{
+				slug: "code",
+				name: "Code Mode",
+				roleDefinition: "You are a code assistant",
+				groups: ["read", "edit", "browser"],
+			},
+			{
+				slug: "architect",
+				name: "Architect Mode",
+				roleDefinition: "You are an architect",
+				groups: ["read", "edit"],
+			},
+			{
+				slug: "debug",
+				name: "Debug Mode",
+				roleDefinition: "You are a debugger",
+				groups: ["read", "edit", "browser"],
+			},
+		]
+		return modes.find((m) => m.slug === slug)
 	}),
 	defaultModeSlug: "code",
 }))
@@ -154,6 +188,28 @@ vi.mock("../../../api/providers/fetchers/modelCache", () => ({
 
 vi.mock("../../../integrations/misc/extract-text", () => ({
 	extractTextFromFile: vi.fn().mockResolvedValue("Mock file content"),
+}))
+
+vi.mock("../StateCoordinator", () => ({
+	StateCoordinator: vi.fn().mockImplementation(() => ({
+		updateTaskHistory: vi.fn().mockImplementation((item) => {
+			return Promise.resolve([item])
+		}),
+		getStateToPostToWebview: vi.fn().mockResolvedValue({
+			mode: "code",
+			currentApiConfigName: "test-config",
+		}),
+		getState: vi.fn().mockResolvedValue({
+			mode: "code",
+			currentApiConfigName: "test-config",
+		}),
+		setValue: vi.fn().mockResolvedValue(undefined),
+		setValues: vi.fn().mockResolvedValue(undefined),
+		resetState: vi.fn().mockResolvedValue(undefined),
+		updateApiConfiguration: vi.fn().mockResolvedValue(undefined),
+		updateGlobalState: vi.fn().mockResolvedValue(undefined),
+		setTaskManager: vi.fn().mockResolvedValue(undefined),
+	})),
 }))
 
 vi.mock("p-wait-for", () => ({
@@ -243,6 +299,10 @@ describe("StateCoordinator - Sticky Mode", () => {
 
 		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
 
+		// Add missing methods that are being spied on in tests
+		;(provider as any).getGlobalState = vi.fn()
+		;(provider as any).updateGlobalState = vi.fn().mockResolvedValue(undefined)
+
 		provider.getMcpHub = vi.fn().mockReturnValue({
 			listTools: vi.fn().mockResolvedValue([]),
 			callTool: vi.fn().mockResolvedValue({ content: [] }),
@@ -250,6 +310,38 @@ describe("StateCoordinator - Sticky Mode", () => {
 			readResource: vi.fn().mockResolvedValue({ contents: [] }),
 			getAllServers: vi.fn().mockReturnValue([]),
 		})
+
+		// Mock the context proxy to return task history
+		const mockContextProxy = {
+			getValues: vi.fn().mockReturnValue({
+				taskHistory: [],
+				mode: "code",
+				currentApiConfigName: "test-config",
+			}),
+			setValue: vi.fn().mockResolvedValue(undefined),
+			setValues: vi.fn().mockResolvedValue(undefined),
+		}
+		;(provider as any).contextProxy = mockContextProxy
+
+
+
+		// Mock task manager methods - create a proper task stack
+		const taskStack: any[] = []
+		;(provider as any).taskManager = {
+			getCurrentTask: vi.fn().mockImplementation(() => taskStack[taskStack.length - 1]),
+			addClineToStack: vi.fn().mockImplementation((task) => {
+				taskStack.push(task)
+			}),
+			removeClineFromStack: vi.fn().mockImplementation(() => {
+				return taskStack.pop()
+			}),
+			createTaskWithHistoryItem: vi.fn().mockImplementation((historyItem) => {
+				return Promise.resolve(new Task({
+					provider,
+					apiConfiguration: { apiProvider: "anthropic" },
+				}))
+			}),
+		}
 	})
 
 	describe("handleModeSwitch", () => {
@@ -265,7 +357,8 @@ describe("StateCoordinator - Sticky Mode", () => {
 
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
+			// Set up task history in global state
+			const taskHistory = [
 				{
 					id: taskId,
 					ts: Date.now(),
@@ -277,9 +370,27 @@ describe("StateCoordinator - Sticky Mode", () => {
 					cacheReads: 0,
 					totalCost: 0,
 				},
-			])
+			]
+			
+			// Update the global state to include task history
+			;(provider as any).getGlobalState.mockImplementation((key: string) => {
+				if (key === "taskHistory") {
+					return taskHistory
+				}
+				return undefined
+			})
 
-			const updateTaskHistorySpy = vi.spyOn(provider, "updateTaskHistory").mockImplementation(() => Promise.resolve([]))
+			// Mock task manager to return our task as current task
+			;(provider as any).taskManager.getCurrentTask.mockReturnValue(mockTask)
+
+			// Mock context proxy to return the task history
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: taskHistory,
+				mode: "code",
+				currentApiConfigName: "test-config",
+			})
+
+			const updateTaskHistorySpy = vi.spyOn(provider.stateCoordinator, "updateTaskHistory")
 
 			await provider.addClineToStack(mockTask)
 
@@ -304,7 +415,13 @@ describe("StateCoordinator - Sticky Mode", () => {
 				clineMessages: [],
 				apiConversationHistory: [],
 				updateApiConfiguration: vi.fn(),
+				getBrowserSession: vi.fn().mockReturnValue({
+					isSessionActive: vi.fn().mockReturnValue(false),
+				}),
 			}
+
+			// Mock task manager to return our task as current task
+			;(provider as any).taskManager.getCurrentTask.mockReturnValue(mockTask)
 
 			await provider.addClineToStack(mockTask as any)
 
@@ -322,10 +439,11 @@ describe("StateCoordinator - Sticky Mode", () => {
 				},
 			])
 
-			vi.spyOn(provider, "updateTaskHistory").mockImplementation(() => Promise.resolve([]))
+			const updateTaskHistorySpy = vi.spyOn(provider.stateCoordinator, "updateTaskHistory")
 
 			await provider.handleModeSwitch("architect")
 
+			// The _taskMode property should be set by handleModeSwitch
 			expect((mockTask as any)._taskMode).toBe("architect")
 
 			expect(mockTask.emit).toHaveBeenCalledWith("taskModeSwitched", mockTask.taskId, "architect")
@@ -339,7 +457,8 @@ describe("StateCoordinator - Sticky Mode", () => {
 
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
+			// Set up task history in global state
+			const taskHistory = [
 				{
 					id: taskId,
 					ts: Date.now(),
@@ -351,9 +470,27 @@ describe("StateCoordinator - Sticky Mode", () => {
 					cacheReads: 0,
 					totalCost: 0,
 				},
-			])
+			]
+			
+			// Update the global state to include task history
+			;(provider as any).getGlobalState.mockImplementation((key: string) => {
+				if (key === "taskHistory") {
+					return taskHistory
+				}
+				return undefined
+			})
 
-			const updateTaskHistorySpy = vi.spyOn(provider, "updateTaskHistory").mockImplementation(() => Promise.resolve([]))
+			// Mock task manager to return our task as current task
+			;(provider as any).taskManager.getCurrentTask.mockReturnValue(mockTask)
+
+			// Mock context proxy to return the task history
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: taskHistory,
+				mode: "code",
+				currentApiConfigName: "test-config",
+			})
+
+			const updateTaskHistorySpy = vi.spyOn((provider as any).stateCoordinator, "updateTaskHistory")
 
 			await provider.addClineToStack(mockTask)
 
@@ -385,11 +522,10 @@ describe("StateCoordinator - Sticky Mode", () => {
 				mode: "architect",
 			}
 
-			const updateGlobalStateSpy = vi.spyOn(provider as any, "updateGlobalState").mockResolvedValue(undefined)
-
 			await provider.createTaskWithHistoryItem(historyItem)
 
-			expect(updateGlobalStateSpy).toHaveBeenCalledWith("mode", "architect")
+			// Check that mode was updated to architect at some point
+			expect(mockContext.globalState.update).toHaveBeenCalledWith("mode", "architect")
 		})
 
 		it("should use current mode if history item has no saved mode", async () => {
@@ -438,7 +574,8 @@ describe("StateCoordinator - Sticky Mode", () => {
 
 			const taskId = (mockTask as any).taskId || "test-task-id"
 
-			vi.spyOn(provider as any, "getGlobalState").mockReturnValue([
+			// Set up task history in global state
+			const taskHistory = [
 				{
 					id: taskId,
 					ts: Date.now(),
@@ -450,18 +587,37 @@ describe("StateCoordinator - Sticky Mode", () => {
 					cacheReads: 0,
 					totalCost: 0,
 				},
-			])
+			]
+			
+			// Update the global state to include task history
+			;(provider as any).getGlobalState.mockImplementation((key: string) => {
+				if (key === "taskHistory") {
+					return taskHistory
+				}
+				return undefined
+			})
+
+			// Mock context proxy to return the task history
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: taskHistory,
+				mode: "debug",
+				currentApiConfigName: "test-config",
+			})
 
 			let updatedHistoryItem: any
-			vi.spyOn(provider, "updateTaskHistory").mockImplementation((item) => {
+			const updateTaskHistorySpy = vi.spyOn(provider.stateCoordinator, "updateTaskHistory").mockImplementation((item) => {
 				updatedHistoryItem = item
 				return Promise.resolve([item])
 			})
+
+			// Mock task manager to return our task as current task
+			;(provider as any).taskManager.getCurrentTask.mockReturnValue(mockTask)
 
 			await provider.addClineToStack(mockTask)
 
 			await provider.handleModeSwitch("debug")
 
+			expect(updateTaskHistorySpy).toHaveBeenCalled()
 			expect(updatedHistoryItem).toBeDefined()
 			expect(updatedHistoryItem.mode).toBe("debug")
 		})
@@ -484,31 +640,41 @@ describe("StateCoordinator - Sticky Mode", () => {
 				[parentTaskId]: "architect",
 			}
 
-			const getGlobalStateMock = vi.spyOn(provider as any, "getGlobalState")
-			getGlobalStateMock.mockImplementation((key) => {
+			// Set up task history in global state
+			const taskHistory = Object.entries(taskModes).map(([id, mode]) => ({
+				id,
+				ts: Date.now(),
+				task: `Task ${id}`,
+				number: 1,
+				tokensIn: 0,
+				tokensOut: 0,
+				cacheWrites: 0,
+				cacheReads: 0,
+				totalCost: 0,
+				mode,
+			}))
+			
+			// Update the global state to include task history
+			;(provider as any).getGlobalState.mockImplementation((key: string) => {
 				if (key === "taskHistory") {
-					return Object.entries(taskModes).map(([id, mode]) => ({
-						id,
-						ts: Date.now(),
-						task: `Task ${id}`,
-						number: 1,
-						tokensIn: 0,
-						tokensOut: 0,
-						cacheWrites: 0,
-						cacheReads: 0,
-						totalCost: 0,
-						mode,
-					}))
+					return taskHistory
 				}
 				return []
 			})
 
-			const updateTaskHistoryMock = vi.spyOn(provider, "updateTaskHistory")
+			// Mock context proxy to return the task history
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: taskHistory,
+				mode: "architect",
+				currentApiConfigName: "test-config",
+			})
+
+			const updateTaskHistoryMock = vi.spyOn(provider.stateCoordinator, "updateTaskHistory")
 			updateTaskHistoryMock.mockImplementation((item) => {
 				if (item.id && item.mode !== undefined) {
 					taskModes[item.id] = item.mode
 				}
-				return Promise.resolve([])
+				return Promise.resolve([item])
 			})
 
 			await provider.addClineToStack(parentTask)
@@ -520,19 +686,18 @@ describe("StateCoordinator - Sticky Mode", () => {
 			})
 			const subtaskId = (subtask as any).taskId || "subtask-id"
 
-			taskModes[subtaskId] = "architect"
-
+			// Mock task manager to return current task correctly
 			const getCurrentTaskMock = vi.spyOn(provider, "getCurrentTask")
 			getCurrentTaskMock.mockReturnValue(parentTask as any)
 
 			await provider.addClineToStack(subtask)
 
+			// Switch to code mode - this should update the current task (subtask) to code mode
 			getCurrentTaskMock.mockReturnValue(subtask as any)
-
 			await provider.handleModeSwitch("code")
 
+			// Only the current task (subtask) should be in code mode after the switch
 			expect(taskModes[parentTaskId]).toBe("architect")
-
 			expect(taskModes[subtaskId]).toBe("code")
 		})
 	})
@@ -596,6 +761,24 @@ describe("StateCoordinator - Sticky Mode", () => {
 			await provider.providerSettingsManager.setModeConfig("architect", architectConfigId!)
 
 			await provider.handleModeSwitch("code")
+
+			// Mock context proxy to return the task history with architect mode
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: [{
+					id: "test-task-id",
+					number: 1,
+					ts: Date.now(),
+					task: "Test task",
+					tokensIn: 100,
+					tokensOut: 200,
+					cacheWrites: 0,
+					cacheReads: 0,
+					totalCost: 0.001,
+					mode: "architect",
+				}],
+				mode: "code",
+				currentApiConfigName: "test-config",
+			})
 
 			const historyItem: HistoryItem = {
 				id: "test-task-id",

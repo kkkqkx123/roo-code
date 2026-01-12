@@ -5,6 +5,28 @@ import { ContextProxy } from "../../config/ContextProxy"
 import * as vscode from "vscode"
 import type { ProviderSettings } from "@roo-code/types"
 
+vi.mock("vscode", () => ({
+	RelativePattern: vi.fn((base, pattern) => ({ base, pattern })),
+	workspace: {
+		createFileSystemWatcher: vi.fn(() => ({
+			onDidCreate: vi.fn(() => ({ dispose: vi.fn() })),
+			onDidDelete: vi.fn(() => ({ dispose: vi.fn() })),
+			onDidChange: vi.fn(() => ({ dispose: vi.fn() })),
+			dispose: vi.fn(),
+		})),
+	},
+	window: {
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
+		tabGroups: {
+			all: [],
+			close: vi.fn().mockResolvedValue(undefined),
+		},
+		showTextDocument: vi.fn().mockResolvedValue(undefined),
+		visibleTextEditors: [],
+		onDidChangeVisibleTextEditors: vi.fn(() => ({ dispose: vi.fn() })),
+	},
+}))
+
 describe("Task - Constructor", () => {
 	let mockProvider: any
 	let mockApiConfig: ProviderSettings

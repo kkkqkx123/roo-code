@@ -329,7 +329,7 @@ describe("Cline - API Tests", () => {
 
 			const mockAbortController = new AbortController()
 			const abortSpy = vi.spyOn(mockAbortController, "abort")
-			task.currentRequestAbortController = mockAbortController
+			;(task as any).stateManager.currentRequestAbortController = mockAbortController
 
 			const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
 
@@ -337,7 +337,7 @@ describe("Cline - API Tests", () => {
 
 			expect(abortSpy).toHaveBeenCalled()
 
-			expect(task.currentRequestAbortController).toBeUndefined()
+			expect((task as any).stateManager.currentRequestAbortController).toBeUndefined()
 
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Aborting current HTTP request"))
 

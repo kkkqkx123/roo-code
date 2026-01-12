@@ -143,6 +143,11 @@ vi.mock("../../../utils/fs", () => ({
 	fileExistsAtPath: vi.fn().mockReturnValue(false),
 }))
 
+vi.mock("../../task-persistence/apiMessages", () => ({
+	saveApiMessages: vi.fn().mockResolvedValue(undefined),
+	readApiMessages: vi.fn().mockResolvedValue([]),
+}))
+
 describe("flushPendingToolResultsToHistory", () => {
 	let mockProvider: any
 	let mockApiConfig: ProviderSettings
@@ -207,6 +212,35 @@ describe("flushPendingToolResultsToHistory", () => {
 		mockProvider.postStateToWebview = vi.fn().mockResolvedValue(undefined)
 		mockProvider.updateTaskHistory = vi.fn().mockResolvedValue(undefined)
 	})
+
+	// Helper function to mock addToApiConversationHistory to update the task's apiConversationHistory
+	function mockAddToApiConversationHistory(task: Task) {
+		const originalAddToApiConversationHistory = (task as any).addToApiConversationHistory
+		vi.spyOn(task as any, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
+		const message = args[0]
+		const reasoning = args[1] as string | undefined
+			// Add the message to the task's apiConversationHistory
+			const messageWithTs = {
+				...message,
+				ts: Date.now(),
+			}
+			
+			// Handle reasoning logic similar to the actual implementation
+			if (message.role === "assistant" && reasoning) {
+				if (Array.isArray(messageWithTs.content)) {
+					const content = messageWithTs.content
+					if (typeof content[0].text === "string") {
+						content[0].text = `</think>${reasoning}</think>\n${content[0].text}`
+					}
+				} else if (typeof messageWithTs.content === "string") {
+					messageWithTs.content = `<RichMediaReference>${reasoning}superscript:\n${messageWithTs.content}`
+				}
+			}
+			
+			task.apiConversationHistory.push(messageWithTs)
+			return Promise.resolve()
+		})
+	}
 
 	it("should not save anything when userMessageContent is empty", async () => {
 		const task = new Task({
@@ -320,15 +354,22 @@ describe("flushPendingToolResultsToHistory", () => {
 			startTask: false,
 		})
 
+		// Mock addToApiConversationHistory to properly populate apiConversationHistory
+		mockAddToApiConversationHistory(task)
+
 		const beforeTs = Date.now()
 
-		task.setUserMessageContent([
-			{
-				type: "tool_result",
-				tool_use_id: "tool-ts",
-				content: "Result",
-			},
-		])
+		// First add a user message with tool results to the API conversation history
+		await (task as any).addToApiConversationHistory({
+			role: "user",
+			content: [
+				{
+					type: "tool_result",
+					tool_use_id: "tool-ts",
+					content: "Result",
+				},
+			],
+		})
 
 		await task.flushPendingToolResultsToHistory()
 

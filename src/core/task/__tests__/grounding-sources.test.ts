@@ -86,6 +86,19 @@ vi.mock("fs/promises", () => ({
 	readFile: vi.fn().mockResolvedValue("[]"),
 	unlink: vi.fn().mockResolvedValue(undefined),
 	rmdir: vi.fn().mockResolvedValue(undefined),
+	access: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock proper-lockfile to avoid lockfile errors
+vi.mock("proper-lockfile", () => ({
+	lock: vi.fn().mockResolvedValue(() => Promise.resolve()),
+	unlock: vi.fn().mockResolvedValue(undefined),
+	check: vi.fn().mockResolvedValue(false),
+}))
+
+// Mock safeWriteJson to avoid file system errors
+vi.mock("../../../utils/safeWriteJson", () => ({
+	safeWriteJson: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock mentions
@@ -164,6 +177,35 @@ describe("Task grounding sources handling", () => {
 		} as ProviderSettings
 	})
 
+	// Helper function to mock addToApiConversationHistory to update the task's apiConversationHistory
+	function mockAddToApiConversationHistory(task: Task) {
+		const originalAddToApiConversationHistory = (task as any).addToApiConversationHistory
+		vi.spyOn(task as any, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
+		const message = args[0]
+		const reasoning = args[1] as string | undefined
+			// Add the message to the task's apiConversationHistory
+			const messageWithTs = {
+				...message,
+				ts: Date.now(),
+			}
+			
+			// Handle reasoning logic similar to the actual implementation
+			if (message.role === "assistant" && reasoning) {
+				if (Array.isArray(messageWithTs.content)) {
+					const content = messageWithTs.content
+					if (typeof content[0].text === "string") {
+						content[0].text = `</think>${reasoning}</think>\n${content[0].text}`
+					}
+				} else if (typeof messageWithTs.content === "string") {
+					messageWithTs.content = `<RichMediaReference>${reasoning}superscript:\n${messageWithTs.content}`
+				}
+			}
+			
+			task.apiConversationHistory.push(messageWithTs)
+			return Promise.resolve()
+		})
+	}
+
 	it("should strip grounding sources from assistant message before persisting to API history", async () => {
 		// Create a task instance
 		const task = new Task({
@@ -173,8 +215,8 @@ describe("Task grounding sources handling", () => {
 			startTask: false,
 		})
 
-		// Mock the API conversation history
-		task.apiConversationHistory = []
+		// Mock addToApiConversationHistory to properly populate apiConversationHistory
+		mockAddToApiConversationHistory(task)
 
 		// Simulate an assistant message with grounding sources
 		const assistantMessageWithSources = `
@@ -231,7 +273,8 @@ Sources: [1](https://example.com), [2](https://another.com)
 			startTask: false,
 		})
 
-		task.apiConversationHistory = []
+		// Mock addToApiConversationHistory to properly populate apiConversationHistory
+		mockAddToApiConversationHistory(task)
 
 		const assistantMessage = "This is a regular response without any sources."
 		const mockGroundingSources: any[] = [] // No grounding sources

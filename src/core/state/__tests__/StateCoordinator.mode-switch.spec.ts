@@ -86,7 +86,11 @@ describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 			getAllServers: vi.fn().mockReturnValue([]),
 		})
 
-		;(provider as any).customModesManager = mockCustomModesManager
+		// Mock customModesManager as a getter property
+		Object.defineProperty(provider, 'customModesManager', {
+			get: () => mockCustomModesManager,
+			configurable: true
+		})
 	})
 
 	describe("handleModeSwitch", () => {
@@ -150,18 +154,22 @@ describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
-			;(provider as any).customModesManager = {
-				updateCustomMode: vi.fn().mockResolvedValue(undefined),
-				getCustomModes: vi.fn().mockResolvedValue([
-					{
-						slug: "test-mode",
-						name: "Test Mode",
-						roleDefinition: "Updated role definition",
-						groups: ["read"] as const,
-					},
-				]),
-				dispose: vi.fn(),
-			} as any
+			// Mock customModesManager as a getter property for this test
+			Object.defineProperty(provider, 'customModesManager', {
+				get: () => ({
+					updateCustomMode: vi.fn().mockResolvedValue(undefined),
+					getCustomModes: vi.fn().mockResolvedValue([
+						{
+							slug: "test-mode",
+							name: "Test Mode",
+							roleDefinition: "Updated role definition",
+							groups: ["read"] as const,
+						},
+					]),
+					dispose: vi.fn(),
+				}),
+				configurable: true
+			})
 
 			await messageHandler({
 				type: "updateCustomMode",

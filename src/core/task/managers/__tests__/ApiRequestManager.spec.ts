@@ -73,6 +73,9 @@ describe("ApiRequestManager", () => {
 			apiConfiguration: { apiProvider: "anthropic" } as ProviderSettings,
 			cwd: "/workspace",
 			streamingManager: mockStreamingManager,
+			getSystemPrompt: vi.fn(async () => "test system prompt"),
+			getLastGlobalApiRequestTime: vi.fn(() => undefined),
+			setLastGlobalApiRequestTime: vi.fn(),
 		})
 	})
 

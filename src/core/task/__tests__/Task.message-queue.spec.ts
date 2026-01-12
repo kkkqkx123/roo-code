@@ -152,6 +152,11 @@ vi.mock("../../../utils/storage", () => ({
 
 vi.mock("../../../utils/fs", () => ({
 	fileExistsAtPath: vi.fn().mockReturnValue(false),
+	ensureDirectoryExists: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock("../../../utils/safeWriteJson", () => ({
+	safeWriteJson: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe("Cline - Queued message processing after condense", () => {
@@ -191,6 +196,9 @@ describe("Cline - Queued message processing after condense", () => {
 		provider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.postStateToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.getState = vi.fn().mockResolvedValue({})
+		provider.getMcpHub = vi.fn().mockReturnValue({
+			getServers: vi.fn().mockReturnValue([]),
+		})
 		return provider
 	}
 
@@ -210,17 +218,23 @@ describe("Cline - Queued message processing after condense", () => {
 		})
 
 		vi.spyOn(task as any, "getSystemPrompt").mockResolvedValue("system")
-		const submitSpy = vi.spyOn(task, "submitUserMessage").mockResolvedValue(undefined)
+		const postMessageSpy = vi.spyOn(provider, "postMessageToWebview").mockImplementation(() => {})
 
 		task.messageQueueManager.getMessageQueueService().addMessage("queued text", ["img1.png"])
 
 		vi.useFakeTimers()
 		await task.condenseContext()
 
-		vi.runAllTimers()
+		// Wait for the setTimeout in processQueuedMessages to complete
+		await vi.advanceTimersByTimeAsync(150)
 		vi.useRealTimers()
 
-		expect(submitSpy).toHaveBeenCalledWith("queued text", ["img1.png"])
+		expect(postMessageSpy).toHaveBeenCalledWith({
+			type: "invoke",
+			invoke: "sendMessage",
+			text: "queued text",
+			images: ["img1.png"]
+		})
 		expect(task.messageQueueManager.getMessageQueueService().isEmpty()).toBe(true)
 	})
 
@@ -244,27 +258,37 @@ describe("Cline - Queued message processing after condense", () => {
 		vi.spyOn(taskA as any, "getSystemPrompt").mockResolvedValue("system")
 		vi.spyOn(taskB as any, "getSystemPrompt").mockResolvedValue("system")
 
-		const spyA = vi.spyOn(taskA, "submitUserMessage").mockResolvedValue(undefined)
-		const spyB = vi.spyOn(taskB, "submitUserMessage").mockResolvedValue(undefined)
+		const spyA = vi.spyOn(providerA, "postMessageToWebview").mockImplementation(() => {})
+		const spyB = vi.spyOn(providerB, "postMessageToWebview").mockImplementation(() => {})
 
 		taskA.messageQueueManager.getMessageQueueService().addMessage("A message")
 		taskB.messageQueueManager.getMessageQueueService().addMessage("B message")
 
 		vi.useFakeTimers()
 		await taskA.condenseContext()
-		vi.runAllTimers()
+		await vi.advanceTimersByTimeAsync(150)
 		vi.useRealTimers()
 
-		expect(spyA).toHaveBeenCalledWith("A message", undefined)
+		expect(spyA).toHaveBeenCalledWith({
+			type: "invoke",
+			invoke: "sendMessage",
+			text: "A message",
+			images: []
+		})
 		expect(spyB).not.toHaveBeenCalled()
 		expect(taskB.messageQueueManager.getMessageQueueService().isEmpty()).toBe(false)
 
 		vi.useFakeTimers()
 		await taskB.condenseContext()
-		vi.runAllTimers()
+		await vi.advanceTimersByTimeAsync(150)
 		vi.useRealTimers()
 
-		expect(spyB).toHaveBeenCalledWith("B message", undefined)
+		expect(spyB).toHaveBeenCalledWith({
+			type: "invoke",
+			invoke: "sendMessage",
+			text: "B message",
+			images: []
+		})
 		expect(taskB.messageQueueManager.getMessageQueueService().isEmpty()).toBe(true)
 	})
 })

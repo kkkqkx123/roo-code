@@ -173,7 +173,9 @@ describe("Cline - Subtask Rate Limiting", () => {
 			getState: vi.fn().mockResolvedValue({
 				apiConfiguration: mockApiConfig,
 			}),
-			getMcpHub: vi.fn().mockReturnValue(undefined),
+			getMcpHub: vi.fn().mockReturnValue({
+				getServers: vi.fn().mockReturnValue([]),
+			}),
 			say: vi.fn(),
 			postStateToWebview: vi.fn().mockResolvedValue(undefined),
 			postMessageToWebview: vi.fn().mockResolvedValue(undefined),
