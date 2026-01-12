@@ -105,45 +105,74 @@ describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 				apiProvider: "anthropic",
 			}
 
-			;(provider as any).providerSettingsManager = {
+			;(provider as any)._providerSettingsManager = {
 				getModeConfigId: vi.fn().mockResolvedValue("saved-config-id"),
 				listConfig: vi.fn().mockResolvedValue([profile]),
-				activateProfile: vi.fn().mockResolvedValue(profile),
+				getProfile: vi.fn().mockResolvedValue({ ...profile, name: "saved-config" }),
+				activateProfile: vi.fn().mockResolvedValue({ ...profile, name: "saved-config" }),
 				setModeConfig: vi.fn(),
-			} as any
+			}
 
-			await provider.handleModeSwitch("architect")
+			// Mock providerCoordinator.activateProviderProfile
+			;(provider as any).providerCoordinator = {
+				activateProviderProfile: vi.fn().mockResolvedValue({ ...profile, name: "saved-config", providerSettings: { apiProvider: "anthropic" } }),
+			}
 
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("mode", "architect")
-
-			expect(provider.providerSettingsManager.getModeConfigId).toHaveBeenCalledWith("architect")
-			expect(provider.providerSettingsManager.activateProfile).toHaveBeenCalledWith({ name: "saved-config" })
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("currentApiConfigName", "saved-config")
-
-			expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "state" }))
-		})
-
-		test("saves current config when switching to mode without config", async () => {
-			;(provider as any).providerSettingsManager = {
-				getModeConfigId: vi.fn().mockResolvedValue(undefined),
-				listConfig: vi
-					.fn()
-					.mockResolvedValue([{ name: "current-config", id: "current-id", apiProvider: "anthropic" }]),
-				setModeConfig: vi.fn(),
-			} as any
-
-			const contextProxy = (provider as any).contextProxy
-			const getValueSpy = vi.spyOn(contextProxy, "getValue")
-			getValueSpy.mockImplementation((key: any) => {
-				if (key === "currentApiConfigName") return "current-config"
-				return undefined
+			// Mock context proxy setValue to call globalState.update
+			const mockContextProxy = (provider as any).contextProxy
+			const originalSetValue = mockContextProxy.setValue
+			mockContextProxy.setValue = vi.fn().mockImplementation(async (key: string, value: any) => {
+				if (key === "mode") {
+					await mockContext.globalState.update("mode", value)
+				} else if (key === "currentApiConfigName") {
+					await mockContext.globalState.update("currentApiConfigName", value)
+				} else if (key === "listApiConfigMeta") {
+					await mockContext.globalState.update("listApiConfigMeta", value)
+				}
 			})
 
 			await provider.handleModeSwitch("architect")
 
 			expect(mockContext.globalState.update).toHaveBeenCalledWith("mode", "architect")
 
-			expect(provider.providerSettingsManager.setModeConfig).toHaveBeenCalledWith("architect", "current-id")
+			expect((provider as any)._providerSettingsManager.getModeConfigId).toHaveBeenCalledWith("architect")
+			expect((provider as any).providerCoordinator.activateProviderProfile).toHaveBeenCalledWith({ name: "saved-config" })
+			expect(mockContext.globalState.update).toHaveBeenCalledWith("currentApiConfigName", "saved-config")
+
+			expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "state" }))
+		})
+
+		test("saves current config when switching to mode without config", async () => {
+			;(provider as any)._providerSettingsManager = {
+				getModeConfigId: vi.fn().mockResolvedValue(undefined),
+				listConfig: vi
+					.fn()
+					.mockResolvedValue([{ name: "current-config", id: "current-id", apiProvider: "anthropic" }]),
+				setModeConfig: vi.fn(),
+			}
+
+			// Mock context proxy setValue to call globalState.update
+			const mockContextProxy = (provider as any).contextProxy
+			mockContextProxy.setValue = vi.fn().mockImplementation(async (key: string, value: any) => {
+				if (key === "mode") {
+					await mockContext.globalState.update("mode", value)
+				} else if (key === "listApiConfigMeta") {
+					await mockContext.globalState.update("listApiConfigMeta", value)
+				}
+			})
+
+			const contextProxy = (provider as any).contextProxy
+			const getValuesSpy = vi.spyOn(contextProxy, "getValues")
+			getValuesSpy.mockReturnValue({
+				currentApiConfigName: "current-config",
+				mode: "code",
+			})
+
+			await provider.handleModeSwitch("architect")
+
+			expect(mockContext.globalState.update).toHaveBeenCalledWith("mode", "architect")
+
+			expect((provider as any)._providerSettingsManager.setModeConfig).toHaveBeenCalledWith("architect", "current-id")
 
 			expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "state" }))
 		})
@@ -154,20 +183,23 @@ describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
+			// Create a single mock object for customModesManager
+			const mockCustomModesManager = {
+				updateCustomMode: vi.fn().mockResolvedValue(undefined),
+				getCustomModes: vi.fn().mockResolvedValue([
+					{
+						slug: "test-mode",
+						name: "Test Mode",
+						roleDefinition: "Updated role definition",
+						groups: ["read"] as const,
+					},
+				]),
+				dispose: vi.fn(),
+			}
+
 			// Mock customModesManager as a getter property for this test
 			Object.defineProperty(provider, 'customModesManager', {
-				get: () => ({
-					updateCustomMode: vi.fn().mockResolvedValue(undefined),
-					getCustomModes: vi.fn().mockResolvedValue([
-						{
-							slug: "test-mode",
-							name: "Test Mode",
-							roleDefinition: "Updated role definition",
-							groups: ["read"] as const,
-						},
-					]),
-					dispose: vi.fn(),
-				}),
+				get: () => mockCustomModesManager,
 				configurable: true
 			})
 
@@ -181,7 +213,7 @@ describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 				},
 			})
 
-			expect(provider.customModesManager.updateCustomMode).toHaveBeenCalledWith(
+			expect(mockCustomModesManager.updateCustomMode).toHaveBeenCalledWith(
 				"test-mode",
 				expect.objectContaining({
 					slug: "test-mode",

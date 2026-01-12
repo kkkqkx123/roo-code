@@ -138,9 +138,9 @@ describe("ApiRequestManager", () => {
 	})
 
 	describe("getSystemPrompt", () => {
-		it("should return empty string", async () => {
+		it("should return system prompt from getSystemPrompt function", async () => {
 			const result = await apiRequestManager.getSystemPrompt()
-			expect(result).toBe("")
+			expect(result).toBe("test system prompt")
 		})
 	})
 

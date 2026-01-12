@@ -311,14 +311,20 @@ describe("StateCoordinator - Sticky Mode", () => {
 			getAllServers: vi.fn().mockReturnValue([]),
 		})
 
-		// Mock the context proxy to return task history
+		// Mock the context proxy to return task history and properly handle setValue
 		const mockContextProxy = {
 			getValues: vi.fn().mockReturnValue({
 				taskHistory: [],
 				mode: "code",
 				currentApiConfigName: "test-config",
 			}),
-			setValue: vi.fn().mockResolvedValue(undefined),
+			setValue: vi.fn().mockImplementation(async (key: string, value: any) => {
+				if (key === "mode") {
+					await mockContext.globalState.update("mode", value)
+				} else if (key === "listApiConfigMeta") {
+					await mockContext.globalState.update("listApiConfigMeta", value)
+				}
+			}),
 			setValues: vi.fn().mockResolvedValue(undefined),
 		}
 		;(provider as any).contextProxy = mockContextProxy
@@ -686,6 +692,21 @@ describe("StateCoordinator - Sticky Mode", () => {
 			})
 			const subtaskId = (subtask as any).taskId || "subtask-id"
 
+			// Add subtask to task history initially
+			taskHistory.push({
+				id: subtaskId,
+				ts: Date.now(),
+				task: `Task ${subtaskId}`,
+				number: 1,
+				tokensIn: 0,
+				tokensOut: 0,
+				cacheWrites: 0,
+				cacheReads: 0,
+				totalCost: 0,
+				mode: "architect", // Initially inherits parent mode
+			})
+			taskModes[subtaskId] = "architect"
+
 			// Mock task manager to return current task correctly
 			const getCurrentTaskMock = vi.spyOn(provider, "getCurrentTask")
 			getCurrentTaskMock.mockReturnValue(parentTask as any)
@@ -748,6 +769,45 @@ describe("StateCoordinator - Sticky Mode", () => {
 		})
 
 		it("should restore API configuration when restoring task from history with mode", async () => {
+			// Create a reactive mock for contextProxy.getValues that updates mode when setValue is called
+			let currentMode = "code"
+			const taskHistory = [{
+				id: "test-task-id",
+				number: 1,
+				ts: Date.now(),
+				task: "Test task",
+				tokensIn: 100,
+				tokensOut: 200,
+				cacheWrites: 0,
+				cacheReads: 0,
+				totalCost: 0.001,
+				mode: "architect",
+			}]
+			
+			;(provider as any).contextProxy.getValues.mockReturnValue({
+				taskHistory: taskHistory,
+				get mode() { return currentMode },
+				currentApiConfigName: "test-config",
+			})
+
+			// Update setValue mock to track mode changes
+			;(provider as any).contextProxy.setValue.mockImplementation(async (key: string, value: any) => {
+				if (key === "mode") {
+					currentMode = value
+					await mockContext.globalState.update("mode", value)
+				} else if (key === "listApiConfigMeta") {
+					await mockContext.globalState.update("listApiConfigMeta", value)
+				}
+			})
+
+			// Make StateCoordinator.getState() reactive to mode changes
+			;(provider as any).stateCoordinator.getState.mockImplementation(async () => {
+				return {
+					mode: currentMode,
+					currentApiConfigName: "test-config",
+				}
+			})
+
 			const codeApiConfig = { apiProvider: "anthropic" as ProviderName, anthropicApiKey: "code-key" }
 			const architectApiConfig = { apiProvider: "openai" as ProviderName, openAiApiKey: "architect-key" }
 
@@ -761,24 +821,6 @@ describe("StateCoordinator - Sticky Mode", () => {
 			await provider.providerSettingsManager.setModeConfig("architect", architectConfigId!)
 
 			await provider.handleModeSwitch("code")
-
-			// Mock context proxy to return the task history with architect mode
-			;(provider as any).contextProxy.getValues.mockReturnValue({
-				taskHistory: [{
-					id: "test-task-id",
-					number: 1,
-					ts: Date.now(),
-					task: "Test task",
-					tokensIn: 100,
-					tokensOut: 200,
-					cacheWrites: 0,
-					cacheReads: 0,
-					totalCost: 0.001,
-					mode: "architect",
-				}],
-				mode: "code",
-				currentApiConfigName: "test-config",
-			})
 
 			const historyItem: HistoryItem = {
 				id: "test-task-id",

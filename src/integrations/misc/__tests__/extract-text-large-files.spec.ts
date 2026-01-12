@@ -5,26 +5,26 @@ import * as fs from "fs/promises"
 import { extractTextFromFile } from "../extract-text"
 import { countFileLines } from "../line-counter"
 import { readLines } from "../read-lines"
-import { isBinaryFile } from "isbinaryfile"
+import { isBinaryFileOptimized } from "../../../utils/binary-file-detector"
 
 // Mock all dependencies
 vi.mock("fs/promises")
 vi.mock("../line-counter")
 vi.mock("../read-lines")
-vi.mock("isbinaryfile")
+vi.mock("../../../utils/binary-file-detector")
 
 describe("extractTextFromFile - Large File Handling", () => {
 	// Type the mocks
 	const mockedFs = vi.mocked(fs)
 	const mockedCountFileLines = vi.mocked(countFileLines)
 	const mockedReadLines = vi.mocked(readLines)
-	const mockedIsBinaryFile = vi.mocked(isBinaryFile)
+	const mockedIsBinaryFileOptimized = vi.mocked(isBinaryFileOptimized, { deep: false })
 
 	beforeEach(() => {
 		vi.clearAllMocks()
 		// Set default mock behavior
 		mockedFs.access.mockResolvedValue(undefined)
-		mockedIsBinaryFile.mockResolvedValue(false)
+		mockedIsBinaryFileOptimized.mockResolvedValue(false as any)
 	})
 
 	it("should truncate files that exceed maxReadFileLine limit", async () => {
@@ -204,7 +204,7 @@ describe("extractTextFromFile - Large File Handling", () => {
 	})
 
 	it("should handle binary files by throwing an error", async () => {
-		mockedIsBinaryFile.mockResolvedValue(true)
+		mockedIsBinaryFileOptimized.mockResolvedValue(true)
 
 		await expect(extractTextFromFile("/test/binary.bin", 100)).rejects.toThrow(
 			"Cannot read text for file type: .bin",
