@@ -23,6 +23,7 @@ describe("presentAssistantMessage - Unknown Tool Handling", () => {
 			currentStreamingContentIndex: 0,
 			assistantMessageContent: [],
 			userMessageContent: [],
+			userMessageContentReady: false,
 			didCompleteReadingStream: false,
 			didRejectTool: false,
 			didAlreadyUseTool: false,
@@ -35,6 +36,9 @@ describe("presentAssistantMessage - Unknown Tool Handling", () => {
 			browserSession: {
 				closeBrowser: vi.fn().mockResolvedValue(undefined),
 			},
+			getBrowserSession: vi.fn().mockReturnValue({
+				closeBrowser: vi.fn().mockResolvedValue(undefined),
+			}),
 			recordToolUsage: vi.fn(),
 			recordToolError: vi.fn(),
 			toolRepetitionDetector: {
@@ -50,6 +54,20 @@ describe("presentAssistantMessage - Unknown Tool Handling", () => {
 			},
 			say: vi.fn().mockResolvedValue(undefined),
 			ask: vi.fn().mockResolvedValue({ response: "yesButtonClicked" }),
+			isPresentAssistantMessageLocked: vi.fn().mockReturnValue(false),
+			setPresentAssistantMessageLocked: vi.fn(),
+			setPresentAssistantMessageHasPendingUpdates: vi.fn(),
+			hasPresentAssistantMessagePendingUpdates: vi.fn().mockReturnValue(false),
+			getCurrentStreamingContentIndex: vi.fn(() => mockTask.currentStreamingContentIndex),
+			setCurrentStreamingContentIndex: vi.fn((value) => { mockTask.currentStreamingContentIndex = value }),
+			getAssistantMessageContent: vi.fn(() => mockTask.assistantMessageContent),
+			getUserMessageContent: vi.fn(() => mockTask.userMessageContent),
+			hasCompletedReadingStream: vi.fn().mockReturnValue(false),
+			setUserMessageContentReady: vi.fn((value) => { mockTask.userMessageContentReady = value }),
+			getDidRejectTool: vi.fn(() => mockTask.didRejectTool),
+			setDidRejectTool: vi.fn((value) => { mockTask.didRejectTool = value }),
+			getDidAlreadyUseTool: vi.fn(() => mockTask.didAlreadyUseTool),
+			setDidAlreadyUseTool: vi.fn((value) => { mockTask.didAlreadyUseTool = value }),
 		}
 	})
 

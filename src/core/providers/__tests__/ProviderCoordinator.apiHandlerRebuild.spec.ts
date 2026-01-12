@@ -67,6 +67,13 @@ vi.mock("vscode", () => ({
 		language: "en",
 		appName: "Visual Studio Code",
 	},
+	extensions: {
+		getExtension: vi.fn().mockReturnValue({
+			packageJSON: {
+				version: "1.0.0",
+			},
+		}),
+	},
 	ExtensionMode: {
 		Production: 1,
 		Development: 2,
@@ -108,6 +115,7 @@ vi.mock("../../task/Task", () => ({
 			updateApiConfiguration: vi.fn().mockImplementation(function (this: any, newConfig: any) {
 				this.apiConfiguration = newConfig
 			}),
+			getBrowserSession: vi.fn().mockReturnValue(undefined),
 		}
 		// Define apiConfiguration as a property so tests can read it
 		Object.defineProperty(mockTask, "apiConfiguration", {
@@ -201,8 +209,11 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 
 		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
 
+		// Store providerSettings to use in activateProviderProfile mock
+		let lastProviderSettings: any = null
+
 		// Mock providerSettingsManager
-		;(provider as any).providerSettingsManager = {
+		;(provider as any)._providerSettingsManager = {
 			saveConfig: vi.fn().mockResolvedValue("test-id"),
 			listConfig: vi
 				.fn()
@@ -210,18 +221,77 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 					{ name: "test-config", id: "test-id", apiProvider: "anthropic", modelId: "claude-3-5-sonnet-20241022" },
 				]),
 			setModeConfig: vi.fn(),
-			activateProfile: vi.fn().mockResolvedValue({
+			activateProfile: vi.fn().mockImplementation(async ({ name }: { name: string }) => {
+				if (name === "test-config") {
+					return {
+						name: "test-config",
+						id: "test-id",
+						apiProvider: "anthropic",
+						apiModelId: "claude-3-5-sonnet-20241022",
+					}
+				} else if (name === "openai-config") {
+					return {
+						name: "openai-config",
+						id: "openai-id",
+						apiProvider: "openai",
+						openAiModelId: "gpt-4-turbo",
+					}
+				}
+				throw new Error(`Config with name '${name}' not found`)
+			}),
+			getProfile: vi.fn().mockImplementation(async (params: { name?: string; id?: string }) => {
+				const name = params.name
+				const id = params.id
+				if (name === "test-config" || id === "test-id") {
+					return {
+						name: "test-config",
+						id: "test-id",
+						apiProvider: "anthropic",
+						apiModelId: "claude-3-5-sonnet-20241022",
+					}
+				} else if (name === "openai-config" || id === "openai-id") {
+					return {
+						name: "openai-config",
+						id: "openai-id",
+						apiProvider: "openai",
+						openAiModelId: "gpt-4-turbo",
+					}
+				}
+				throw new Error(`Config with name '${name}' or id '${id}' not found`)
+			}),
+		}
+
+		// Mock providerCoordinator after providerSettingsManager is set
+		;(provider as any).providerCoordinator = {
+			getProviderProfiles: vi.fn().mockResolvedValue([
+				{ name: "test-config", id: "test-id", apiProvider: "anthropic", modelId: "claude-3-5-sonnet-20241022" },
+			]),
+			getProviderProfile: vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
 				apiProvider: "anthropic",
 				apiModelId: "claude-3-5-sonnet-20241022",
 			}),
-			getProfile: vi.fn().mockResolvedValue({
-				name: "test-config",
-				id: "test-id",
-				apiProvider: "anthropic",
-				apiModelId: "claude-3-5-sonnet-20241022",
+			upsertProviderProfile: vi.fn().mockImplementation(async (name, providerSettings, activate) => {
+				lastProviderSettings = providerSettings
+				if (activate) {
+					await provider.activateProviderProfile({ name })
+				}
+				return "test-id"
 			}),
+			activateProviderProfile: vi.fn().mockImplementation(async (args) => {
+				const name = 'name' in args ? args.name : 'test-config'
+				const result = await (provider as any)._providerSettingsManager.activateProfile({ name })
+				const { name: _, id: __, ...providerSettings } = result
+				return {
+					name: result.name,
+					id: result.id,
+					providerSettings: lastProviderSettings || providerSettings,
+				}
+			}),
+			deleteProviderProfile: vi.fn().mockResolvedValue(undefined),
+			hasProviderProfileEntry: vi.fn().mockReturnValue(true),
+			updateTaskApiHandlerIfNeeded: vi.fn().mockResolvedValue(undefined),
 		}
 
 		// Get the buildApiHandler mock
@@ -404,14 +474,15 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return same provider/model but different non-model setting
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			const newSettings = {
 				name: "test-config",
 				id: "test-id",
 				apiProvider: "anthropic",
 				apiModelId: "claude-3-5-sonnet-20241022",
 				modelTemperature: 0.9,
 				rateLimitSeconds: 7,
-			})
+			}
+			;(provider as any)._providerSettingsManager.activateProfile = vi.fn().mockResolvedValue(newSettings)
 
 			await provider.activateProviderProfile({ name: "test-config" })
 
@@ -446,7 +517,7 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return different provider
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any)._providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
 				name: "openai-config",
 				id: "openai-id",
 				apiProvider: "openai",
@@ -485,7 +556,7 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// Mock activateProfile to return different model
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any)._providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
 				apiProvider: "anthropic",
@@ -526,7 +597,7 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 			await provider.addClineToStack(mockTask)
 
 			// First switch: A -> B (anthropic -> openai)
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any)._providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
 				name: "openai-config",
 				id: "openai-id",
 				apiProvider: "openai",
@@ -540,7 +611,7 @@ describe("ProviderCoordinator - API Handler Rebuild Guard", () => {
 
 			// Second switch: B -> A (openai -> anthropic)
 			;(mockTask.updateApiConfiguration as any).mockClear()
-			;(provider as any).providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
+			;(provider as any)._providerSettingsManager.activateProfile = vi.fn().mockResolvedValue({
 				name: "test-config",
 				id: "test-id",
 				apiProvider: "anthropic",

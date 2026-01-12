@@ -70,13 +70,10 @@ describe("ContextProxy", () => {
 
 	describe("constructor", () => {
 		it("should initialize state cache with all global state keys", () => {
-			// +1 for the migration check of old nested settings
-			expect(mockGlobalState.get).toHaveBeenCalledTimes(GLOBAL_STATE_KEYS.length + 1)
+			expect(mockGlobalState.get).toHaveBeenCalledTimes(GLOBAL_STATE_KEYS.length)
 			for (const key of GLOBAL_STATE_KEYS) {
 				expect(mockGlobalState.get).toHaveBeenCalledWith(key)
 			}
-			// Also check for migration call
-			expect(mockGlobalState.get).toHaveBeenCalledWith("openRouterImageGenerationSettings")
 		})
 
 		it("should initialize secret cache with all secret keys", () => {
@@ -99,8 +96,8 @@ describe("ContextProxy", () => {
 			const result = proxy.getGlobalState("apiProvider")
 			expect(result).toBe("anthropic")
 
-			// Original context should be called once during updateGlobalState (+1 for migration check)
-			expect(mockGlobalState.get).toHaveBeenCalledTimes(GLOBAL_STATE_KEYS.length + 1) // From initialization + migration check
+			// Original context should be called once during updateGlobalState
+			expect(mockGlobalState.get).toHaveBeenCalledTimes(GLOBAL_STATE_KEYS.length)
 		})
 
 		it("should handle default values correctly", async () => {

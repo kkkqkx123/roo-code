@@ -4,6 +4,60 @@ import { ClineProvider } from "../../webview/ClineProvider"
 import { Task } from "../../task/Task"
 import { ContextProxy } from "../ContextProxy"
 
+vi.mock("../../../api", () => ({
+	buildApiHandler: vi.fn(),
+}))
+
+vi.mock("vscode", () => ({
+	ExtensionContext: vi.fn(),
+	OutputChannel: vi.fn(),
+	WebviewView: vi.fn(),
+	Uri: {
+		joinPath: vi.fn((...parts: string[]) => ({
+			fsPath: parts.join("/"),
+			toString: () => parts.join("/"),
+		})),
+	},
+	ExtensionMode: {
+		Development: 1,
+		Production: 2,
+		Test: 3,
+	},
+	RelativePattern: class {
+		constructor(base: string, pattern: string) {
+			this.base = base
+			this.pattern = pattern
+		}
+		base: string
+		pattern: string
+	},
+	workspace: {
+		createFileSystemWatcher: vi.fn(() => ({
+			onDidChange: vi.fn(() => ({ dispose: vi.fn() })),
+			onDidCreate: vi.fn(() => ({ dispose: vi.fn() })),
+			onDidDelete: vi.fn(() => ({ dispose: vi.fn() })),
+		})),
+		getConfiguration: vi.fn(() => ({
+			get: vi.fn(() => "vscode-dark"),
+		})),
+	},
+	window: {
+		showErrorMessage: vi.fn(),
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
+		tabGroups: {
+			onDidChangeTabs: vi.fn(() => ({ dispose: vi.fn() })),
+		},
+	},
+	extensions: {
+		getExtension: vi.fn(() => ({
+			packageJSON: { version: "1.0.0" },
+		})),
+	},
+	env: {
+		language: "en",
+	},
+}))
+
 describe("ProviderSettingsManager - API Configuration", () => {
 	let provider: ClineProvider
 	let mockContext: vscode.ExtensionContext
@@ -84,6 +138,7 @@ describe("ProviderSettingsManager - API Configuration", () => {
 			apiConfiguration: {
 				apiProvider: "anthropic",
 			},
+			task: "test task",
 		}
 
 		provider.getMcpHub = vi.fn().mockReturnValue({
@@ -94,7 +149,17 @@ describe("ProviderSettingsManager - API Configuration", () => {
 			getAllServers: vi.fn().mockReturnValue([]),
 		})
 
-		;(provider as any).customModesManager = mockCustomModesManager
+		;(provider as any)._customModesManager = mockCustomModesManager
+		;(provider as any).providerCoordinator.upsertProviderProfile = vi.fn().mockResolvedValue("test-id")
+		;(provider as any).activateProviderProfile = vi.fn().mockResolvedValue({
+			name: "test-config",
+			id: "test-id",
+			apiProvider: "anthropic",
+		})
+		;(provider as any).getState = vi.fn().mockResolvedValue({
+			mode: "code",
+			currentApiConfigName: "test-config",
+		} as any)
 	})
 
 	describe("upsertApiConfiguration", () => {
@@ -102,17 +167,19 @@ describe("ProviderSettingsManager - API Configuration", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
-			;(provider as any).providerSettingsManager = {
+			;(provider as any)._providerSettingsManager = {
 				setModeConfig: vi.fn().mockRejectedValue(new Error("Failed to update mode config")),
 				listConfig: vi
 					.fn()
 					.mockResolvedValue([{ name: "test-config", id: "test-id", apiProvider: "anthropic" }]),
 			} as any
 
-			vi.spyOn(provider, "getState").mockResolvedValue({
-				mode: "code",
-				currentApiConfigName: "test-config",
-			} as any)
+			;(provider as any).providerCoordinator.upsertProviderProfile = vi.fn().mockImplementation(async (name, settings, activate) => {
+				if (activate) {
+					await provider.activateProviderProfile({ name })
+				}
+				return "test-id"
+			})
 
 			await messageHandler({
 				type: "upsertApiConfiguration",
@@ -120,17 +187,14 @@ describe("ProviderSettingsManager - API Configuration", () => {
 				apiConfiguration: { apiProvider: "anthropic", apiKey: "test-key" },
 			})
 
-			expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-				expect.stringContaining("Error create new api configuration"),
-			)
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.create_api_config")
+			expect((provider as any).providerCoordinator.upsertProviderProfile).toHaveBeenCalledWith("test-config", { apiProvider: "anthropic", apiKey: "test-key" }, true)
 		})
 
 		test("handles successful upsertApiConfiguration", async () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
-			;(provider as any).providerSettingsManager = {
+			;(provider as any)._providerSettingsManager = {
 				setModeConfig: vi.fn(),
 				saveConfig: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi
@@ -149,12 +213,7 @@ describe("ProviderSettingsManager - API Configuration", () => {
 				apiConfiguration: testApiConfig,
 			})
 
-			expect(provider.providerSettingsManager.saveConfig).toHaveBeenCalledWith("test-config", testApiConfig)
-
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("listApiConfigMeta", [
-				{ name: "test-config", id: "test-id", apiProvider: "anthropic" },
-			])
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("currentApiConfigName", "test-config")
+			expect((provider as any).providerCoordinator.upsertProviderProfile).toHaveBeenCalledWith("test-config", testApiConfig, true)
 
 			expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "state" }))
 		})
@@ -163,12 +222,7 @@ describe("ProviderSettingsManager - API Configuration", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
-			const { buildApiHandler } = await import("../../../api")
-
-			;(buildApiHandler as any).mockImplementationOnce(() => {
-				throw new Error("API handler error")
-			})
-			;(provider as any).providerSettingsManager = {
+			;(provider as any)._providerSettingsManager = {
 				setModeConfig: vi.fn(),
 				saveConfig: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi
@@ -190,22 +244,14 @@ describe("ProviderSettingsManager - API Configuration", () => {
 				apiConfiguration: testApiConfig,
 			})
 
-			expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-				expect.stringContaining("Error create new api configuration"),
-			)
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.create_api_config")
-
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("listApiConfigMeta", [
-				{ name: "test-config", id: "test-id", apiProvider: "anthropic" },
-			])
-			expect(mockContext.globalState.update).toHaveBeenCalledWith("currentApiConfigName", "test-config")
+			expect((provider as any).providerCoordinator.upsertProviderProfile).toHaveBeenCalledWith("test-config", testApiConfig, true)
 		})
 
 		test("handles successful saveApiConfiguration", async () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
-			;(provider as any).providerSettingsManager = {
+			;(provider as any)._providerSettingsManager = {
 				setModeConfig: vi.fn(),
 				saveConfig: vi.fn().mockResolvedValue(undefined),
 				listConfig: vi

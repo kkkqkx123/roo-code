@@ -200,7 +200,11 @@ function mockAddToApiConversationHistory(task: Task) {
 			// Handle encrypted reasoning case (when getEncryptedContent is available)
 			// Note: These methods don't exist on the base ApiHandler interface
 			// but are used in the actual implementation for specific providers
-			const encryptedContent: any = null // task.api?.getEncryptedContent?.()
+			const encryptedContent: any = (task.api as any)?.getEncryptedContent?.()
+			const responseId: string | undefined = (task.api as any)?.getResponseId?.()
+			if (responseId) {
+				messageWithTs.id = responseId
+			}
 			if (encryptedContent && encryptedContent.encrypted_content) {
 				// Create a reasoning block as the first content block
 				const reasoningBlock = {

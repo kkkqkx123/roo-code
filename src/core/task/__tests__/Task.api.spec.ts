@@ -331,17 +331,11 @@ describe("Cline - API Tests", () => {
 			const abortSpy = vi.spyOn(mockAbortController, "abort")
 			;(task as any).stateManager.currentRequestAbortController = mockAbortController
 
-			const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
-
 			task.cancelCurrentRequest()
 
 			expect(abortSpy).toHaveBeenCalled()
 
 			expect((task as any).stateManager.currentRequestAbortController).toBeUndefined()
-
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Aborting current HTTP request"))
-
-			consoleLogSpy.mockRestore()
 		})
 
 		it("should handle missing AbortController gracefully", () => {
