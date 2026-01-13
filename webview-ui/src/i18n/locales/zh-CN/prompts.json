@@ -29,6 +29,30 @@
 			"command": "运行命令",
 			"mcp": "MCP服务"
 		},
+		"toolDetails": {
+			"read": {
+				"read_file": "读取文件",
+				"fetch_instructions": "获取指令",
+				"search_files": "搜索文件",
+				"list_files": "列出文件",
+				"codebase_search": "代码库搜索",
+				"get_workspace_diagnostics": "获取工作区诊断信息"
+			},
+			"edit": {
+				"apply_diff": "应用差异",
+				"write_to_file": "写入文件"
+			},
+			"browser": {
+				"browser_action": "浏览器操作"
+			},
+			"command": {
+				"execute_command": "执行命令"
+			},
+			"mcp": {
+				"use_mcp_tool": "使用MCP工具",
+				"access_mcp_resource": "访问MCP资源"
+			}
+		},
 		"noTools": "无"
 	},
 	"roleDefinition": {

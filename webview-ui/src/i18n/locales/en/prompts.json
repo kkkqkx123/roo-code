@@ -29,6 +29,30 @@
 			"command": "Run Commands",
 			"mcp": "Use MCP"
 		},
+		"toolDetails": {
+			"read": {
+				"read_file": "Read File",
+				"fetch_instructions": "Fetch Instructions",
+				"search_files": "Search Files",
+				"list_files": "List Files",
+				"codebase_search": "Codebase Search",
+				"get_workspace_diagnostics": "Get Workspace Diagnostics"
+			},
+			"edit": {
+				"apply_diff": "Apply Diff",
+				"write_to_file": "Write to File"
+			},
+			"browser": {
+				"browser_action": "Browser Action"
+			},
+			"command": {
+				"execute_command": "Execute Command"
+			},
+			"mcp": {
+				"use_mcp_tool": "Use MCP Tool",
+				"access_mcp_resource": "Access MCP Resource"
+			}
+		},
 		"noTools": "None"
 	},
 	"roleDefinition": {
