@@ -1,6 +1,5 @@
 import { Task } from "../Task"
 import { ClineMessage } from "@roo-code/types"
-import { ApiMessage } from "../../task-persistence/apiMessages"
 import { cleanupAfterTruncation } from "../../condense"
 
 export interface RewindOptions {

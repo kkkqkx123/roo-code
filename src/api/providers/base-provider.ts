@@ -6,6 +6,27 @@ import type { ApiHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { ApiStream } from "../transform/stream"
 import { countTokens } from "../../utils/countTokens"
 
+export interface TokenEstimationResult {
+	inputTokens: number
+	outputTokens: number
+}
+
+export interface TokenValidationOptions {
+	enableFallback?: boolean
+	logFallback?: boolean
+}
+
+export class TokenValidationError extends Error {
+	constructor(
+		message: string,
+		public readonly originalInputTokens?: number,
+		public readonly originalOutputTokens?: number,
+	) {
+		super(message)
+		this.name = "TokenValidationError"
+	}
+}
+
 /**
  * Base class for API providers that implements common functionality.
  */
@@ -102,5 +123,93 @@ export abstract class BaseProvider implements ApiHandler {
 		}
 
 		return countTokens(content, { useWorker: true })
+	}
+
+	/**
+	 * Validates if a token count is valid (non-zero and defined).
+	 *
+	 * @param count The token count to validate
+	 * @returns true if the token count is valid, false otherwise
+	 */
+	protected isValidTokenCount(count: number | undefined): boolean {
+		return count !== undefined && count !== null && count > 0
+	}
+
+	/**
+	 * Estimates tokens using tiktoken for input and output content.
+	 * This is used as a fallback when API returns invalid token counts.
+	 *
+	 * @param inputContent The input content (system prompt + messages)
+	 * @param outputContent The output content (assistant response)
+	 * @param options Validation options
+	 * @returns A promise resolving to estimated token counts
+	 */
+	async estimateTokensWithTiktoken(
+		inputContent: Anthropic.Messages.ContentBlockParam[],
+		outputContent: Anthropic.Messages.ContentBlockParam[],
+		options?: TokenValidationOptions,
+	): Promise<TokenEstimationResult> {
+		const enableFallback = options?.enableFallback !== false
+		const logFallback = options?.logFallback !== false
+
+		try {
+			const inputTokens = await this.countTokens(inputContent)
+			const outputTokens = await this.countTokens(outputContent)
+
+			if (logFallback) {
+				console.warn(
+					`[BaseProvider] Token count fallback to tiktoken: input=${inputTokens}, output=${outputTokens}`,
+				)
+			}
+
+			return { inputTokens, outputTokens }
+		} catch (error) {
+			if (enableFallback) {
+				console.error("[BaseProvider] Failed to estimate tokens with tiktoken:", error)
+				return { inputTokens: 0, outputTokens: 0 }
+			}
+			throw new TokenValidationError("Failed to estimate tokens with tiktoken", 0, 0)
+		}
+	}
+
+	/**
+	 * Validates and potentially corrects token counts from API responses.
+	 * If token counts are invalid (0, undefined, or null), estimates them using tiktoken.
+	 *
+	 * @param inputTokens The input token count from API
+	 * @param outputTokens The output token count from API
+	 * @param inputContent The input content for fallback estimation
+	 * @param outputContent The output content for fallback estimation
+	 * @param options Validation options
+	 * @returns A promise resolving to validated/corrected token counts
+	 */
+	async validateAndCorrectTokenCounts(
+		inputTokens: number | undefined,
+		outputTokens: number | undefined,
+		inputContent: Anthropic.Messages.ContentBlockParam[],
+		outputContent: Anthropic.Messages.ContentBlockParam[],
+		options?: TokenValidationOptions,
+	): Promise<{ inputTokens: number; outputTokens: number; didFallback: boolean }> {
+		const isInputValid = this.isValidTokenCount(inputTokens)
+		const isOutputValid = this.isValidTokenCount(outputTokens)
+
+		if (isInputValid && isOutputValid) {
+			return { inputTokens: inputTokens!, outputTokens: outputTokens!, didFallback: false }
+		}
+
+		const logFallback = options?.logFallback !== false
+		if (logFallback) {
+			console.warn(
+				`[BaseProvider] Invalid token counts detected. Input: ${inputTokens} (valid: ${isInputValid}), Output: ${outputTokens} (valid: ${isOutputValid})`,
+			)
+		}
+
+		const estimated = await this.estimateTokensWithTiktoken(inputContent, outputContent, options)
+
+		return {
+			inputTokens: isInputValid ? inputTokens! : estimated.inputTokens,
+			outputTokens: isOutputValid ? outputTokens! : estimated.outputTokens,
+			didFallback: true,
+		}
 	}
 }

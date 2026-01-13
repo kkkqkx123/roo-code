@@ -162,7 +162,7 @@ export interface TaskLike {
 export type TaskEvents = {
 	// Task Lifecycle
 	[RooCodeEventName.TaskStarted]: []
-	[RooCodeEventName.TaskCompleted]: [taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage]
+	[RooCodeEventName.TaskCompleted]: [taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage, options: { isSubtask: boolean }]
 	[RooCodeEventName.TaskAborted]: []
 	[RooCodeEventName.TaskFocused]: []
 	[RooCodeEventName.TaskUnfocused]: []

@@ -227,24 +227,22 @@ function mockAddToApiConversationHistory(task: Task) {
 			} else if (reasoning) {
 				// Handle plain text reasoning case - create reasoning block
 				// Note: getEncryptedContent doesn't exist on base ApiHandler interface
-				if (true) { // !task.api?.getEncryptedContent
-					// Create a reasoning block as the first content block
-					const reasoningBlock = {
-						type: "reasoning",
-						text: reasoning,
-						summary: []
-					}
-					// Insert reasoning block as first element, then add original content
-					if (Array.isArray(messageWithTs.content)) {
-						messageWithTs.content = [reasoningBlock, ...messageWithTs.content]
-					} else if (typeof messageWithTs.content === "string") {
-						messageWithTs.content = [
-							reasoningBlock,
-							{ type: "text", text: messageWithTs.content }
-						]
-					} else if (!messageWithTs.content) {
-						messageWithTs.content = [reasoningBlock]
-					}
+				// Create a reasoning block as the first content block
+				const reasoningBlock = {
+					type: "reasoning",
+					text: reasoning,
+					summary: []
+				}
+				// Insert reasoning block as first element, then add original content
+				if (Array.isArray(messageWithTs.content)) {
+					messageWithTs.content = [reasoningBlock, ...messageWithTs.content]
+				} else if (typeof messageWithTs.content === "string") {
+					messageWithTs.content = [
+						reasoningBlock,
+						{ type: "text", text: messageWithTs.content }
+					]
+				} else if (!messageWithTs.content) {
+					messageWithTs.content = [reasoningBlock]
 				}
 			}
 		}

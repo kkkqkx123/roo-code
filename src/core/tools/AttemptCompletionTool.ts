@@ -90,7 +90,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 			// and properly updates the snapshot to prevent redundant emissions
 			task.emitFinalTokenUsageUpdate()
 
-			task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage)
+			task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage, { isSubtask: !!task.parentTaskId })
 
 			// Check for subtask using parentTaskId (metadata-driven delegation)
 			if (task.parentTaskId) {
@@ -205,7 +205,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 				// Force final token usage update before emitting TaskCompleted for consistency
 				task.emitFinalTokenUsageUpdate()
 
-				task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage)
+				task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage, { isSubtask: !!task.parentTaskId })
 
 				await task
 					.ask("command", this.removeClosingTag("command", command, block.partial), undefined, block.partial)

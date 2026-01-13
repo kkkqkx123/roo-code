@@ -21,101 +21,65 @@ import {
 	type ToolProgressStatus,
 	type HistoryItem,
 	type CreateTaskOptions,
-	type ModelInfo,
 	type ToolProtocol,
 	RooCodeEventName,
 	TaskStatus,
 	TodoItem,
-	getApiProtocol,
-	getModelId,
-	isIdleAsk,
-	isInteractiveAsk,
-	isResumableAsk,
 	isNativeProtocol,
 	QueuedMessage,
-	StreamingState,
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
-	TOOL_PROTOCOL,
 } from "@roo-code/types"
-import { resolveToolProtocol, detectToolProtocolFromHistory } from "../../utils/resolveToolProtocol"
 
 // api
-import { ApiHandler, ApiHandlerCreateMessageMetadata, buildApiHandler } from "../../api"
-import { ApiStream, GroundingSource } from "../../api/transform/stream"
-import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
+import { ApiHandler, buildApiHandler } from "../../api"
+import { ApiStream } from "../../api/transform/stream"
 
 // shared
-import { findLastIndex } from "../../shared/array"
-import type { ToolResponse } from "../../shared/tools"
-import { combineApiRequests } from "../../shared/combineApiRequests"
-import { combineCommandSequences } from "../../shared/combineCommandSequences"
-import { t } from "../../i18n"
-import { ClineApiReqCancelReason, ClineApiReqInfo } from "../../shared/ExtensionMessage"
-import { getApiMetrics, hasTokenUsageChanged, hasToolUsageChanged } from "../../shared/getApiMetrics"
+import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
+import { getApiMetrics } from "../../shared/getApiMetrics"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
-import { defaultModeSlug, getModeBySlug, getGroupName } from "../../shared/modes"
-import { DiffStrategy, type ToolUse, type ToolParamName, toolParamNames } from "../../shared/tools"
+import { defaultModeSlug } from "../../shared/modes"
+import { DiffStrategy, type ToolResponse } from "../../shared/tools"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { getModelMaxOutputTokens } from "../../shared/api"
 
 // services
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
-import { BrowserSession } from "../../services/browser/BrowserSession"
-import { McpHub } from "../../services/mcp/McpHub"
-import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { RepoPerTaskCheckpointService } from "../../services/checkpoints"
 
 // integrations
 import { DiffViewProvider } from "../../integrations/editor/DiffViewProvider"
-import { findToolName } from "../../integrations/misc/export-markdown"
 import { RooTerminalProcess } from "../../integrations/terminal/types"
-import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"
 
 // utils
 import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../shared/cost"
 import { getWorkspacePath } from "../../utils/path"
 
-// prompts
-import { formatResponse } from "../prompts/responses"
-import { SYSTEM_PROMPT } from "../prompts/system"
-import { buildNativeToolsArray } from "./build-tools"
-
 // core modules
 import { ToolRepetitionDetector } from "../tools/ToolRepetitionDetector"
-import { restoreTodoListForTask } from "../tools/UpdateTodoListTool"
 import { FileContextTracker } from "../context-tracking/FileContextTracker"
 import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
-import { presentAssistantMessage } from "../assistant-message"
 import { AssistantMessageParser } from "../assistant-message/AssistantMessageParser"
-import { NativeToolCallParser } from "../assistant-message/NativeToolCallParser"
 import { manageContext, willManageContext } from "../context-management"
 import { ClineProvider } from "../webview/ClineProvider"
 import { MultiSearchReplaceDiffStrategy } from "../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../diff/strategies/multi-file-search-replace"
 import {
 	type ApiMessage,
-	readApiMessages,
-	saveApiMessages,
-	readTaskMessages,
-	saveTaskMessages,
 	taskMetadata,
 } from "../task-persistence"
-import { getEnvironmentDetails } from "../environment/getEnvironmentDetails"
-import { checkContextWindowExceededError } from "../context-management/context-error-handling"
 import {
 	type CheckpointDiffOptions,
 	type CheckpointRestoreOptions,
-	getCheckpointService,
 	checkpointSave,
 	checkpointRestore,
 	checkpointDiff,
 } from "../checkpoints"
-import { processUserContentMentions } from "../mentions/processUserContentMentions"
-import { getMessagesSinceLastSummary, summarizeConversation, getEffectiveApiHistory } from "../condense"
+import { summarizeConversation } from "../condense"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 
@@ -140,11 +104,6 @@ import {
 	BrowserSessionManager,
 	ConversationHistoryManager,
 } from "./managers"
-
-const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
-const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
-const FORCED_CONTEXT_REDUCTION_PERCENT = 75 // Keep 75% of context (remove 25%) on context window errors
-const MAX_CONTEXT_WINDOW_RETRIES = 3 // Maximum retries for context window errors
 
 export interface TaskOptions extends CreateTaskOptions {
 	provider: ClineProvider
@@ -660,27 +619,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		const userMessageWithTs = { ...validatedMessage, ts: Date.now() }
 		this.apiConversationHistory.push(userMessageWithTs as ApiMessage)
 
-		await this.saveApiConversationHistory()
+		await this.taskMessageManager.saveApiConversationHistory()
 
 		// Clear the pending content since it's now saved
 		this.setUserMessageContent([])
-	}
+}
 
-	private async saveApiConversationHistory() {
-		return this.taskMessageManager.saveApiConversationHistory()
-	}
-
-	// Cline Messages - delegated to message manager
-	private async getSavedClineMessages(): Promise<ClineMessage[]> {
-		return this.taskMessageManager.getSavedClineMessages()
-	}
-
-	private async addToClineMessages(message: ClineMessage) {
-		await this.taskMessageManager.addToClineMessages(message, this.providerRef, this.cloudSyncedMessageTimestamps)
-		return this.saveClineMessages()
-	}
-
-	public async overwriteClineMessages(newMessages: ClineMessage[]) {
+public async overwriteClineMessages(newMessages: ClineMessage[]) {
 		await this.taskMessageManager.overwriteClineMessages(newMessages, this.providerRef, this.cloudSyncedMessageTimestamps)
 		this.clineMessages = newMessages
 		this.cloudSyncedMessageTimestamps.clear()
@@ -689,10 +634,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				this.cloudSyncedMessageTimestamps.add(msg.ts)
 			}
 		}
-	}
-
-	private async updateClineMessage(message: ClineMessage) {
-		return this.taskMessageManager.updateClineMessage(message, this.providerRef)
 	}
 
 	public async saveClineMessages() {
@@ -715,10 +656,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		} catch (error) {
 			console.error("Failed to update token usage:", error)
 		}
-	}
-
-	private findMessageByTimestamp(ts: number): ClineMessage | undefined {
-		return this.taskMessageManager.findMessageByTimestamp(ts)
 	}
 
 	// User interactions - delegated to user interaction manager
@@ -970,106 +907,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.apiRequestManager.recursivelyMakeClineRequests(userContent, includeFileDetails)
 	}
 
-	private async handleContextWindowExceededError(): Promise<void> {
-		const provider = this.providerRef.deref()
-		const state = await provider?.getState()
-
-		const {
-			autoCondenseContext = true,
-			autoCondenseContextPercent = 100,
-			profileThresholds = {},
-			customCondensingPrompt,
-			condensingApiConfigId,
-			listApiConfigMeta,
-		} = state ?? {}
-
-		const systemPrompt = await this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled)
-		const { contextTokens } = this.getTokenUsage()
-
-		const modelInfo = this.api.getModel().info
-		const maxTokens = getModelMaxOutputTokens({
-			modelId: this.api.getModel().id,
-			model: modelInfo,
-			settings: this.apiConfiguration,
-		})
-		const contextWindow = modelInfo.contextWindow
-
-		const currentProfileId = this.configurationManager.getCurrentProfileId(state)
-		const useNativeTools = isNativeProtocol(this._taskToolProtocol ?? "xml")
-
-		let condensingApiHandler: ApiHandler | undefined
-
-		if (condensingApiConfigId && listApiConfigMeta && Array.isArray(listApiConfigMeta)) {
-			const matchingConfig = listApiConfigMeta.find((config) => config.id === condensingApiConfigId)
-
-			if (matchingConfig) {
-				const profile = await provider?.providerSettingsManager.getProfile({
-					id: condensingApiConfigId,
-				})
-
-				if (profile && profile.apiProvider) {
-					condensingApiHandler = buildApiHandler(profile)
-				}
-			}
-		}
-
-		const truncateResult = await manageContext({
-			messages: this.apiConversationHistory,
-			totalTokens: contextTokens,
-			maxTokens,
-			contextWindow,
-			apiHandler: this.api,
-			autoCondenseContext,
-			autoCondenseContextPercent,
-			systemPrompt,
-			taskId: this.taskId,
-			customCondensingPrompt,
-			condensingApiHandler,
-			profileThresholds,
-			currentProfileId,
-			useNativeTools,
-		})
-
-		if (truncateResult.messages !== this.apiConversationHistory) {
-			await this.overwriteApiConversationHistory(truncateResult.messages)
-		}
-
-		if (truncateResult.summary) {
-			const { summary, cost, prevContextTokens, newContextTokens = 0 } = truncateResult
-			const contextCondense: ContextCondense = { summary, cost, newContextTokens, prevContextTokens }
-			await this.say(
-				"condense_context",
-				undefined,
-				undefined,
-				false,
-				undefined,
-				undefined,
-				{ isNonInteractive: true },
-				contextCondense,
-			)
-		} else if (truncateResult.truncationId) {
-			const contextTruncation: ContextTruncation = {
-				truncationId: truncateResult.truncationId,
-				messagesRemoved: truncateResult.messagesRemoved ?? 0,
-				prevContextTokens: truncateResult.prevContextTokens,
-				newContextTokens: truncateResult.newContextTokensAfterTruncation ?? 0,
-			}
-			await this.say(
-				"sliding_window_truncation",
-				undefined,
-				undefined,
-				false,
-				undefined,
-				undefined,
-				{ isNonInteractive: true },
-				undefined,
-				contextTruncation,
-			)
-		}
-
-		await provider?.postMessageToWebview({ type: "condenseTaskContextResponse", text: this.taskId })
-	}
-
 	public async *attemptApiRequest(): ApiStream {
 		yield* this.apiRequestManager.attemptApiRequest()
 	}
@@ -1228,39 +1065,5 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	public disposeBrowserSession(): void {
 		this.browserSessionManager.dispose()
-	}
-
-	private isValidTokenCount(count: number | undefined): boolean {
-		return count !== undefined && count !== null && count > 0
-	}
-
-	private async estimateTokensWithTiktoken(): Promise<{ inputTokens: number; outputTokens: number } | null> {
-		try {
-			let inputTokens = 0
-			let outputTokens = 0
-
-			const userMessageContent = this.streamingManager.getUserMessageContent()
-			if (userMessageContent.length > 0) {
-				inputTokens = await this.api.countTokens(userMessageContent)
-			}
-
-			const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
-			if (assistantMessageContent.length > 0) {
-				const assistantContent = assistantMessageContent.map((block) => {
-					if (block.type === "text") {
-						return { type: "text" as const, text: block.content }
-					} else if (block.type === "tool_use") {
-						return { type: "text" as const, text: JSON.stringify(block.params) }
-					}
-					return { type: "text" as const, text: "" }
-				})
-				outputTokens = await this.api.countTokens(assistantContent)
-			}
-
-			return { inputTokens, outputTokens }
-		} catch (error) {
-			console.error("Failed to estimate tokens with tiktoken:", error)
-			return null
-		}
 	}
 }
