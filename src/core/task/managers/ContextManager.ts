@@ -2,7 +2,7 @@ import { FileContextTracker } from "../../context-tracking/FileContextTracker"
 import { RooIgnoreController } from "../../ignore/RooIgnoreController"
 import { RooProtectedController } from "../../protect/RooProtectedController"
 import type { ClineProvider } from "../../webview/ClineProvider"
-import { manageContext, type ContextManagementOptions, type ContextManagementResult } from "../../context-management"
+import { manageContext, type ContextManagementOptions, type ContextManagementResult, DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../context-management"
 import { getModelMaxOutputTokens } from "../../../shared/api"
 import { isNativeProtocol, TOOL_PROTOCOL } from "@roo-code/types"
 import { buildApiHandler, type ApiHandler } from "../../../api"
@@ -144,7 +144,7 @@ export class ContextManager {
 				contextWindow,
 				apiHandler: api,
 				autoCondenseContext: true,
-				autoCondenseContextPercent: 75, // FORCED_CONTEXT_REDUCTION_PERCENT
+				autoCondenseContextPercent: DEFAULT_CONTEXT_CONDENSE_PERCENT,
 				systemPrompt: await getSystemPrompt(),
 				taskId: this.taskId,
 				profileThresholds,

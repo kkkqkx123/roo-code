@@ -23,6 +23,12 @@ import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "@roo-code/types"
 export const TOKEN_BUFFER_PERCENTAGE = 0.1
 
 /**
+ * Default percentage of context window usage that triggers context condensation.
+ * When context usage reaches this percentage, intelligent condensation is triggered.
+ */
+export const DEFAULT_CONTEXT_CONDENSE_PERCENT = 75
+
+/**
  * Counts tokens for user content using the provider's token counting implementation.
  *
  * @param {Array<Anthropic.Messages.ContentBlockParam>} content - The content to count tokens for

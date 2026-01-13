@@ -3,6 +3,7 @@ import { ContextManager } from "../ContextManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import * as contextManagement from "../../../context-management"
 import type { ApiHandler } from "../../../../api"
+import { DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../context-management"
 
 vi.mock("../../../ignore/RooIgnoreController", () => ({
 	RooIgnoreController: vi.fn().mockImplementation(() => ({
@@ -375,7 +376,7 @@ describe("ContextManager", () => {
 				contextWindow: 128000,
 				apiHandler: mockApi,
 				autoCondenseContext: true,
-				autoCondenseContextPercent: 75, // FORCED_CONTEXT_REDUCTION_PERCENT
+				autoCondenseContextPercent: DEFAULT_CONTEXT_CONDENSE_PERCENT,
 				systemPrompt: "Test system prompt",
 				taskId: "task-1",
 				profileThresholds: {},

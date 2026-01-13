@@ -236,34 +236,11 @@ export type ToolGroupConfig = {
 	customTools?: readonly string[] // Opt-in only tools - only available when explicitly included via model's includedTools
 }
 
-export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
-	execute_command: "run commands",
-	read_file: "read files",
-	fetch_instructions: "fetch instructions",
-	write_to_file: "write files",
-	apply_diff: "apply changes",
-	search_and_replace: "apply changes using search and replace",
-	search_replace: "apply single search and replace",
-	edit_file: "edit files using search and replace",
-	apply_patch: "apply patches using codex format",
-	search_files: "search files",
-	list_files: "list files",
-	browser_action: "use a browser",
-	use_mcp_tool: "use mcp tools",
-	access_mcp_resource: "access mcp resources",
-	ask_followup_question: "ask questions",
-	attempt_completion: "complete tasks",
-	switch_mode: "switch modes",
-	new_task: "create new task",
-	codebase_search: "codebase search",
-	update_todo_list: "update todo list",
-	run_slash_command: "run slash command",
-} as const
 
 // Define available tool groups.
 export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 	read: {
-		tools: ["read_file", "fetch_instructions", "search_files", "list_files", "codebase_search"],
+		tools: ["read_file", "fetch_instructions", "search_files", "list_files", "codebase_search", "get_workspace_diagnostics"],
 	},
 	edit: {
 		tools: ["apply_diff", "write_to_file"],

@@ -18,7 +18,6 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
 
 const MAX_CONTEXT_WINDOW_RETRIES = 3
-const FORCED_CONTEXT_REDUCTION_PERCENT = 75
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 120
 
 export interface ApiRequestManagerOptions {

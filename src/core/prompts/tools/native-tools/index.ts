@@ -19,6 +19,7 @@ import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
+import { get_workspace_diagnostics } from "./get_workspace_diagnostics"
 
 export { getMcpServerTools } from "./mcp_server"
 export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./converters"
@@ -51,6 +52,7 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 		switchMode,
 		updateTodoList,
 		writeToFile,
+		get_workspace_diagnostics,
 	] satisfies OpenAI.Chat.ChatCompletionTool[]
 }
 

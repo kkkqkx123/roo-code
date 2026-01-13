@@ -30,17 +30,19 @@ export const toolNames = [
 	"access_mcp_resource",
 	"ask_followup_question",
 	"attempt_completion",
-	"switch_mode",
+	"switch_mode", 
 	"new_task",
 	"fetch_instructions",
 	"codebase_search",
 	"update_todo_list",
 	"run_slash_command",
+	"get_workspace_diagnostics",
 ] as const
 
 export const toolNamesSchema = z.enum(toolNames)
 
 export type ToolName = z.infer<typeof toolNamesSchema>
+
 
 /**
  * ToolUsage

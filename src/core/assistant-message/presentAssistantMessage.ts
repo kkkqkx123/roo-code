@@ -38,6 +38,7 @@ import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
 import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
 import { validateToolUse } from "../tools/validateToolUse"
 import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
+import { getWorkspaceDiagnosticsTool } from "../tools/GetWorkspaceDiagnosticsTool"
 
 import { formatResponse } from "../prompts/responses"
 
@@ -1043,6 +1044,15 @@ export async function presentAssistantMessage(cline: Task) {
 					)
 					break
 				}
+				case "get_workspace_diagnostics":
+					await getWorkspaceDiagnosticsTool.handle(cline, block as ToolUse<"get_workspace_diagnostics">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+						toolProtocol,
+					})
+					break
 				case "run_slash_command":
 					await runSlashCommandTool.handle(cline, block as ToolUse<"run_slash_command">, {
 						askApproval,
