@@ -1,7 +1,27 @@
 import * as path from "path"
+import { readdir } from "fs/promises"
 import Mocha from "mocha"
-import { glob } from "glob"
 import * as vscode from "vscode"
+
+async function findTestFiles(dir: string, pattern: string): Promise<string[]> {
+	const results: string[] = []
+	const entries = await readdir(dir, { withFileTypes: true })
+	
+	for (const entry of entries) {
+		const fullPath = path.join(dir, entry.name)
+		if (entry.isDirectory() && !entry.name.startsWith('.')) {
+			const subFiles = await findTestFiles(fullPath, pattern)
+			results.push(...subFiles)
+		} else if (entry.isFile() && entry.name.endsWith('.test.js')) {
+			const relativePath = path.relative(process.cwd(), fullPath)
+			if (pattern === '**/**.test.js' || relativePath.includes(pattern.replace('**/', '').replace('.js', ''))) {
+				results.push(relativePath)
+			}
+		}
+	}
+	
+	return results
+}
 
 import type { RooCodeAPI } from "@roo-code/types"
 
@@ -47,10 +67,10 @@ export async function run() {
 			? process.env.TEST_FILE
 			: `${process.env.TEST_FILE}.js`
 
-		testFiles = await glob(`**/${specificFile}`, { cwd })
+		testFiles = await findTestFiles(cwd, `**/${specificFile}`)
 		console.log(`Running specific test file: ${specificFile}`)
 	} else {
-		testFiles = await glob("**/**.test.js", { cwd })
+		testFiles = await findTestFiles(cwd, "**/**.test.js")
 	}
 
 	if (testFiles.length === 0) {

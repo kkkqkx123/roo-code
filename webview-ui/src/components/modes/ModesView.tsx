@@ -30,6 +30,7 @@ import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { Section } from "@src/components/settings/Section"
 import { SectionHeader } from "@src/components/settings/SectionHeader"
+import { ToolGroupDetails } from "@src/components/modes/ToolDetails"
 import {
 	Button,
 	Select,
@@ -278,7 +279,7 @@ const ModesView = () => {
 			source: customMode.source || "global",
 		})
 		// Optimistically reflect rename in UI/search immediately
-		setLocalRenames((prev) => ({ ...prev, [visualMode]: trimmed }))
+		setLocalRenames((prev: any) => ({ ...prev, [visualMode]: trimmed }))
 		setIsRenamingMode(false)
 	}, [visualMode, customModes, renameInputValue, modes, updateCustomMode, findModeBySlug])
 
@@ -553,7 +554,7 @@ const ModesView = () => {
 				}
 				// Note: Auto-select after import will be handled by PR #9003
 			} else if (message.type === "checkRulesDirectoryResult") {
-				setHasRulesToExport((prev) => ({
+				setHasRulesToExport((prev: any) => ({
 					...prev,
 					[message.slug]: message.hasContent,
 				}))
@@ -614,7 +615,7 @@ const ModesView = () => {
 										onClick={(e: React.MouseEvent) => {
 											e.preventDefault()
 											e.stopPropagation()
-											setShowConfigMenu((prev) => !prev)
+											setShowConfigMenu((prev: any) => !prev)
 										}}
 										onBlur={() => {
 											// Add slight delay to allow menu item clicks to register
@@ -919,7 +920,7 @@ const ModesView = () => {
 						<div className="mb-2">
 							<Select
 								value={currentApiConfigName}
-								onValueChange={(value) => {
+								onValueChange={(value: any) => {
 									vscode.postMessage({
 										type: "loadApiConfiguration",
 										text: value,
@@ -929,7 +930,7 @@ const ModesView = () => {
 									<SelectValue placeholder={t("settings:common.select")} />
 								</SelectTrigger>
 								<SelectContent>
-									{(listApiConfigMeta || []).map((config) => (
+									{(listApiConfigMeta || []).map((config: { id: any; name: any }) => (
 										<SelectItem key={config.id} value={config.name}>
 											{config.name}
 										</SelectItem>
@@ -1133,7 +1134,7 @@ const ModesView = () => {
 							</div>
 						)}
 						{isToolsEditMode && findModeBySlug(visualMode, customModes) ? (
-							<div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
+							<div className="space-y-4">
 								{availableGroups.map((group) => {
 									const currentMode = getCurrentMode()
 									const isCustomMode = findModeBySlug(visualMode, customModes)
@@ -1143,14 +1144,22 @@ const ModesView = () => {
 										: currentMode?.groups?.some((g) => getGroupName(g) === group)
 
 									return (
-										<VSCodeCheckbox
-											key={group}
-											checked={isGroupEnabled}
-											onChange={handleGroupChange(group, Boolean(isCustomMode), customMode)}
-											disabled={!isCustomMode}>
-											{t(`prompts:tools.toolNames.${group}`)}
-											{group === "edit" && (
-												<div className="text-xs text-vscode-descriptionForeground mt-0.5">
+										<div key={group} className="border border-vscode-panel-border rounded p-3">
+											<div className="flex items-center mb-2">
+												<VSCodeCheckbox
+													checked={isGroupEnabled}
+													onChange={handleGroupChange(group, Boolean(isCustomMode), customMode)}
+													disabled={!isCustomMode}>
+													{t(`prompts:tools.toolNames.${group}`)}
+												</VSCodeCheckbox>
+											</div>
+											{isGroupEnabled && (
+												<div className="ml-6 space-y-1">
+													<ToolGroupDetails group={group} className="text-sm" />
+												</div>
+											)}
+											{group === "edit" && isGroupEnabled && (
+												<div className="text-xs text-vscode-descriptionForeground mt-2 ml-6">
 													{t("prompts:tools.allowedFiles")}{" "}
 													{(() => {
 														const currentMode = getCurrentMode()
@@ -1163,12 +1172,12 @@ const ModesView = () => {
 													})()}
 												</div>
 											)}
-										</VSCodeCheckbox>
+										</div>
 									)
 								})}
 							</div>
 						) : (
-							<div className="text-sm text-vscode-foreground mb-2 leading-relaxed">
+							<div className="space-y-2">
 								{(() => {
 									const currentMode = getCurrentMode()
 									const enabledGroups = currentMode?.groups || []
@@ -1178,17 +1187,25 @@ const ModesView = () => {
 										return t("prompts:tools.noTools")
 									}
 
-									return enabledGroups
-										.map((group) => {
-											const groupName = getGroupName(group)
-											const displayName = t(`prompts:tools.toolNames.${groupName}`)
-											if (Array.isArray(group) && group[1]?.fileRegex) {
-												const description = group[1].description || `/${group[1].fileRegex}/`
-												return `${displayName} (${description})`
-											}
-											return displayName
-										})
-										.join(", ")
+									return enabledGroups.map((group) => {
+										const groupName = getGroupName(group)
+										return (
+											<div key={groupName} className="border border-vscode-panel-border rounded p-2">
+												<div className="font-medium text-sm mb-1">
+													{t(`prompts:tools.toolNames.${groupName}`)}
+												</div>
+												<div className="ml-3 text-xs text-vscode-descriptionForeground">
+													<ToolGroupDetails group={groupName} />
+												</div>
+												{Array.isArray(group) && group[1]?.fileRegex && (
+													<div className="text-xs text-vscode-descriptionForeground mt-1 ml-3">
+														{t("prompts:tools.allowedFiles")}{" "}
+														{group[1].description || `/${group[1].fileRegex}/`}
+													</div>
+												)}
+											</div>
+										)
+									})
 								})()}
 							</div>
 						)}
@@ -1480,7 +1497,7 @@ const ModesView = () => {
 								<Input
 									type="text"
 									value={newModeName}
-									onChange={(e) => {
+									onChange={(e: { target: { value: any } }) => {
 										handleNameChange(e.target.value)
 									}}
 									className="w-full"
@@ -1494,7 +1511,7 @@ const ModesView = () => {
 								<Input
 									type="text"
 									value={newModeSlug}
-									onChange={(e) => {
+									onChange={(e: { target: { value: any } }) => {
 										setNewModeSlug(e.target.value)
 									}}
 									className="w-full"
