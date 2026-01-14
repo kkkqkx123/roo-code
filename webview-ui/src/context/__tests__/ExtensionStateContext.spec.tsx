@@ -210,6 +210,14 @@ describe("mergeExtensionState", () => {
 			featureRoomoteControlEnabled: false,
 			isBrowserSessionActive: false,
 			checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS, // Add the checkpoint timeout property
+			
+			// Terminal command checkpoint configurations
+			checkpointBeforeHighRiskCommands: false,
+			checkpointAfterHighRiskCommands: false,
+			checkpointOnCommandError: true,
+			checkpointCommands: [],
+			noCheckpointCommands: [],
+			checkpointShellSpecific: {},
 		}
 
 		const prevState: ExtensionState = {

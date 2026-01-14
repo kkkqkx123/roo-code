@@ -617,6 +617,15 @@ describe("ClineProvider", () => {
 			maxReadFileLine: 500,
 			maxImageFileSize: 5,
 			maxTotalImageSize: 20,
+			
+			// Terminal command checkpoint configurations
+			checkpointBeforeHighRiskCommands: false,
+			checkpointAfterHighRiskCommands: false,
+			checkpointOnCommandError: true,
+			checkpointCommands: [],
+			noCheckpointCommands: [],
+			checkpointShellSpecific: {},
+			
 			autoCondenseContext: true,
 			autoCondenseContextPercent: 100,
 			profileThresholds: {},

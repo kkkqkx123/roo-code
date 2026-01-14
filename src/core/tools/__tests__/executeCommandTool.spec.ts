@@ -36,6 +36,12 @@ vitest.mock("../../../integrations/terminal/TerminalRegistry", () => ({
 
 vitest.mock("../../task/Task")
 vitest.mock("../../prompts/responses")
+vitest.mock("../checkpoints/CheckpointDecisionEngine", () => ({
+	CheckpointDecisionEngine: vitest.fn().mockImplementation(() => ({
+		shouldCreateCheckpoint: vitest.fn().mockResolvedValue({ shouldCheckpoint: false, reason: "low_risk" }),
+		shouldCreateCheckpointAfterExecution: vitest.fn().mockResolvedValue({ shouldCheckpoint: false, reason: "no_checkpoint_needed_after" }),
+	})),
+}))
 
 // Import the module
 import * as executeCommandModule from "../ExecuteCommandTool"

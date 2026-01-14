@@ -17,6 +17,7 @@ import { Terminal } from "../../integrations/terminal/Terminal"
 import { Package } from "../../shared/package"
 import { t } from "../../i18n"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
+import { CheckpointDecisionEngine } from "../checkpoints/CheckpointDecisionEngine"
 
 class ShellIntegrationError extends Error {}
 
@@ -92,6 +93,16 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 			// Convert seconds to milliseconds for internal use, but skip timeout if command is allowlisted
 			const commandExecutionTimeout = isCommandAllowlisted ? 0 : commandExecutionTimeoutSeconds * 1000
 
+			// Initialize checkpoint decision engine
+			const checkpointDecisionEngine = new CheckpointDecisionEngine(providerState ?? {})
+			
+			// Check if we should create a checkpoint before executing the command
+			const shouldCheckpointBefore = await checkpointDecisionEngine.shouldCreateCheckpoint(unescapedCommand)
+			
+			if (shouldCheckpointBefore.shouldCheckpoint) {
+				await task.checkpointSave(false, true) // force=false, suppressMessage=true
+			}
+
 			const options: ExecuteCommandOptions = {
 				executionId,
 				command: unescapedCommand,
@@ -102,15 +113,21 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 				commandExecutionTimeout,
 			}
 
+			let commandExecutedSuccessfully = false
+			let commandError: Error | undefined
+
 			try {
 				const [rejected, result] = await executeCommandInTerminal(task, options)
 
 				if (rejected) {
 					task.didRejectTool = true
+				} else {
+					commandExecutedSuccessfully = true
 				}
 
 				pushToolResult(result)
 			} catch (error: unknown) {
+				commandError = error as Error
 				const status: CommandExecutionStatus = { executionId, status: "fallback" }
 				provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 				await task.say("shell_integration_warning")
@@ -123,12 +140,25 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 
 					if (rejected) {
 						task.didRejectTool = true
+					} else {
+						commandExecutedSuccessfully = true
 					}
 
 					pushToolResult(result)
 				} else {
 					pushToolResult(`Command failed to execute in terminal due to a shell integration error.`)
 				}
+			}
+
+			// Check if we should create a checkpoint after command execution
+			const shouldCheckpointAfter = await checkpointDecisionEngine.shouldCreateCheckpointAfterExecution(
+				unescapedCommand,
+				commandExecutedSuccessfully,
+				commandError?.message
+			)
+			
+			if (shouldCheckpointAfter.shouldCheckpoint) {
+				await task.checkpointSave(false, true) // force=false, suppressMessage=true
 			}
 
 			return

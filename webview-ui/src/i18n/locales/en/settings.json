@@ -445,6 +445,23 @@
 		"enable": {
 			"label": "Enable automatic checkpoints",
 			"description": "When enabled, Roo will automatically create checkpoints during task execution, making it easy to review changes or revert to earlier states. <0>Learn more</0>"
+		},
+		"terminal": {
+			"label": "Terminal Command Checkpoints",
+			"triggers": "Checkpoint Triggers",
+			"beforeHighRisk": "Create checkpoint before high-risk commands",
+			"beforeHighRiskDescription": "Automatically create a checkpoint before executing potentially dangerous commands",
+			"afterHighRisk": "Create checkpoint after high-risk commands",
+			"afterHighRiskDescription": "Automatically create a checkpoint after executing potentially dangerous commands",
+			"onError": "Create checkpoint on command error",
+			"onErrorDescription": "Create a checkpoint when a terminal command fails or returns an error",
+			"requiredCommands": "Commands that require checkpoints",
+			"requiredCommandsDescription": "Commands that will always trigger a checkpoint before execution",
+			"exemptedCommands": "Commands exempt from checkpoints",
+			"exemptedCommandsDescription": "Commands that will never trigger a checkpoint",
+			"commandPlaceholder": "Enter command (e.g., rm -rf, git reset --hard)",
+			"exemptedPlaceholder": "Enter command (e.g., ls, pwd, echo)",
+			"addButton": "Add"
 		}
 	},
 	"notifications": {

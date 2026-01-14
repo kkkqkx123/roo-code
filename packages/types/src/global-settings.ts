@@ -131,6 +131,20 @@ export const globalSettingsSchema = z.object({
 		.min(MIN_CHECKPOINT_TIMEOUT_SECONDS)
 		.max(MAX_CHECKPOINT_TIMEOUT_SECONDS)
 		.optional(),
+	
+	// Terminal command checkpoint settings
+	checkpointBeforeHighRiskCommands: z.boolean().optional(),
+	checkpointAfterHighRiskCommands: z.boolean().optional(),
+	checkpointOnCommandError: z.boolean().optional(),
+	checkpointCommands: z.array(z.string()).optional(),
+	noCheckpointCommands: z.array(z.string()).optional(),
+	checkpointShellSpecific: z.record(z.string(), z.object({
+		checkpointBeforeHighRiskCommands: z.boolean().optional(),
+		checkpointAfterHighRiskCommands: z.boolean().optional(),
+		checkpointOnCommandError: z.boolean().optional(),
+		checkpointCommands: z.array(z.string()).optional(),
+		noCheckpointCommands: z.array(z.string()).optional(),
+	})).optional(),
 
 	ttsEnabled: z.boolean().optional(),
 	ttsSpeed: z.number().optional(),

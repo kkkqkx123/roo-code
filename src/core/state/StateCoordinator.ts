@@ -185,6 +185,14 @@ export class StateCoordinator {
 			condensingApiConfigId: stateValues.condensingApiConfigId,
 			customCondensingPrompt: stateValues.customCondensingPrompt,
 			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
+			
+			// Terminal command checkpoint configurations
+			checkpointBeforeHighRiskCommands: stateValues.checkpointBeforeHighRiskCommands ?? false,
+			checkpointAfterHighRiskCommands: stateValues.checkpointAfterHighRiskCommands ?? false,
+			checkpointOnCommandError: stateValues.checkpointOnCommandError ?? true,
+			checkpointCommands: stateValues.checkpointCommands ?? [],
+			noCheckpointCommands: stateValues.noCheckpointCommands ?? [],
+			checkpointShellSpecific: stateValues.checkpointShellSpecific ?? {},
 			codebaseIndexConfig: {
 				codebaseIndexEnabled: stateValues.codebaseIndexConfig?.codebaseIndexEnabled ?? false,
 				codebaseIndexQdrantUrl:

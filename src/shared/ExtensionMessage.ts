@@ -278,6 +278,15 @@ export type ExtensionState = Pick<
 
 	enableCheckpoints: boolean
 	checkpointTimeout: number // Timeout for checkpoint initialization in seconds (default: 15)
+	
+	// Terminal command checkpoint configurations
+	checkpointBeforeHighRiskCommands: boolean // Whether to create checkpoints before high-risk commands
+	checkpointAfterHighRiskCommands: boolean // Whether to create checkpoints after high-risk commands
+	checkpointOnCommandError: boolean // Whether to create checkpoints when command execution fails
+	checkpointCommands: string[] // List of commands that should always trigger checkpoints
+	noCheckpointCommands: string[] // List of commands that should never trigger checkpoints
+	checkpointShellSpecific: Record<string, any> // Shell-specific checkpoint configurations
+	
 	maxOpenTabsContext: number // Maximum number of VSCode open tabs to include in context (0-500)
 	maxWorkspaceFiles: number // Maximum number of files to include in current working directory details (0-500)
 	showRooIgnoredFiles: boolean // Whether to show .rooignore'd files in listings

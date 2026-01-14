@@ -79,6 +79,20 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setEnableCheckpoints: (value: boolean) => void
 	checkpointTimeout: number
 	setCheckpointTimeout: (value: number) => void
+	
+	// Terminal command checkpoint settings
+	checkpointBeforeHighRiskCommands: boolean
+	setCheckpointBeforeHighRiskCommands: (value: boolean) => void
+	checkpointAfterHighRiskCommands: boolean
+	setCheckpointAfterHighRiskCommands: (value: boolean) => void
+	checkpointOnCommandError: boolean
+	setCheckpointOnCommandError: (value: boolean) => void
+	checkpointCommands: string[]
+	setCheckpointCommands: (value: string[]) => void
+	noCheckpointCommands: string[]
+	setNoCheckpointCommands: (value: string[]) => void
+	checkpointShellSpecific: Record<string, any>
+	setCheckpointShellSpecific: (value: Record<string, any>) => void
 	setBrowserViewportSize: (value: string) => void
 	setFuzzyMatchThreshold: (value: number) => void
 	setWriteDelayMs: (value: number) => void
@@ -188,6 +202,14 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		diffEnabled: false,
 		enableCheckpoints: true,
 		checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS, // Default to 15 seconds
+		
+		// Terminal command checkpoint settings
+		checkpointBeforeHighRiskCommands: false, // Default to false for safety
+		checkpointAfterHighRiskCommands: false, // Default to false for performance
+		checkpointOnCommandError: true, // Default to true to capture state on errors
+		checkpointCommands: [], // Default empty list
+		noCheckpointCommands: [], // Default empty list
+		checkpointShellSpecific: {}, // Default empty object
 		fuzzyMatchThreshold: 1.0,
 		language: "en", // Default language code
 		writeDelayMs: 1000,
@@ -401,6 +423,14 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		profileThresholds: state.profileThresholds ?? {},
 		alwaysAllowFollowupQuestions,
 		followupAutoApproveTimeoutMs,
+		
+		// Terminal command checkpoint properties
+		checkpointBeforeHighRiskCommands: state.checkpointBeforeHighRiskCommands ?? false,
+		checkpointAfterHighRiskCommands: state.checkpointAfterHighRiskCommands ?? false,
+		checkpointOnCommandError: state.checkpointOnCommandError ?? true,
+		checkpointCommands: state.checkpointCommands ?? [],
+		noCheckpointCommands: state.noCheckpointCommands ?? [],
+		checkpointShellSpecific: state.checkpointShellSpecific ?? {},
 		remoteControlEnabled: state.remoteControlEnabled ?? false,
 		taskSyncEnabled: state.taskSyncEnabled,
 		featureRoomoteControlEnabled: state.featureRoomoteControlEnabled ?? false,
@@ -433,7 +463,15 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		setTtsSpeed: (value) => setState((prevState) => ({ ...prevState, ttsSpeed: value })),
 		setDiffEnabled: (value) => setState((prevState) => ({ ...prevState, diffEnabled: value })),
 		setEnableCheckpoints: (value) => setState((prevState) => ({ ...prevState, enableCheckpoints: value })),
-		setCheckpointTimeout: (value) => setState((prevState) => ({ ...prevState, checkpointTimeout: value })),
+	setCheckpointTimeout: (value) => setState((prevState) => ({ ...prevState, checkpointTimeout: value })),
+	
+	// Terminal command checkpoint setters
+	setCheckpointBeforeHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointBeforeHighRiskCommands: value })),
+	setCheckpointAfterHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointAfterHighRiskCommands: value })),
+	setCheckpointOnCommandError: (value) => setState((prevState) => ({ ...prevState, checkpointOnCommandError: value })),
+	setCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, checkpointCommands: value })),
+	setNoCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, noCheckpointCommands: value })),
+	setCheckpointShellSpecific: (value) => setState((prevState) => ({ ...prevState, checkpointShellSpecific: value })),
 		setBrowserViewportSize: (value: string) =>
 			setState((prevState) => ({ ...prevState, browserViewportSize: value })),
 		setFuzzyMatchThreshold: (value) => setState((prevState) => ({ ...prevState, fuzzyMatchThreshold: value })),
