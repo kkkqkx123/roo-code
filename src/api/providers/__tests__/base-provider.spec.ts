@@ -9,6 +9,7 @@ class TestProvider extends BaseProvider {
 		messages: Anthropic.Messages.MessageParam[],
 		metadata?: any,
 	): ApiStream {
+		yield { type: "text", text: "test" }
 		throw new Error("Method not implemented.")
 	}
 

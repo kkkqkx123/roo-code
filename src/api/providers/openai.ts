@@ -227,8 +227,16 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			}
 
 			if (lastUsage) {
-				yield this.processUsageMetrics(lastUsage, modelInfo)
-			}
+			// Build input content from system prompt and messages
+			const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: systemPrompt }
+			]
+			// For output content, we need to extract the assistant's response
+			// Since we don't have the full response here, we'll use an empty array
+			const outputContent: Anthropic.Messages.ContentBlockParam[] = []
+			
+			yield await this.processUsageMetrics(lastUsage, inputContent, outputContent, modelInfo)
+		}
 		} else {
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: modelId,
@@ -275,18 +283,31 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				text: message?.content || "",
 			}
 
-			yield this.processUsageMetrics(response.usage, modelInfo)
+			// Build input content from system prompt and messages
+			const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: systemPrompt }
+			]
+			// Build output content from assistant's response
+			const outputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: message?.content || "" }
+			]
+			
+			yield await this.processUsageMetrics(response.usage, inputContent, outputContent, modelInfo)
 		}
 	}
 
-	protected processUsageMetrics(usage: any, _modelInfo?: ModelInfo): ApiStreamUsageChunk {
-		return {
-			type: "usage",
-			inputTokens: usage?.prompt_tokens || 0,
-			outputTokens: usage?.completion_tokens || 0,
-			cacheWriteTokens: usage?.cache_creation_input_tokens || undefined,
-			cacheReadTokens: usage?.cache_read_input_tokens || undefined,
-		}
+	protected async processUsageMetrics(
+		usage: any, 
+		inputContent: Anthropic.Messages.ContentBlockParam[],
+		outputContent: Anthropic.Messages.ContentBlockParam[],
+		_modelInfo?: ModelInfo
+	): Promise<ApiStreamUsageChunk> {
+		return await this.processUsageWithValidation(
+			usage,
+			inputContent,
+			outputContent,
+			{ logFallback: true }
+		)
 	}
 
 	override getModel() {
@@ -430,7 +451,17 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				type: "text",
 				text: message?.content || "",
 			}
-			yield this.processUsageMetrics(response.usage)
+
+			// Build input content from system prompt and messages
+			const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: systemPrompt }
+			]
+			// Build output content from assistant's response
+			const outputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: message?.content || "" }
+			]
+			
+			yield await this.processUsageMetrics(response.usage, inputContent, outputContent)
 		}
 	}
 
@@ -461,10 +492,12 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			}
 
 			if (chunk.usage) {
+				// For stream responses, we don't have full content for validation
+				// Use basic validation without fallback estimation
 				yield {
 					type: "usage",
-					inputTokens: chunk.usage.prompt_tokens || 0,
-					outputTokens: chunk.usage.completion_tokens || 0,
+					inputTokens: this.isValidTokenCount(chunk.usage.prompt_tokens) ? chunk.usage.prompt_tokens : 0,
+					outputTokens: this.isValidTokenCount(chunk.usage.completion_tokens) ? chunk.usage.completion_tokens : 0,
 				}
 			}
 		}

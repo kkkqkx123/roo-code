@@ -1,6 +1,6 @@
 import { Plugin } from "vite"
-import fs from "fs"
-import path from "path"
+import * as fs from "fs"
+import * as path from "path"
 
 /**
  * Custom Vite plugin to ensure source maps are properly included in the build

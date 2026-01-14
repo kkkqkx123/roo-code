@@ -1,12 +1,13 @@
-import path, { resolve } from "path"
-import fs from "fs"
+import * as path from "path"
+import * as fs from "fs"
 import { execSync } from "child_process"
+const { resolve } = path
 
 import { defineConfig, type PluginOption, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 
-import { sourcemapPlugin } from "./src/vite-plugins/sourcemapPlugin"
+import { sourcemapPlugin } from "./src/vite-plugins/sourcemapPlugin.js"
 
 function getGitSha() {
 	let gitSha: string | undefined = undefined
@@ -24,12 +25,13 @@ const wasmPlugin = (): Plugin => ({
 	name: "wasm",
 	async load(id) {
 		if (id.endsWith(".wasm")) {
-			const wasmBinary = await import(id)
+			const buffer = await fs.promises.readFile(id)
+			const bytes = Array.from(buffer)
 
 			return `
-           			const wasmModule = new WebAssembly.Module(${wasmBinary.default});
-           			export default wasmModule;
-         		`
+            		const wasmModule = new WebAssembly.Module(new Uint8Array([${bytes.join(',')}]));
+            		export default wasmModule;
+          		`
 		}
 	},
 })
@@ -100,6 +102,10 @@ export default defineConfig(({ mode }) => {
 			sourcemap: true,
 			// Ensure source maps are properly included in the build
 			minify: mode === "production" ? "esbuild" : false,
+			// Target modern browsers for VS Code webview
+			target: "esnext",
+			// Set chunk size warning limit
+			chunkSizeWarningLimit: 1000,
 			// Use a single combined CSS bundle so both webviews share styles
 			cssCodeSplit: false,
 			rollupOptions: {
@@ -164,9 +170,12 @@ export default defineConfig(({ mode }) => {
 			hmr: {
 				host: "localhost",
 				protocol: "ws",
+				// Enable error overlay for better debugging
+				overlay: true,
 			},
 			cors: {
-				origin: "*",
+				// Only allow all origins in development for VS Code webview integration
+				origin: mode === "development" ? "*" : false,
 				methods: "*",
 				allowedHeaders: "*",
 			},

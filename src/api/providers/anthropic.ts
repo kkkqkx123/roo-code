@@ -197,38 +197,45 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			switch (chunk.type) {
 				case "message_start": {
 					// Tells us cache reads/writes/input/output.
-					const {
-						input_tokens = 0,
-						output_tokens = 0,
-						cache_creation_input_tokens,
-						cache_read_input_tokens,
-					} = chunk.message.usage
+					// Convert sanitizedMessages to ContentBlockParam[] by extracting content blocks
+					const outputContentBlocks: Anthropic.Messages.ContentBlockParam[] = []
+					sanitizedMessages.forEach(message => {
+						if (typeof message.content === "string") {
+							outputContentBlocks.push({ type: "text", text: message.content })
+						} else if (Array.isArray(message.content)) {
+							outputContentBlocks.push(...message.content)
+						}
+					})
+					
+					const usageChunk = await this.processUsageWithValidation(
+						chunk.message.usage,
+						[{ text: systemPrompt, type: "text" }], // input content
+						outputContentBlocks, // output content
+						{ logFallback: true }
+					)
 
-					yield {
-						type: "usage",
-						inputTokens: input_tokens,
-						outputTokens: output_tokens,
-						cacheWriteTokens: cache_creation_input_tokens || undefined,
-						cacheReadTokens: cache_read_input_tokens || undefined,
-					}
+					yield usageChunk
 
-					inputTokens += input_tokens
-					outputTokens += output_tokens
-					cacheWriteTokens += cache_creation_input_tokens || 0
-					cacheReadTokens += cache_read_input_tokens || 0
+					inputTokens += usageChunk.inputTokens
+					outputTokens += usageChunk.outputTokens
+					cacheWriteTokens += usageChunk.cacheWriteTokens || 0
+					cacheReadTokens += usageChunk.cacheReadTokens || 0
 
 					break
 				}
-				case "message_delta":
+				case "message_delta": {
 					// Tells us stop_reason, stop_sequence, and output tokens
 					// along the way and at the end of the message.
+					// For message_delta, we only have output tokens, so create a simplified usage
+					const deltaOutputTokens = chunk.usage.output_tokens || 0
 					yield {
 						type: "usage",
 						inputTokens: 0,
-						outputTokens: chunk.usage.output_tokens || 0,
+						outputTokens: this.isValidTokenCount(deltaOutputTokens) ? deltaOutputTokens : 0,
 					}
 
 					break
+				}
 				case "message_stop":
 					// No usage data, just an indicator that the message is done.
 					break

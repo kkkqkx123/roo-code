@@ -178,7 +178,15 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 
 		if (lastUsage) {
-			yield this.processUsageMetrics(lastUsage, this.getModel().info)
+			// Build inputContent from system prompt and messages
+			const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: systemPrompt }
+			]
+			// For output content, we need to extract the assistant's response
+			// Since we don't have the full response here, we'll use an empty array
+			const outputContent: Anthropic.Messages.ContentBlockParam[] = []
+			
+			yield this.processUsageMetrics(lastUsage, inputContent, outputContent, this.getModel().info)
 		}
 
 		// Process any remaining content
@@ -187,20 +195,29 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
-	protected processUsageMetrics(usage: any, modelInfo?: any): ApiStreamUsageChunk {
-		const inputTokens = usage?.prompt_tokens || 0
-		const outputTokens = usage?.completion_tokens || 0
+	protected async processUsageMetrics(
+		usage: any, 
+		inputContent: Anthropic.Messages.ContentBlockParam[],
+		outputContent: Anthropic.Messages.ContentBlockParam[],
+		modelInfo?: any
+	): Promise<ApiStreamUsageChunk> {
+		const usageChunk = await this.processUsageWithValidation(
+			usage,
+			inputContent,
+			outputContent,
+			{ logFallback: true }
+		)
+
+		// Add cache tokens from OpenAI-specific details
 		const cacheWriteTokens = usage?.prompt_tokens_details?.cache_write_tokens || 0
 		const cacheReadTokens = usage?.prompt_tokens_details?.cached_tokens || 0
 
 		const { totalCost } = modelInfo
-			? calculateApiCostOpenAI(modelInfo, inputTokens, outputTokens, cacheWriteTokens, cacheReadTokens)
+			? calculateApiCostOpenAI(modelInfo, usageChunk.inputTokens, usageChunk.outputTokens, cacheWriteTokens, cacheReadTokens)
 			: { totalCost: 0 }
 
 		return {
-			type: "usage",
-			inputTokens,
-			outputTokens,
+			...usageChunk,
 			cacheWriteTokens: cacheWriteTokens || undefined,
 			cacheReadTokens: cacheReadTokens || undefined,
 			totalCost,

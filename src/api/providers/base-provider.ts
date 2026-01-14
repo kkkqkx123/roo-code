@@ -3,7 +3,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import type { ModelInfo } from "@roo-code/types"
 
 import type { ApiHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { ApiStream } from "../transform/stream"
+import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { countTokens } from "../../utils/countTokens"
 
 export interface TokenEstimationResult {
@@ -207,9 +207,51 @@ export abstract class BaseProvider implements ApiHandler {
 		const estimated = await this.estimateTokensWithTiktoken(inputContent, outputContent, options)
 
 		return {
-			inputTokens: isInputValid ? inputTokens! : estimated.inputTokens,
-			outputTokens: isOutputValid ? outputTokens! : estimated.outputTokens,
-			didFallback: true,
+		inputTokens: isInputValid ? inputTokens! : estimated.inputTokens,
+		outputTokens: isOutputValid ? outputTokens! : estimated.outputTokens,
+		didFallback: true,
+	}
+}
+
+	/**
+	 * Processes API usage data with unified validation and correction.
+	 * Extracts token counts from API response, validates them, and returns
+	 * a properly formatted usage chunk with fallback estimation if needed.
+	 *
+	 * @param apiUsage The raw usage data from API response
+	 * @param inputContent The input content for fallback estimation
+	 * @param outputContent The output content for fallback estimation
+	 * @param options Validation options
+	 * @returns A promise resolving to validated usage chunk
+	 */
+	protected async processUsageWithValidation(
+		apiUsage: any,
+		inputContent: Anthropic.Messages.ContentBlockParam[],
+		outputContent: Anthropic.Messages.ContentBlockParam[],
+		options?: TokenValidationOptions,
+	): Promise<ApiStreamUsageChunk> {
+		// Extract token counts from different provider formats
+		const inputTokens = apiUsage?.input_tokens ?? apiUsage?.prompt_tokens
+		const outputTokens = apiUsage?.output_tokens ?? apiUsage?.completion_tokens
+		
+		// Validate and correct token counts using unified mechanism
+		const validated = await this.validateAndCorrectTokenCounts(
+			inputTokens,
+			outputTokens,
+			inputContent,
+			outputContent,
+			options,
+		)
+		
+		// Return properly formatted usage chunk with additional metadata
+		return {
+			type: "usage",
+			inputTokens: validated.inputTokens,
+			outputTokens: validated.outputTokens,
+			cacheWriteTokens: apiUsage?.cache_creation_input_tokens,
+			cacheReadTokens: apiUsage?.cache_read_input_tokens,
+			reasoningTokens: apiUsage?.reasoning_tokens,
+			totalCost: apiUsage?.total_cost,
 		}
 	}
 }

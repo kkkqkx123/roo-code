@@ -285,21 +285,33 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			}
 
 			if (lastUsageMetadata) {
-				const inputTokens = lastUsageMetadata.promptTokenCount ?? 0
-				const outputTokens = lastUsageMetadata.candidatesTokenCount ?? 0
+				// Build input content from system instruction and messages
+				const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+					{ type: "text", text: systemInstruction }
+				]
+				// For output content, we need to extract the assistant's response
+				// Since we don't have the full response here, we'll use an empty array
+				const outputContent: Anthropic.Messages.ContentBlockParam[] = []
+				
+				const usageChunk = await this.processUsageWithValidation(
+					lastUsageMetadata,
+					inputContent,
+					outputContent,
+					{ logFallback: true }
+				)
+				
+				// Add Gemini-specific fields
 				const cacheReadTokens = lastUsageMetadata.cachedContentTokenCount
 				const reasoningTokens = lastUsageMetadata.thoughtsTokenCount
-
+				
 				yield {
-					type: "usage",
-					inputTokens,
-					outputTokens,
+					...usageChunk,
 					cacheReadTokens,
 					reasoningTokens,
 					totalCost: this.calculateCost({
 						info,
-						inputTokens,
-						outputTokens,
+						inputTokens: usageChunk.inputTokens,
+						outputTokens: usageChunk.outputTokens,
 						cacheReadTokens,
 						reasoningTokens,
 					}),
