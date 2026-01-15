@@ -7,7 +7,7 @@ Use '--' to separate paths from revisions, like this:
 
 Workspace is repo: true
 Workspace git status: current=main, staged=0, not_added=1
-Workspace HEAD before re-init: 5408af36153867470e803a41693adcff451c6c7e
+Workspace HEAD before re-init: d22e3012cff61798612dc03b3678a90849b0aa56
 initShadowGit succeeded
 Service git instance after init: SET
-Service baseHash after init: 5408af36153867470e803a41693adcff451c6c7e
+Service baseHash after init: d22e3012cff61798612dc03b3678a90849b0aa56

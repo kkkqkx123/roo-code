@@ -1,10 +1,10 @@
-baseHash: 4972062
+baseHash: 67792aa
 Base content from shadow repo: "Hello, world!"
 details1: [
   {
     "paths": {
       "relative": "test.txt",
-      "absolute": "C:\\Users\\33530\\AppData\\Local\\Temp\\CheckpointService\\workspace-1768231554487\\test.txt"
+      "absolute": "C:\\Users\\33530\\AppData\\Local\\Temp\\CheckpointService\\workspace-1768479885098\\test.txt"
     },
     "content": {
       "before": "Hello, world!",

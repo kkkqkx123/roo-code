@@ -1,41 +1,61 @@
-import i18next from "./setup"
+import { I18nManager } from './setup'
+import { TranslationKey, TranslationParams, LanguageCode } from './types'
+import * as fs from 'fs'
+import * as path from 'path'
 
-/**
- * Initialize i18next with the specified language
- *
- * @param language The language code to use
- */
-export function initializeI18n(language: string): void {
-	i18next.changeLanguage(language)
+// Load translations from JSON files
+function loadTranslationsFromFile(language: string): any {
+	const localePath = path.join(__dirname, 'locales', language)
+	const translations: any = {}
+	
+	try {
+		// Read all JSON files in the language directory
+		const files = fs.readdirSync(localePath)
+		
+		for (const file of files) {
+			if (file.endsWith('.json')) {
+				const namespace = file.replace('.json', '')
+				const filePath = path.join(localePath, file)
+				const content = fs.readFileSync(filePath, 'utf8')
+				translations[namespace] = JSON.parse(content)
+			}
+		}
+		
+		return translations
+	} catch (error) {
+		console.warn(`Failed to load translations for ${language}:`, error)
+		return {}
+	}
 }
 
-/**
- * Get the current language
- *
- * @returns The current language code
- */
-export function getCurrentLanguage(): string {
-	return i18next.language
+// Create i18n manager instance
+const i18nManager = new I18nManager({ debug: false })
+
+// Load English translations
+const enTranslations = loadTranslationsFromFile('en')
+i18nManager.registerTranslations('en', enTranslations)
+
+// Load Chinese translations  
+const zhCNTranslations = loadTranslationsFromFile('zh-CN')
+i18nManager.registerTranslations('zh-CN', zhCNTranslations)
+
+// Export type-safe translation function
+export function t<K extends TranslationKey>(
+	key: K,
+	params?: TranslationParams[K]
+): string {
+	return i18nManager.t(key, params)
 }
 
-/**
- * Change the current language
- *
- * @param language The language code to change to
- */
+// Export language change function
+export function initializeI18n(language: string = 'en'): void {
+	i18nManager.changeLanguage(language as LanguageCode)
+}
+
+// Export changeLanguage function for backward compatibility
 export function changeLanguage(language: string): void {
-	i18next.changeLanguage(language)
+	i18nManager.changeLanguage(language as LanguageCode)
 }
 
-/**
- * Translate a string using i18next
- *
- * @param key The translation key, can use namespace with colon, e.g. "common:welcome"
- * @param options Options for interpolation or pluralization
- * @returns The translated string
- */
-export function t(key: string, options?: Record<string, any>): string {
-	return i18next.t(key, options)
-}
-
-export default i18next
+// Export i18n manager for advanced usage
+export { i18nManager }

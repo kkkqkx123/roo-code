@@ -9,7 +9,7 @@
  * - Enables debugging with complete error context
  */
 
-import i18n from "../../../i18n/setup"
+import { t } from "../../../i18n"
 
 /**
  * Handles API provider errors and transforms them into user-friendly messages
@@ -63,7 +63,7 @@ export function handleProviderError(
 		// Special case: Invalid character/ByteString conversion error in API key
 		// This is specific to OpenAI-compatible SDKs
 		if (msg.includes("Cannot convert argument to a ByteString")) {
-			wrapped = new Error(i18n.t("common:errors.api.invalidKeyInvalidChars"))
+			wrapped = new Error(t("common:errors.api.invalidKeyInvalidChars"))
 		} else {
 			// Apply custom transformer if provided, otherwise use default format
 			const finalMessage = options?.messageTransformer

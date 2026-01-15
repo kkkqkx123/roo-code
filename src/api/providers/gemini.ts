@@ -20,7 +20,7 @@ import type { ApiHandlerOptions } from "../../shared/api"
 import { safeJsonParse } from "../../shared/safeJsonParse"
 
 import { convertAnthropicMessageToGemini } from "../transform/gemini-format"
-import { t } from "i18next"
+import { t } from "../../i18n"
 import type { ApiStream, GroundingSource } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 import { handleProviderError } from "./utils/error-handler"
