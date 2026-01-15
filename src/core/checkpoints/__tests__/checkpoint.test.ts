@@ -166,7 +166,6 @@ describe("Checkpoint functionality", () => {
 			if (checkpointResult && "commit" in checkpointResult) {
 				mockTask.pendingUserMessageCheckpoint = {
 					hash: checkpointResult.commit,
-					timestamp: Date.now(),
 					type: "user_message",
 				}
 			}

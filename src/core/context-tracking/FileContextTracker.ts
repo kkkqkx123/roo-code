@@ -212,6 +212,11 @@ export class FileContextTracker {
 		return files
 	}
 
+	// Gets the list of currently tracked files
+	getTrackedFiles(): string[] {
+		return Array.from(this.fileWatchers.keys())
+	}
+
 	// Marks a file as edited by Roo to prevent false positives in file watchers
 	markFileAsEditedByRoo(filePath: string): void {
 		this.recentlyEditedByRoo.add(filePath)

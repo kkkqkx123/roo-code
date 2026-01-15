@@ -750,16 +750,40 @@ export const webviewMessageHandler = async (
 			const result = checkoutRestorePayloadSchema.safeParse(message.payload)
 
 			if (result.success) {
-				await provider.cancelTask()
+				const { ts, commitHash, mode, restoreType, apiRequestId } = result.data
+				
+				// 根据恢复类型决定是否取消任务
+				if (restoreType === "files_and_context" || !restoreType) {
+					await provider.cancelTask()
 
-				try {
-					await pWaitFor(() => provider.getCurrentTask()?.isInitialized === true, { timeout: 3_000 })
-				} catch (error) {
-					vscode.window.showErrorMessage(t("common:errors.checkpoint_timeout"))
+					try {
+						await pWaitFor(() => provider.getCurrentTask()?.isInitialized === true, { timeout: 3_000 })
+					} catch (error) {
+						vscode.window.showErrorMessage(t("common:errors.checkpoint_timeout"))
+					}
 				}
 
 				try {
-					await provider.getCurrentTask()?.checkpointRestore(result.data)
+					// 使用扩展的检查点恢复方法
+					const currentTask = provider.getCurrentTask()
+					if (currentTask) {
+						if (restoreType === "context_only" && apiRequestId) {
+							// 仅恢复上下文
+							const checkpointManager = currentTask.getCheckpointManager()
+							if (checkpointManager.checkpointRestoreExtended) {
+								await checkpointManager.checkpointRestoreExtended({
+									ts,
+									commitHash,
+									mode,
+									operation: "delete",
+									restoreApiContext: true,
+								})
+							}
+						} else {
+							// 恢复文件和上下文（默认行为）
+							await currentTask.checkpointRestore(result.data)
+						}
+					}
 				} catch (error) {
 					vscode.window.showErrorMessage(t("common:errors.checkpoint_failed"))
 				}

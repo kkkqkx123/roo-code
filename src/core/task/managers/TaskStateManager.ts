@@ -108,12 +108,25 @@ export class TaskStateManager extends EventEmitter {
 		return this._taskMode || defaultModeSlug
 	}
 
+	setTaskMode(mode: string): void {
+		this._taskMode = mode
+	}
+
 	get taskToolProtocol(): ToolProtocol | undefined {
 		return this._taskToolProtocol
 	}
 
 	set taskToolProtocol(protocol: ToolProtocol | undefined) {
 		this._taskToolProtocol = protocol
+	}
+
+	setTaskToolProtocol(protocol: ToolProtocol | undefined): void {
+		this._taskToolProtocol = protocol
+	}
+
+	setSystemPrompt(systemPrompt: string): void {
+		// 系统提示的恢复由Task类处理，这里只是占位方法
+		console.log("[TaskStateManager] System prompt restoration should be handled by Task class")
 	}
 
 	cancelCurrentRequest(): void {

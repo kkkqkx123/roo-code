@@ -13,6 +13,7 @@ import type { ContextManager } from "./ContextManager"
 import type { UsageTracker } from "./UsageTracker"
 import type { FileEditorManager } from "./FileEditorManager"
 import type { StreamingManager } from "./StreamingManager"
+import type { CheckpointManager } from "./CheckpointManager"
 import { BaseProvider, TokenValidationOptions } from "../../../api/providers/base-provider"
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
@@ -31,6 +32,7 @@ export interface ApiRequestManagerOptions {
 	apiConfiguration: ProviderSettings
 	cwd: string
 	streamingManager: StreamingManager
+	checkpointManager?: CheckpointManager
 	getSystemPrompt: () => Promise<string>
 	getLastGlobalApiRequestTime: () => number | undefined
 	setLastGlobalApiRequestTime: (time: number) => void
@@ -44,6 +46,7 @@ export class ApiRequestManager {
 	private usageTracker: UsageTracker
 	private fileEditorManager: FileEditorManager
 	private streamingManager: StreamingManager
+	private checkpointManager?: CheckpointManager
 	private getSystemPromptFn: () => Promise<string>
 	private getLastGlobalApiRequestTime: () => number | undefined
 	private setLastGlobalApiRequestTime: (time: number) => void
@@ -59,6 +62,7 @@ export class ApiRequestManager {
 		enableFallback: true,
 		logFallback: true,
 	}
+	private currentRequestIndex: number | undefined // 当前请求索引
 
 	constructor(options: ApiRequestManagerOptions) {
 		this.stateManager = options.stateManager
@@ -68,6 +72,7 @@ export class ApiRequestManager {
 		this.usageTracker = options.usageTracker
 		this.fileEditorManager = options.fileEditorManager
 		this.streamingManager = options.streamingManager
+		this.checkpointManager = options.checkpointManager
 		this.getSystemPromptFn = options.getSystemPrompt
 		this.getLastGlobalApiRequestTime = options.getLastGlobalApiRequestTime
 		this.setLastGlobalApiRequestTime = options.setLastGlobalApiRequestTime
@@ -75,6 +80,13 @@ export class ApiRequestManager {
 		this.api = options.api
 		this.apiConfiguration = options.apiConfiguration
 		this.cwd = options.cwd
+	}
+
+	/**
+	 * 获取当前请求索引
+	 */
+	getCurrentRequestIndex(): number | undefined {
+		return this.currentRequestIndex
 	}
 
 	/**
@@ -145,6 +157,25 @@ export class ApiRequestManager {
 		return this.getSystemPromptFn()
 	}
 
+	/**
+ * 在API调用前保存检查点（基于请求索引）
+ * 不再返回索引，索引管理由外部控制
+ */
+private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: boolean, retryAttempt?: number, userMessageWasRemoved?: boolean): Promise<void> {
+	if (!this.checkpointManager) {
+		return
+	}
+
+	try {
+		// 纯粹的检查点创建，不处理索引逻辑
+		await this.checkpointManager.checkpointSave(false, true)
+		console.log(`[ApiRequestManager] Saved checkpoint before API request`)
+	} catch (error) {
+		console.error("[ApiRequestManager] Failed to save checkpoint before API call:", error)
+		throw error  // 抛出错误让上层处理
+	}
+}
+
 	async recursivelyMakeClineRequests(
 		userContent: any[],
 		includeFileDetails: boolean = false,
@@ -211,50 +242,76 @@ export class ApiRequestManager {
 
 		let retryCount = 0
 		const maxRetries = MAX_CONTEXT_WINDOW_RETRIES
+		let currentRequestIndex: number | undefined
 
-		while (retryCount <= maxRetries) {
-			try {
-				const stream = await this.attemptApiRequest()
-				const iterator = stream[Symbol.asyncIterator]()
+		try {
+			// 开始新的API请求，分配请求索引
+			currentRequestIndex = this.messageManager.startNewApiRequest()
+			this.currentRequestIndex = currentRequestIndex
+			console.log(`[ApiRequestManager] Started new API request with index: ${currentRequestIndex}`)
 
-				let item = await iterator.next()
-				while (!item.done) {
-					const chunk = item.value
-					await this.handleStreamChunk(chunk)
-					item = await iterator.next()
-				}
-				
-				// Success, exit the retry loop
-				return
-				
-			} catch (error) {
-				// Check if this is a context window exceeded error
-				if (checkContextWindowExceededError(error)) {
-					console.warn(`[ApiRequestManager] Context window exceeded on attempt ${retryCount + 1}/${maxRetries + 1}`)
-					
-					if (retryCount < maxRetries) {
-						// Handle context window error and retry
-						await this.handleContextWindowExceededError(error, retryCount)
-						
-						// Add exponential backoff delay before retry
-						await this.backoffAndAnnounce(retryCount, error)
-						
-						retryCount++
-					} else {
-						// Max retries reached, throw the error
-						console.error(`[ApiRequestManager] Max retries (${maxRetries}) reached for context window errors`)
-						throw new Error(`Context window exceeded after ${maxRetries} retry attempts: ${error instanceof Error ? error.message : String(error)}`)
+			while (retryCount <= maxRetries) {
+				try {
+					// 在请求前创建检查点，关联请求索引
+					if (this.checkpointManager && currentRequestIndex !== undefined) {
+						await this.checkpointManager.createCheckpoint(currentRequestIndex)
+						console.log(`[ApiRequestManager] Created checkpoint for request index: ${currentRequestIndex}`)
 					}
-				} else {
-					// Not a context window error, re-throw
-					throw error
+
+					const stream = await this.attemptApiRequest()
+					const iterator = stream[Symbol.asyncIterator]()
+
+					let item = await iterator.next()
+					while (!item.done) {
+						const chunk = item.value
+						await this.handleStreamChunk(chunk)
+						item = await iterator.next()
+					}
+					
+					// Success, exit the retry loop
+					return
+					
+				} catch (error) {
+					// 处理API错误，使用相同的请求索引重试
+					await this.handleApiError(error, retryCount, maxRetries)
+					retryCount++
 				}
 			}
+			
+		} finally {
+			// 确保请求结束，清理状态
+			this.messageManager.endCurrentApiRequest()
+			this.currentRequestIndex = undefined
+			console.log(`[ApiRequestManager] Ended API request with index: ${currentRequestIndex}`)
 		}
 	}
 
 	private resetStreamingState(): void {
 		this.streamingManager.resetStreamingState()
+	}
+
+	/**
+	 * 处理API错误（使用相同的请求索引重试）
+	 */
+	private async handleApiError(error: any, retryCount: number, maxRetries: number): Promise<void> {
+		if (checkContextWindowExceededError(error)) {
+			console.warn(`[ApiRequestManager] Context window exceeded on attempt ${retryCount + 1}/${maxRetries + 1}`)
+			
+			if (retryCount < maxRetries) {
+				// 处理上下文窗口错误，使用相同的请求索引重试
+				await this.handleContextWindowExceededError(error, retryCount)
+				
+				// 指数退避延迟
+				await this.backoffAndAnnounce(retryCount, error)
+			} else {
+				// 达到最大重试次数
+				console.error(`[ApiRequestManager] Max retries (${maxRetries}) reached for context window errors`)
+				throw new Error(`Context window exceeded after ${maxRetries} retry attempts: ${error instanceof Error ? error.message : String(error)}`)
+			}
+		} else {
+			// 非上下文窗口错误，直接抛出
+			throw error
+		}
 	}
 
 	private async handleStreamChunk(chunk: any): Promise<void> {

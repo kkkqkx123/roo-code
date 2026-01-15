@@ -19,11 +19,66 @@ export class MessageManager {
 
 	apiConversationHistory: ApiMessage[] = []
 	clineMessages: ClineMessage[] = []
+	private conversationIndexCounter: number = 0 // 对话索引计数器
+	private currentRequestIndex: number | undefined // 当前请求索引
 
 	constructor(options: MessageManagerOptions) {
 		this.stateManager = options.stateManager
 		this.taskId = options.taskId
 		this.globalStoragePath = options.globalStoragePath
+		
+		// 从保存的历史中恢复对话索引
+		this.initializeConversationIndex()
+	}
+
+	/**
+	 * 开始新的API请求，分配请求索引
+	 */
+	startNewApiRequest(): number {
+		const requestIndex = this.conversationIndexCounter++
+		this.currentRequestIndex = requestIndex
+		return requestIndex
+	}
+
+	/**
+	 * 获取当前请求索引
+	 */
+	getCurrentRequestIndex(): number | undefined {
+		return this.currentRequestIndex
+	}
+
+	/**
+	 * 设置当前请求索引
+	 */
+	setCurrentRequestIndex(index: number): void {
+		this.currentRequestIndex = index
+	}
+
+	/**
+	 * 结束当前API请求
+	 */
+	endCurrentApiRequest(): void {
+		this.currentRequestIndex = undefined
+	}
+
+	/**
+	 * 初始化对话索引（从保存的历史中恢复）
+	 */
+	private async initializeConversationIndex(): Promise<void> {
+		try {
+			const savedHistory = await this.getSavedApiConversationHistory()
+			if (savedHistory && savedHistory.length > 0) {
+				// 找到最大的对话索引
+				const maxIndex = Math.max(...savedHistory
+					.filter(msg => msg.conversationIndex !== undefined)
+					.map(msg => msg.conversationIndex!)
+				)
+				this.conversationIndexCounter = maxIndex + 1
+			}
+		} catch (error) {
+			console.warn("[MessageManager] Failed to initialize conversation index:", error)
+			this.conversationIndexCounter = 0
+		}
 	}
 
 	async getSavedApiConversationHistory(): Promise<ApiMessage[]> {
@@ -35,9 +90,24 @@ export class MessageManager {
 	}
 
 	async addToApiConversationHistory(message: ApiMessage, reasoning?: string, api?: any): Promise<void> {
+		// 修改：基于请求索引的策略
+		let conversationIndex: number | undefined
+		
+		if (message.role === "assistant") {
+			// 响应消息继承当前请求索引
+			conversationIndex = this.currentRequestIndex
+			
+			// 如果没有当前请求（异常情况），分配新索引
+			if (conversationIndex === undefined) {
+				conversationIndex = this.conversationIndexCounter++
+				console.warn(`[MessageManager] Assistant message without active request, assigned new index: ${conversationIndex}`)
+			}
+		}
+
 		const messageWithTs = {
 			...message,
 			ts: Date.now(),
+			conversationIndex,
 		} as ApiMessage
 
 		if (message.role === "assistant") {

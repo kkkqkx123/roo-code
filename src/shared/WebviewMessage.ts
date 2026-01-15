@@ -252,6 +252,8 @@ export const checkoutRestorePayloadSchema = z.object({
 	ts: z.number(),
 	commitHash: z.string(),
 	mode: z.enum(["preview", "restore"]),
+	restoreType: z.enum(["files_only", "context_only", "files_and_context"]).optional(),
+	apiRequestId: z.string().optional(),
 })
 
 export type CheckpointRestorePayload = z.infer<typeof checkoutRestorePayloadSchema>

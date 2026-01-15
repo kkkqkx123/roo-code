@@ -103,6 +103,11 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 		return this._checkpoints.slice()
 	}
 
+	/**
+	 * 获取检查点的时间戳
+	 */
+
+
 	constructor(taskId: string, checkpointsDir: string, workspaceDir: string, log: (message: string) => void) {
 		super()
 

@@ -28,6 +28,8 @@ export type ApiMessage = Anthropic.MessageParam & {
 	// For non-destructive truncation: unique identifier for truncation marker messages
 	truncationId?: string
 	// For non-destructive truncation: points to the truncationId of the marker that hides this message
+	// 对话索引，用于检查点恢复
+	conversationIndex?: number
 	// Messages with truncationParent are filtered out when sending to API if the marker exists
 	truncationParent?: string
 	// Identifies a message as a truncation boundary marker

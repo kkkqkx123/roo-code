@@ -428,9 +428,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			apiConfiguration,
 			cwd: this.cwd,
 			streamingManager: this.streamingManager,
+			checkpointManager: this.checkpointManager,
 			getSystemPrompt: () => this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled),
 			getLastGlobalApiRequestTime: () => Task.lastGlobalApiRequestTime,
-			setLastGlobalApiRequestTime: (time: number) => { Task.lastGlobalApiRequestTime = time },
+			setLastGlobalApiRequestTime: (time: number) => {
+				Task.lastGlobalApiRequestTime = time
+			},
 		})
 
 		this.promptManager = new PromptManager({
@@ -722,6 +725,11 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 
 	public async checkpointDiff(options: CheckpointDiffOptions) {
 		return this.checkpointManager.checkpointDiff(options)
+	}
+
+	// Get checkpoint manager for extended operations
+	getCheckpointManager(): CheckpointManager {
+		return this.checkpointManager
 	}
 
 	// Context management - kept in Task class as it orchestrates multiple components
@@ -1061,6 +1069,27 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 
 	public getBrowserViewportSize(): { width?: number; height?: number } {
 		return this.browserSessionManager.getViewportSize()
+	}
+
+	/**
+	 * 获取当前请求索引（新增）
+	 */
+	public getCurrentRequestIndex(): number | undefined {
+		return this.apiRequestManager.getCurrentRequestIndex()
+	}
+
+	/**
+	 * 开始新的API请求（新增）
+	 */
+	public startNewApiRequest(): number {
+		return this.taskMessageManager.startNewApiRequest()
+	}
+
+	/**
+	 * 结束当前API请求（新增）
+	 */
+	public endCurrentApiRequest(): void {
+		this.taskMessageManager.endCurrentApiRequest()
 	}
 
 	public disposeBrowserSession(): void {

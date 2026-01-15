@@ -17,6 +17,8 @@ export interface CheckpointRestoreConfig {
 		images?: string[]
 		apiConversationHistoryIndex: number
 	}
+	restoreType?: "files_only" | "context_only" | "files_and_context"
+	apiRequestId?: string
 }
 
 /**
@@ -53,13 +55,48 @@ export async function handleCheckpointRestoreOperation(config: CheckpointRestore
 			})
 		}
 
+		// 获取当前请求索引（新的基于请求的策略）
+		const currentRequestIndex = currentCline.getCurrentRequestIndex ? currentCline.getCurrentRequestIndex() : undefined
+
 		// Perform the checkpoint restoration
-		await currentCline.checkpointRestore({
-			ts: messageTs,
-			commitHash: checkpoint.hash,
-			mode: "restore",
-			operation,
-		})
+		if (operation === "delete" && config.restoreType === "context_only") {
+			// 仅恢复API上下文
+			const checkpointManager = currentCline.getCheckpointManager()
+			if (checkpointManager.checkpointRestoreExtended) {
+				await checkpointManager.checkpointRestoreExtended({
+					ts: messageTs,
+					commitHash: checkpoint.hash,
+					mode: "restore",
+					operation,
+					restoreApiContext: true,
+					conversationIndex: currentRequestIndex,  // 使用对话索引
+				})
+			} else {
+				// 回退到标准恢复方法
+				await currentCline.checkpointRestore({
+					ts: messageTs,
+					commitHash: checkpoint.hash,
+					mode: "restore",
+					operation,
+				})
+			}
+		} else if (operation === "delete" && (config.restoreType === "files_and_context" || !config.restoreType)) {
+			// 恢复文件和上下文（默认行为）
+			await currentCline.checkpointRestore({
+				ts: messageTs,
+				commitHash: checkpoint.hash,
+				mode: "restore",
+				operation,
+			})
+		} else {
+			// 其他情况（如edit操作）使用标准恢复方法
+			await currentCline.checkpointRestore({
+				ts: messageTs,
+				commitHash: checkpoint.hash,
+				mode: "restore",
+				operation,
+			})
+		}
 
 		// For delete operations, we need to save messages and reinitialize
 		// For edit operations, the reinitialization happens automatically

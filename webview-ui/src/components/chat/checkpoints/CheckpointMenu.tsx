@@ -73,13 +73,44 @@ export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: Che
 		})
 	}, [ts, commitHash])
 
-	const onPreview = useCallback(() => {
-		vscode.postMessage({ type: "checkpointRestore", payload: { ts, commitHash, mode: "preview" } })
+
+
+	const onRestoreFilesOnly = useCallback(() => {
+		vscode.postMessage({ 
+			type: "checkpointRestore", 
+			payload: { 
+				ts, 
+				commitHash, 
+				mode: "restore",
+				restoreType: "files_only"
+			} 
+		})
 		setRestoreOpen(false)
 	}, [ts, commitHash, setRestoreOpen])
 
-	const onRestore = useCallback(() => {
-		vscode.postMessage({ type: "checkpointRestore", payload: { ts, commitHash, mode: "restore" } })
+	const onRestoreContextOnly = useCallback(() => {
+		vscode.postMessage({ 
+			type: "checkpointRestore", 
+			payload: { 
+				ts, 
+				commitHash, 
+				mode: "restore",
+				restoreType: "context_only"
+			} 
+		})
+		setRestoreOpen(false)
+	}, [ts, commitHash, setRestoreOpen])
+
+	const onRestoreFilesAndContext = useCallback(() => {
+		vscode.postMessage({ 
+			type: "checkpointRestore", 
+			payload: { 
+				ts, 
+				commitHash, 
+				mode: "restore",
+				restoreType: "files_and_context"
+			} 
+		})
 		setRestoreOpen(false)
 	}, [ts, commitHash, setRestoreOpen])
 
@@ -117,7 +148,7 @@ export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: Che
 				<PopoverContent align="end" container={portalContainer}>
 					<div className="flex flex-col gap-2">
 						<div className="flex flex-col gap-1 group hover:text-foreground">
-							<Button variant="secondary" onClick={onPreview} data-testid="restore-files-btn">
+							<Button variant="secondary" onClick={onRestoreFilesOnly} data-testid="restore-files-btn">
 								{t("chat:checkpoint.menu.restoreFiles")}
 							</Button>
 							<div className="text-muted transition-colors group-hover:text-foreground">
@@ -125,18 +156,26 @@ export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: Che
 							</div>
 						</div>
 						<div className="flex flex-col gap-1 group hover:text-foreground">
+							<Button variant="secondary" onClick={onRestoreContextOnly} data-testid="restore-context-btn">
+								{t("chat:checkpoint.menu.restoreContext")}
+							</Button>
+							<div className="text-muted transition-colors group-hover:text-foreground">
+								{t("chat:checkpoint.menu.restoreContextDescription")}
+							</div>
+						</div>
+						<div className="flex flex-col gap-1 group hover:text-foreground">
 							{!restoreConfirming ? (
 								<Button
 									variant="secondary"
 									onClick={() => setRestoreConfirming(true)}
-									data-testid="restore-files-and-task-btn">
-									{t("chat:checkpoint.menu.restoreFilesAndTask")}
+									data-testid="restore-files-and-context-btn">
+									{t("chat:checkpoint.menu.restoreFilesAndContext")}
 								</Button>
 							) : (
 								<>
 									<Button
 										variant="primary"
-										onClick={onRestore}
+										onClick={onRestoreFilesAndContext}
 										className="grow"
 										data-testid="confirm-restore-btn">
 										<div className="flex flex-row gap-1">
@@ -158,7 +197,7 @@ export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: Che
 								</div>
 							) : (
 								<div className="text-muted transition-colors group-hover:text-foreground">
-									{t("chat:checkpoint.menu.restoreFilesAndTaskDescription")}
+									{t("chat:checkpoint.menu.restoreFilesAndContextDescription")}
 								</div>
 							)}
 						</div>

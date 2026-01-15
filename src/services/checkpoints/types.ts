@@ -1,6 +1,8 @@
 import { CommitResult } from "simple-git"
 
-export type CheckpointResult = Partial<CommitResult> & Pick<CommitResult, "commit">
+export type CheckpointResult = Partial<CommitResult> & Pick<CommitResult, "commit"> & {
+	timestamp?: number
+}
 
 export type CheckpointDiff = {
 	paths: {
