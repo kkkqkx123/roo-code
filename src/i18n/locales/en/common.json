@@ -1,7 +1,7 @@
 {
 	"extension": {
 		"name": "Roo Code",
-		"description": "A whole dev team of AI agents in your editor."
+		"description": "A complete AI development team in your editor."
 	},
 	"number_format": {
 		"thousand_suffix": "k",
@@ -11,19 +11,19 @@
 	"welcome": "Welcome, {{name}}! You have {{count}} notifications.",
 	"items": {
 		"zero": "No items",
-		"one": "One item",
+		"one": "1 item",
 		"other": "{{count}} items"
 	},
 	"confirmation": {
-		"reset_state": "Are you sure you want to reset all state and secret storage in the extension? This cannot be undone.",
+		"reset_state": "Are you sure you want to reset all state and key storage in the extension? This cannot be undone.",
 		"delete_config_profile": "Are you sure you want to delete this configuration profile?",
 		"delete_custom_mode_with_rules": "Are you sure you want to delete this {scope} mode?\n\nThis will also delete the associated rules folder at:\n{rulesFolderPath}"
 	},
 	"errors": {
 		"invalid_data_uri": "Invalid data URI format",
 		"error_copying_image": "Error copying image: {{errorMessage}}",
-		"error_opening_image": "Error opening image: {{error}}",
 		"error_saving_image": "Error saving image: {{errorMessage}}",
+		"error_opening_image": "Error opening image: {{error}}",
 		"could_not_open_file": "Could not open file: {{errorMessage}}",
 		"could_not_open_file_generic": "Could not open file!",
 		"checkpoint_timeout": "Timed out when attempting to restore checkpoint.",
@@ -123,17 +123,11 @@
 			"noResponseBody": "Cerebras API Error: No response body",
 			"completionError": "Cerebras completion error: {{error}}"
 		},
-		"roo": {
-			"authenticationRequired": "Roo provider requires cloud authentication. Please sign in to Roo Code Cloud."
-		},
 		"api": {
 			"invalidKeyInvalidChars": "API key contains invalid characters."
 		},
-		"manual_url_empty": "Please enter a valid callback URL",
-		"manual_url_no_query": "Invalid callback URL: missing query parameters",
-		"manual_url_missing_params": "Invalid callback URL: missing required parameters (code and state)",
-		"manual_url_auth_failed": "Manual URL authentication failed",
-		"manual_url_auth_error": "Authentication failed"
+		"missing_param": "Missing required parameter '{{paramName}}' for tool '{{toolName}}'{{relPath}}",
+		"attempt_completion_tool_failed": "Attempt completion tool failed"
 	},
 	"warnings": {
 		"no_terminal_content": "No terminal content selected",
@@ -149,12 +143,13 @@
 		"settings_imported": "Settings imported successfully.",
 		"auto_import_success": "RooCode settings automatically imported from {{filename}}",
 		"share_link_copied": "Share link copied to clipboard",
-		"organization_share_link_copied": "Organization share link copied to clipboard!",
-		"public_share_link_copied": "Public share link copied to clipboard!",
 		"image_copied_to_clipboard": "Image data URI copied to clipboard",
 		"image_saved": "Image saved to {{path}}",
+		"organization_share_link_copied": "Organization share link copied to clipboard!",
+		"public_share_link_copied": "Public share link copied to clipboard!",
 		"mode_exported": "Mode '{{mode}}' exported successfully",
-		"mode_imported": "Mode imported successfully"
+		"mode_imported": "Mode imported successfully",
+		"path_copied_to_clipboard": "Path copied to clipboard"
 	},
 	"answers": {
 		"yes": "Yes",
@@ -187,6 +182,9 @@
 		"task_prompt": "What should Roo do?",
 		"task_placeholder": "Type your task here"
 	},
+	"settings": {
+		"providers": {}
+	},
 	"customModes": {
 		"errors": {
 			"yamlParseError": "Invalid YAML in .roomodes file at line {{line}}. Please check for:\n• Proper indentation (use spaces, not tabs)\n• Matching quotes and brackets\n• Valid YAML syntax",
@@ -209,16 +207,6 @@
 			"rulesCleanupFailed": "Mode removed successfully, but failed to delete rules folder at {{rulesFolderPath}}. You may need to delete it manually."
 		}
 	},
-	"mdm": {
-		"errors": {
-			"cloud_auth_required": "Your organization requires Roo Code Cloud authentication. Please sign in to continue.",
-			"organization_mismatch": "You must be authenticated with your organization's Roo Code Cloud account.",
-			"verification_failed": "Unable to verify organization authentication."
-		},
-		"info": {
-			"organization_requires_auth": "Your organization requires authentication."
-		}
-	},
 	"prompts": {
 		"deleteMode": {
 			"title": "Delete Custom Mode",
@@ -229,7 +217,7 @@
 	},
 	"commands": {
 		"preventCompletionWithOpenTodos": {
-			"description": "Prevent task completion when there are incomplete todos in the todo list"
+			"description": "Prevent task completion when there are open todos in the todo list"
 		}
 	},
 	"docsLink": {

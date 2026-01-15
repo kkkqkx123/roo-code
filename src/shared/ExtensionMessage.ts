@@ -321,7 +321,6 @@ export type ExtensionState = Pick<
 	apiModelId?: string
 	mcpServers?: McpServer[]
 	hasSystemPromptOverride?: boolean
-	mdmCompliant?: boolean
 	remoteControlEnabled: boolean
 	taskSyncEnabled: boolean
 	featureRoomoteControlEnabled: boolean

@@ -15,5 +15,13 @@
 		"errors": {
 			"policy_restriction": "Failed to create new task due to policy restrictions."
 		}
+	},
+	"generateImage": {
+		"unknownError": "Unknown error generating image",
+		"failedWithStatus": "Image generation failed with status {{status}}",
+		"failedWithMessage": "Image generation failed: {{message}}",
+		"noImageGenerated": "No image was generated",
+		"invalidImageData": "Invalid image data received",
+		"invalidImageFormat": "Invalid image format received"
 	}
 }

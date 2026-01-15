@@ -96,12 +96,6 @@ export interface TranslationParams {
   'common:errors.cerebras.genericError': { status: number; message: string }
   'common:errors.cerebras.noResponseBody': Record<string, never>
   'common:errors.cerebras.completionError': { error: string }
-  'common:errors.roo.authenticationRequired': Record<string, never>
-  'common:errors.manual_url_empty': Record<string, never>
-  'common:errors.manual_url_no_query': Record<string, never>
-  'common:errors.manual_url_missing_params': Record<string, never>
-  'common:errors.manual_url_auth_failed': Record<string, never>
-  'common:errors.manual_url_auth_error': Record<string, never>
   'common:errors.api.invalidKeyInvalidChars': Record<string, never>
   'common:errors.error_opening_image': { error: string }
   'common:errors.invalid_data_uri': Record<string, never>
@@ -193,11 +187,7 @@ export interface TranslationParams {
   // Common namespace - marketplace
   'common:marketplace.mode.rulesCleanupFailed': { rulesFolderPath: string }
 
-  // Common namespace - mdm
-  'common:mdm.errors.cloud_auth_required': Record<string, never>
-  'common:mdm.errors.organization_mismatch': Record<string, never>
-  'common:mdm.errors.verification_failed': Record<string, never>
-  'common:mdm.info.organization_requires_auth': Record<string, never>
+
 
   // Common namespace - prompts
   'common:prompts.deleteMode.title': Record<string, never>
@@ -228,14 +218,6 @@ export interface TranslationParams {
   'common:items.zero': Record<string, never>
   'common:items.one': Record<string, never>
   'common:items.other': { count: number }
-
-  // Common namespace - invalid_data_uri
-  'common:invalid_data_uri': Record<string, never>
-  'common:error_copying_image': { errorMessage: string }
-  'common:error_opening_image': { error: string }
-  'common:error_saving_image': { errorMessage: string }
-  'common:could_not_open_file': { errorMessage: string }
-  'common:could_not_open_file_generic': Record<string, never>
 
   // Tools namespace
   'tools:readFile.linesRange': { start: number; end: number }
@@ -321,8 +303,6 @@ export interface TranslationParams {
 
   // Additional missing keys from type errors
   'common:errors.command_template_content': Record<string, never>
-  'mdm.errors.cloud_auth_required': Record<string, never>
-  'common:errors:command_timeout': { seconds: number }
 }
 
 /**

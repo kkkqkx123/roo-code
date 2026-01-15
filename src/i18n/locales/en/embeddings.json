@@ -50,5 +50,10 @@
 		"indexingRequiresWorkspace": "Indexing requires an open workspace folder",
 		"failedToConnect": "Connection failed: {{errorMessage}}",
 		"unexpectedError": "Unexpected error: {{errorMessage}}"
+	},
+	"textWithPrefixExceedsTokenLimit": "Text with prefix exceeds token limit ({{text}} + {{prefix}} > {{tokenLimit}}). Skipping.",
+	"openai": {
+		"invalidResponseFormat": "Invalid response format from OpenAI API"
+	}
 	}
 }

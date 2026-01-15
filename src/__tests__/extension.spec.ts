@@ -57,32 +57,6 @@ vi.mock("@dotenvx/dotenvx", () => ({
 	config: vi.fn(),
 }))
 
-const mockBridgeOrchestratorDisconnect = vi.fn().mockResolvedValue(undefined)
-
-const mockCloudServiceInstance = {
-	off: vi.fn(),
-	on: vi.fn(),
-	getUserInfo: vi.fn().mockReturnValue(null),
-	isTaskSyncEnabled: vi.fn().mockReturnValue(false),
-	authService: {
-		getSessionToken: vi.fn().mockReturnValue("test-session-token"),
-	},
-}
-
-vi.mock("@roo-code/cloud", () => ({
-	CloudService: {
-		createInstance: vi.fn(),
-		hasInstance: vi.fn().mockReturnValue(true),
-		get instance() {
-			return mockCloudServiceInstance
-		},
-	},
-	BridgeOrchestrator: {
-		disconnect: mockBridgeOrchestratorDisconnect,
-	},
-	getRooCodeApiUrl: vi.fn().mockReturnValue("https://app.roocode.com"),
-}))
-
 vi.mock("../utils/outputChannelLogger", () => ({
 	createOutputChannelLogger: vi.fn().mockReturnValue(vi.fn()),
 	createDualLogger: vi.fn().mockReturnValue(vi.fn()),
@@ -167,12 +141,6 @@ vi.mock("../services/code-index/manager", () => ({
 	},
 }))
 
-vi.mock("../services/mdm/MdmService", () => ({
-	MdmService: {
-		createInstance: vi.fn().mockResolvedValue(null),
-	},
-}))
-
 vi.mock("../utils/migrateSettings", () => ({
 	migrateSettings: vi.fn().mockResolvedValue(undefined) as any,
 }))
@@ -220,7 +188,6 @@ describe("extension.ts", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
-		mockBridgeOrchestratorDisconnect.mockClear()
 
 		mockContext = {
 			extensionPath: "/test/path",
