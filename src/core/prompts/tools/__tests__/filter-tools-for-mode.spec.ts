@@ -827,7 +827,7 @@ describe("filterMcpToolsForMode", () => {
 		})
 	})
 
-	it("should only allow switch_mode in orchestrator mode", () => {
+	it("should only allow switch_mode in modes with coordinator group", () => {
 		// Create a simple mock tool array with just the switch_mode tool
 		const mockToolsWithSwitchMode: OpenAI.Chat.ChatCompletionTool[] = [
 			{
@@ -886,7 +886,7 @@ describe("filterMcpToolsForMode", () => {
 		)
 		expect(hasSwitchMode(askModeTools)).toBe(false)
 
-		// Test orchestrator mode - should HAVE switch_mode
+		// Test orchestrator mode (has coordinator group) - should HAVE switch_mode
 		const orchestratorModeTools = filterNativeToolsForMode(
 			mockToolsWithSwitchMode,
 			"orchestrator",

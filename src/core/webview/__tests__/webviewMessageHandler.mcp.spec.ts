@@ -190,7 +190,7 @@ describe("webviewMessageHandler - Project MCP Settings", () => {
 
 			await messageHandler({ type: "openProjectMcpSettings" })
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("common:errors.no_workspace")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("[No Workspace]")
 		})
 
 		it("handles openProjectMcpSettings file creation error", async () => {
@@ -207,7 +207,7 @@ describe("webviewMessageHandler - Project MCP Settings", () => {
 				type: "openProjectMcpSettings",
 			})
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("mcp:errors.create_json")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("[Create Json]")
 		})
 	})
 })

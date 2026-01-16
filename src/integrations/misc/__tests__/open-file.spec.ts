@@ -179,7 +179,7 @@ describe("openFile", () => {
 
 			await openFile(nonExistentPath)
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.could_not_open_file")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("[Could Not Open File] (errorMessage)")
 		})
 
 		it("should handle generic errors", async () => {
@@ -189,7 +189,7 @@ describe("openFile", () => {
 
 			await openFile(testPath)
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.could_not_open_file")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("[Could Not Open File] (errorMessage)")
 		})
 	})
 

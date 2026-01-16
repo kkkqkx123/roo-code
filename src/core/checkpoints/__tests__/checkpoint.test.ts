@@ -375,7 +375,7 @@ describe("Checkpoint functionality", () => {
 				mode: "to-current",
 			})
 
-			expect(vscode.window.showInformationMessage).toHaveBeenCalledWith("common:errors.checkpoint_no_changes")
+			expect(vscode.window.showInformationMessage).toHaveBeenCalledWith("[Checkpoint No Changes]")
 			expect(vscode.commands.executeCommand).not.toHaveBeenCalled()
 		})
 

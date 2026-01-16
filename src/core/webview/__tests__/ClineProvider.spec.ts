@@ -1730,7 +1730,7 @@ describe("Project MCP Settings", () => {
 		await messageHandler({ type: "openProjectMcpSettings" })
 
 		// Verify error message was shown
-		expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.no_workspace")
+		expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("[No Workspace]")
 	})
 
 	test.skip("handles openProjectMcpSettings file creation error", async () => {

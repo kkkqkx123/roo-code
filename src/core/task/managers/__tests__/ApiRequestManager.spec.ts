@@ -40,6 +40,11 @@ describe("ApiRequestManager", () => {
 		mockMessageManager = {
 			getApiConversationHistory: vi.fn(),
 			addToApiConversationHistory: vi.fn(),
+			startNewApiRequest: vi.fn(() => 0), // 返回一个默认索引
+			endCurrentApiRequest: vi.fn(),
+			getCurrentRequestIndex: vi.fn(() => undefined),
+			setCurrentRequestIndex: vi.fn(),
+			overwriteApiConversationHistory: vi.fn(),
 		} as any
 
 		mockUserInteractionManager = {

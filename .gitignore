@@ -8,6 +8,9 @@ coverage/
 mock/
 backup
 **/*.db
+src/debug_shadow_test.txt
+src/debug_lfs_test.txt
+src/services/checkpoints/__tests__/debug_git_dir_test.txt
 
 .DS_Store
 

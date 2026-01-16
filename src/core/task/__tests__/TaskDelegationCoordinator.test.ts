@@ -87,7 +87,7 @@ describe("TaskDelegationCoordinator", () => {
 				undefined,
 				mockParent,
 				{
-					initialTodos: [{ id: "1", content: "Test todo" }],
+					initialTodos: [{ id: "1", content: "Test todo", status: "pending" }],
 					initialStatus: "active",
 				},
 			)

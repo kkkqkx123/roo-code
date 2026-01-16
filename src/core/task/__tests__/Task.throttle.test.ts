@@ -110,12 +110,7 @@ describe("Task token usage throttling", () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// Add a message to trigger saveClineMessages
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Test message",
-		})
+		await task.say("text", "Test message")
 
 		// Should emit immediately on first change
 		expect(emitSpy).toHaveBeenCalledWith(
@@ -130,12 +125,7 @@ describe("Task token usage throttling", () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// First message - should emit
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		const firstEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -143,12 +133,7 @@ describe("Task token usage throttling", () => {
 
 		// Second message immediately after - should NOT emit due to throttle
 		vi.advanceTimersByTime(500) // Advance only 500ms
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 2",
-		})
+		await task.say("text", "Message 2")
 
 		const secondEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -159,12 +144,7 @@ describe("Task token usage throttling", () => {
 
 		// Third message after 2+ seconds - should emit
 		vi.advanceTimersByTime(1600) // Total time: 2100ms
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 3",
-		})
+		await task.say("text", "Message 3")
 
 		const thirdEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -184,12 +164,7 @@ describe("Task token usage throttling", () => {
 		}
 
 		// Add a message to trigger emission
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Test message",
-		})
+		await task.say("text", "Test message")
 
 		// Should emit with toolUsage as third parameter
 		expect(emitSpy).toHaveBeenCalledWith(
@@ -209,12 +184,7 @@ describe("Task token usage throttling", () => {
 		}
 
 		// Add a message first
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		// Clear the spy to check for final emission
 		emitSpy.mockClear()
@@ -265,36 +235,21 @@ describe("Task token usage throttling", () => {
 		})
 
 		// Add initial message
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		// Get the initial snapshot
 		const initialSnapshot = task.tokenUsageSnapshot
 
 		// Add another message within throttle window
 		vi.advanceTimersByTime(500)
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 2",
-		})
+		await task.say("text", "Message 2")
 
 		// Snapshot should still be the same (throttled)
 		expect(task.tokenUsageSnapshot).toBe(initialSnapshot)
 
 		// Add message after throttle window
 		vi.advanceTimersByTime(1600) // Total: 2100ms
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 3",
-		})
+		await task.say("text", "Message 3")
 
 		// Snapshot should be updated now (new object reference)
 		expect(task.tokenUsageSnapshot).not.toBe(initialSnapshot)
@@ -331,12 +286,7 @@ describe("Task token usage throttling", () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// Add first message
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		const firstEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -344,12 +294,7 @@ describe("Task token usage throttling", () => {
 
 		// Wait for throttle period and add another message
 		vi.advanceTimersByTime(2100)
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 2",
-		})
+		await task.say("text", "Message 2")
 
 		const secondEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -388,12 +333,7 @@ describe("Task token usage throttling", () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// Add first message - should emit
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		const firstEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -408,12 +348,7 @@ describe("Task token usage throttling", () => {
 		}
 
 		// Add another message
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 2",
-		})
+		await task.say("text", "Message 2")
 
 		const secondEmitCount = emitSpy.mock.calls.filter(
 			(call) => call[0] === RooCodeEventName.TaskTokenUsageUpdated,
@@ -425,12 +360,7 @@ describe("Task token usage throttling", () => {
 
 	test("should update toolUsageSnapshot when emission occurs", async () => {
 		// Add initial message
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		// Initially toolUsageSnapshot should be set to current toolUsage (empty object)
 		const initialSnapshot = task.toolUsageSnapshot
@@ -447,12 +377,7 @@ describe("Task token usage throttling", () => {
 		}
 
 		// Add another message
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 2",
-		})
+		await task.say("text", "Message 2")
 
 		// Snapshot should be updated to match the new toolUsage
 		const newSnapshot = task.toolUsageSnapshot
@@ -465,12 +390,7 @@ describe("Task token usage throttling", () => {
 		const emitSpy = vi.spyOn(task, "emit")
 
 		// Add a message to trigger initial emission
-		await (task as any).addToClineMessages({
-			ts: Date.now(),
-			type: "say",
-			say: "text",
-			text: "Message 1",
-		})
+		await task.say("text", "Message 1")
 
 		// Wait for throttle period
 		vi.advanceTimersByTime(2100)

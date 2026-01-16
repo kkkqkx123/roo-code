@@ -124,7 +124,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.openAiConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[OpenAiConfigMissing]")
 		})
 
 		it("should pass model ID to OpenAI Compatible embedder when using OpenAI Compatible provider", () => {
@@ -187,7 +187,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.openAiCompatibleConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[OpenAiCompatibleConfigMissing]")
 		})
 
 		it("should throw error when OpenAI Compatible API key is missing", () => {
@@ -203,7 +203,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.openAiCompatibleConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[OpenAiCompatibleConfigMissing]")
 		})
 
 		it("should throw error when OpenAI Compatible options are missing", () => {
@@ -216,7 +216,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.openAiCompatibleConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[OpenAiCompatibleConfigMissing]")
 		})
 
 		it("should create GeminiEmbedder with default model when no modelId specified", () => {
@@ -265,7 +265,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.geminiConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[GeminiConfigMissing]")
 		})
 
 		it("should throw error when Gemini options are missing", () => {
@@ -277,7 +277,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.geminiConfigMissing")
+			expect(() => factory.createEmbedder()).toThrow("[GeminiConfigMissing]")
 		})
 
 		it("should throw error for invalid embedder provider", () => {
@@ -289,7 +289,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
 
 			// Act & Assert
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.invalidEmbedderType")
+			expect(() => factory.createEmbedder()).toThrow("[InvalidEmbedderType] (embedderProvider)")
 		})
 	})
 
@@ -465,7 +465,7 @@ describe("CodeIndexServiceFactory", () => {
 
 			// Act & Assert
 			expect(() => factory.createVectorStore()).toThrow(
-				"serviceFactory.vectorDimensionNotDeterminedOpenAiCompatible",
+				"[VectorDimensionNotDeterminedOpenAiCompatible] (modelId, provider)",
 			)
 		})
 
@@ -487,7 +487,7 @@ describe("CodeIndexServiceFactory", () => {
 
 			// Act & Assert
 			expect(() => factory.createVectorStore()).toThrow(
-				"serviceFactory.vectorDimensionNotDeterminedOpenAiCompatible",
+			 "[VectorDimensionNotDeterminedOpenAiCompatible] (modelId, provider)",
 			)
 		})
 
@@ -579,7 +579,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockGetModelDimension.mockReturnValue(undefined)
 
 			// Act & Assert
-			expect(() => factory.createVectorStore()).toThrow("serviceFactory.vectorDimensionNotDetermined")
+			expect(() => factory.createVectorStore()).toThrow("[VectorDimensionNotDetermined] (modelId, provider)")
 		})
 
 		it("should throw error when Qdrant URL is missing", () => {
@@ -594,7 +594,7 @@ describe("CodeIndexServiceFactory", () => {
 			mockGetModelDimension.mockReturnValue(1536)
 
 			// Act & Assert
-			expect(() => factory.createVectorStore()).toThrow("serviceFactory.qdrantUrlMissing")
+			expect(() => factory.createVectorStore()).toThrow("[QdrantUrlMissing]")
 		})
 	})
 
@@ -742,7 +742,7 @@ describe("CodeIndexServiceFactory", () => {
 			await expect(async () => {
 				const embedder = factory.createEmbedder()
 				await factory.validateEmbedder(embedder)
-			}).rejects.toThrow("serviceFactory.openAiConfigMissing")
+			}).rejects.toThrow("[OpenAiConfigMissing]")
 		})
 
 		it("should return error for unknown embedder provider", async () => {
@@ -755,7 +755,7 @@ describe("CodeIndexServiceFactory", () => {
 
 			// Act & Assert
 			// This should throw when trying to create the embedder
-			expect(() => factory.createEmbedder()).toThrow("serviceFactory.invalidEmbedderType")
+			expect(() => factory.createEmbedder()).toThrow("[InvalidEmbedderType] (embedderProvider)")
 		})
 	})
 })

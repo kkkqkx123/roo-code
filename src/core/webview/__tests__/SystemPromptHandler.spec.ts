@@ -226,7 +226,7 @@ describe("SystemPromptHandler - getSystemPrompt", () => {
 		// The error should be caught and showErrorMessage should be called
 		await messageHandler({ type: "getSystemPrompt", mode: "code" })
 
-		expect(showErrorMessageSpy).toHaveBeenCalledWith("errors.get_system_prompt")
+		expect(showErrorMessageSpy).toHaveBeenCalledWith("[Get System Prompt]")
 	})
 
 	test("uses code mode custom instructions", async () => {

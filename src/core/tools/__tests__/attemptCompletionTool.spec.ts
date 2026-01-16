@@ -437,12 +437,12 @@ describe("attemptCompletionTool", () => {
 				await attemptCompletionTool.handle(mockTask as Task, block, callbacks)
 
 				expect(mockSay).toHaveBeenCalledWith(
-					"error",
-					expect.stringContaining("errors.attempt_completion_tool_failed"),
-				)
-				expect(mockPushToolResult).toHaveBeenCalledWith(
-					expect.stringContaining("errors.attempt_completion_tool_failed"),
-				)
+			"error",
+			expect.stringContaining("[Attempt Completion Tool Failed]"),
+		)
+		expect(mockPushToolResult).toHaveBeenCalledWith(
+			expect.stringContaining("[Attempt Completion Tool Failed]"),
+		)
 			})
 
 			it("should allow completion when no tools failed", async () => {
