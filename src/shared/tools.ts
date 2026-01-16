@@ -97,7 +97,7 @@ export type NativeToolArgs = {
 	apply_patch: { patch: string }
 	ask_followup_question: {
 		question: string
-		follow_up: Array<{ text: string; mode?: string }>
+		follow_up: Array<{ text: string }>
 	}
 	browser_action: BrowserActionParams
 	codebase_search: { query: string; path?: string }
@@ -234,6 +234,7 @@ export type ToolGroupConfig = {
 	tools: readonly string[]
 	alwaysAvailable?: boolean // Whether this group is always available and shouldn't show in prompts view
 	customTools?: readonly string[] // Opt-in only tools - only available when explicitly included via model's includedTools
+	description?: string // Optional description for the tool group
 }
 
 
@@ -258,6 +259,10 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 	modes: {
 		tools: ["switch_mode", "new_task"],
 		alwaysAvailable: true,
+	},
+	coordinator: {
+		tools: ["switch_mode", "new_task"],
+		description: "Tools for mode coordination and switching",
 	},
 }
 

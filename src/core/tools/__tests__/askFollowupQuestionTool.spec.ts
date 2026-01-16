@@ -48,7 +48,7 @@ describe("askFollowupQuestionTool", () => {
 		)
 	})
 
-	it("should parse suggestions with mode attributes", async () => {
+	it("should ignore mode attributes in suggestions", async () => {
 		const block: ToolUse = {
 			type: "tool_use",
 			name: "ask_followup_question",
@@ -70,14 +70,14 @@ describe("askFollowupQuestionTool", () => {
 		expect(mockCline.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining(
-				'"suggest":[{"answer":"Write code","mode":"code"},{"answer":"Debug issue","mode":"debug"}]',
+				'"suggest":[{"answer":"Write code"},{"answer":"Debug issue"}]',
 			),
 			undefined,
 			false,
 		)
 	})
 
-	it("should handle mixed suggestions with and without mode attributes", async () => {
+	it("should handle mixed suggestions and ignore mode attributes", async () => {
 		const block: ToolUse = {
 			type: "tool_use",
 			name: "ask_followup_question",
@@ -99,7 +99,7 @@ describe("askFollowupQuestionTool", () => {
 		expect(mockCline.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining(
-				'"suggest":[{"answer":"Regular option"},{"answer":"Plan architecture","mode":"architect"}]',
+				'"suggest":[{"answer":"Regular option"},{"answer":"Plan architecture"}]',
 			),
 			undefined,
 			false,
@@ -117,7 +117,7 @@ describe("askFollowupQuestionTool", () => {
 				partial: true,
 				nativeArgs: {
 					question: "What would you like to do?",
-					follow_up: [{ text: "Option 1", mode: "code" }, { text: "Option 2" }],
+					follow_up: [{ text: "Option 1" }, { text: "Option 2" }],
 				},
 			}
 

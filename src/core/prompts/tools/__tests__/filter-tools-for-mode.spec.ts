@@ -826,4 +826,76 @@ describe("filterMcpToolsForMode", () => {
 			expect(toolNames).not.toContain("write_to_file")
 		})
 	})
+
+	it("should only allow switch_mode in orchestrator mode", () => {
+		// Create a simple mock tool array with just the switch_mode tool
+		const mockToolsWithSwitchMode: OpenAI.Chat.ChatCompletionTool[] = [
+			{
+				type: "function",
+				function: {
+					name: "switch_mode",
+					description: "Switch mode",
+					parameters: {},
+				},
+			},
+		]
+
+		// Helper function to check if switch_mode is in filtered tools
+		const hasSwitchMode = (tools: OpenAI.Chat.ChatCompletionTool[]) => {
+			return tools.some((tool) => {
+				if ("function" in tool && tool.function) {
+					return tool.function.name === "switch_mode"
+				}
+				return false
+			})
+		}
+
+		// Test code mode - should NOT have switch_mode
+		const codeModeTools = filterNativeToolsForMode(
+			mockToolsWithSwitchMode,
+			"code",
+			[],
+			{},
+			undefined,
+			{},
+			undefined
+		)
+		expect(hasSwitchMode(codeModeTools)).toBe(false)
+
+		// Test architect mode - should NOT have switch_mode
+		const architectModeTools = filterNativeToolsForMode(
+			mockToolsWithSwitchMode,
+			"architect",
+			[],
+			{},
+			undefined,
+			{},
+			undefined
+		)
+		expect(hasSwitchMode(architectModeTools)).toBe(false)
+
+		// Test ask mode - should NOT have switch_mode
+		const askModeTools = filterNativeToolsForMode(
+			mockToolsWithSwitchMode,
+			"ask",
+			[],
+			{},
+			undefined,
+			{},
+			undefined
+		)
+		expect(hasSwitchMode(askModeTools)).toBe(false)
+
+		// Test orchestrator mode - should HAVE switch_mode
+		const orchestratorModeTools = filterNativeToolsForMode(
+			mockToolsWithSwitchMode,
+			"orchestrator",
+			[],
+			{},
+			undefined,
+			{},
+			undefined
+		)
+		expect(hasSwitchMode(orchestratorModeTools)).toBe(true)
+	})
 })

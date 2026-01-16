@@ -6,7 +6,6 @@ import type { ToolUse } from "../../shared/tools"
 
 interface Suggestion {
 	text: string
-	mode?: string
 }
 
 interface AskFollowupQuestionParams {
@@ -25,7 +24,7 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 
 		if (follow_up_xml) {
 			// Define the actual structure returned by the XML parser
-			type ParsedSuggestion = string | { "#text": string; "@_mode"?: string }
+			type ParsedSuggestion = string | { "#text": string }
 
 			try {
 				const parsedSuggest = parseXml(follow_up_xml, ["suggest"]) as {
@@ -36,18 +35,14 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 					? parsedSuggest.suggest
 					: [parsedSuggest?.suggest].filter((sug): sug is ParsedSuggestion => sug !== undefined)
 
-				// Transform parsed XML to our Suggest format
+				// Transform parsed XML to our Suggest format (ignoring mode attributes)
 				for (const sug of rawSuggestions) {
 					if (typeof sug === "string") {
-						// Simple string suggestion (no mode attribute)
+						// Simple string suggestion
 						suggestions.push({ text: sug })
 					} else {
-						// XML object with text content and optional mode attribute
-						const suggestion: Suggestion = { text: sug["#text"] }
-						if (sug["@_mode"]) {
-							suggestion.mode = sug["@_mode"]
-						}
-						suggestions.push(suggestion)
+						// XML object with text content only (ignore mode attribute)
+						suggestions.push({ text: sug["#text"] })
 					}
 				}
 			} catch (error) {
@@ -79,7 +74,7 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 			// Transform follow_up suggestions to the format expected by task.ask
 			const follow_up_json = {
 				question,
-				suggest: follow_up.map((s) => ({ answer: s.text, mode: s.mode })),
+				suggest: follow_up.map((s) => ({ answer: s.text })),
 			}
 
 			task.consecutiveMistakeCount = 0
