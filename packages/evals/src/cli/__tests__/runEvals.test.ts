@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { runEvals } from "../runEvals.js"
-import { createRun, createTask, findRun, getTasks, createTaskMetrics, updateTask } from "../../db/index.js"
+import { createRun, createTask, findRun, createTaskMetrics, updateTask } from "../../db/index.js"
 import { db } from "../../db/index.js"
 import { schema } from "../../db/schema.js"
 import { eq } from "drizzle-orm"
@@ -114,7 +114,7 @@ describe("runEvals", () => {
 
 	describe("basic execution", () => {
 		it("should process all unfinished tasks", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = vi.fn()
 			const processTaskSpy = vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -123,7 +123,7 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should skip already finished tasks", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			const processTaskSpy = vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			if (taskIds[0] !== undefined) {
@@ -136,7 +136,7 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should call finishRun after all tasks are processed", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -146,10 +146,10 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should reset evals repo before processing tasks", async () => {
-			const { resetEvalsRepo } = await import("../utils.js")
+			const { resetEvalsRepo: _resetEvalsRepo } = await import("../utils.js")
 			const resetEvalsRepoSpy = vi.spyOn(await import("../utils.js"), "resetEvalsRepo").mockResolvedValue()
 
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -158,10 +158,10 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should commit evals repo changes after processing tasks", async () => {
-			const { commitEvalsRepoChanges } = await import("../utils.js")
+			const { commitEvalsRepoChanges: _commitEvalsRepoChanges } = await import("../utils.js")
 			const commitEvalsRepoChangesSpy = vi.spyOn(await import("../utils.js"), "commitEvalsRepoChanges").mockResolvedValue()
 
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -192,12 +192,12 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should handle errors from processTask gracefully", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockRejectedValueOnce(
 				new Error("Task processing failed"),
 			)
 
-			const { finishRun } = await import("../../db/index.js")
+			const _finishRun = await import("../../db/index.js")
 
 			await runEvals(runId)
 
@@ -206,7 +206,7 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should continue processing tasks even if one fails", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			let callCount = 0
 			vi.spyOn(await import("../runTask.js"), "processTask").mockImplementation(async () => {
 				callCount++
@@ -223,7 +223,7 @@ describe("runEvals", () => {
 
 	describe("concurrency handling", () => {
 		it("should use run's concurrency setting", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			const processTaskSpy = vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			const run = await findRun(runId)
@@ -235,7 +235,7 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should process tasks with staggered start times when concurrency > 1", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			const processTaskSpy = vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			const startTime = Date.now()
@@ -249,7 +249,7 @@ describe("runEvals", () => {
 
 	describe("logging", () => {
 		it("should create a logger with correct tag", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -263,7 +263,7 @@ describe("runEvals", () => {
 		}, 10000)
 
 		it("should log task processing start", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			await runEvals(runId)
@@ -275,7 +275,7 @@ describe("runEvals", () => {
 
 	describe("cleanup", () => {
 		it("should close logger after processing", async () => {
-			const { processTask } = await import("../runTask.js")
+			const _processTask = await import("../runTask.js")
 			vi.spyOn(await import("../runTask.js"), "processTask").mockResolvedValue()
 
 			const mockLogger = {
@@ -285,7 +285,7 @@ describe("runEvals", () => {
 				debug: vi.fn(),
 				log: vi.fn(),
 				close: vi.fn(),
-			} as any
+			} as any // eslint-disable-line @typescript-eslint/no-explicit-any
 			vi.spyOn(await import("../utils.js"), "Logger").mockReturnValue(mockLogger)
 
 			await runEvals(runId)

@@ -42,7 +42,11 @@ export class TaskLifecycleManager {
 	}
 
 	async startTask(task?: string, images?: string[]): Promise<void> {
+		const provider = this.providerRef.deref()
+		provider?.log(`[TaskLifecycleManager#startTask] Starting task: "${task?.substring(0, 100)}..."`)
+		
 		if (this.task.abandoned === true || this.task.abortReason === "user_cancelled") {
+			provider?.log(`[TaskLifecycleManager#startTask] Task abandoned or cancelled, returning early`)
 			return
 		}
 
@@ -57,10 +61,13 @@ export class TaskLifecycleManager {
 		}
 
 		await this.prepareTaskHistory()
+		provider?.log(`[TaskLifecycleManager#startTask] Task history prepared`)
 
 		await this.detectToolProtocol()
+		provider?.log(`[TaskLifecycleManager#startTask] Tool protocol detected: ${this.task.taskToolProtocol}`)
 
 		await this.initiateTaskLoop()
+		provider?.log(`[TaskLifecycleManager#startTask] Task loop completed`)
 	}
 
 	async resumeTaskFromHistory(): Promise<void> {

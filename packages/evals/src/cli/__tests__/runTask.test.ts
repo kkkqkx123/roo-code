@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { processTask, runTask } from "../runTask.js"
-import { createRun, createTask, createTaskMetrics, findTask, updateTask } from "../../db/index.js"
+import { createRun, createTask, createTaskMetrics, findTask } from "../../db/index.js"
 import { db } from "../../db/index.js"
 import { schema } from "../../db/schema.js"
 import { eq } from "drizzle-orm"
@@ -187,7 +187,8 @@ describe("processTask", () => {
 
 			try {
 				await processTask({ taskId, logger: mockLogger })
-			} catch (error) {
+			} catch (_error) {
+				// Intentionally empty - we're testing error handling
 			}
 
 			expect(errorSpy).toHaveBeenCalled()

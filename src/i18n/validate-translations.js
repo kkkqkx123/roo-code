@@ -5,6 +5,7 @@
  * 验证JSON翻译文件与类型定义的一致性
  */
 
+/* global require, __dirname, console, process */
 const fs = require('fs')
 const path = require('path')
 
@@ -15,7 +16,7 @@ function flattenObject(obj, prefix = '') {
   const result = {}
   
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const newKey = prefix ? `${prefix}.${key}` : key
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         Object.assign(result, flattenObject(obj[key], newKey))

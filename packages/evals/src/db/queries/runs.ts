@@ -23,7 +23,7 @@ export const createRun = async (args: InsertRun) => {
 	// Handle JSON serialization for settings field
 	const insertData = { ...args }
 	if (insertData.settings && typeof insertData.settings === 'object') {
-		insertData.settings = JSON.stringify(insertData.settings) as any
+		insertData.settings = JSON.stringify(insertData.settings) as any // eslint-disable-line @typescript-eslint/no-explicit-any
 	}
 	
 	const records = await db

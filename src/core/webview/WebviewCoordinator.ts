@@ -72,10 +72,17 @@ export class WebviewCoordinator {
 	 */
 	public async postMessageToWebview(message: ExtensionMessage): Promise<void> {
 		if (!this.view) {
+			this.logger.warn(`[postMessageToWebview] Webview view not available, message dropped: ${message.type}`)
 			return
 		}
 
-		await this.view.webview.postMessage(message)
+		this.logger.debug(`[postMessageToWebview] Sending message to webview: ${JSON.stringify(message).substring(0, 200)}`)
+		try {
+			await this.view.webview.postMessage(message)
+			this.logger.debug(`[postMessageToWebview] Message sent successfully: ${message.type}`)
+		} catch (error) {
+			this.logger.error(`[postMessageToWebview] Failed to send message: ${message.type}`, error)
+		}
 	}
 
 	/**

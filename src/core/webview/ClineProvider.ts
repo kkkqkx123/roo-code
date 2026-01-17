@@ -102,7 +102,7 @@ export class ClineProvider
 	
 	private currentWorkspacePath: string | undefined
 	public settingsImportedAt?: number
-	public readonly latestAnnouncementId = "dec-2025-v3.36.0-context-rewind-roo-provider"
+	public readonly latestAnnouncementId = "" // 禁用更新公告
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -329,6 +329,8 @@ export class ClineProvider
 		options: CreateTaskOptions = {},
 		configuration: RooCodeSettings = {},
 	): Promise<Task> {
+		this.logger.debug(`[ClineProvider#createTask] Creating task with text: "${text?.substring(0, 100)}..."`)
+		
 		if (configuration) {
 			await this.setValues(configuration)
 		}
@@ -342,7 +344,10 @@ export class ClineProvider
 			}
 		}
 
-		return await this.taskManager.createTask(text || "", options)
+		const task = await this.taskManager.createTask(text || "", options)
+		this.logger.debug(`[ClineProvider#createTask] Task created: ${task.taskId}`)
+		
+		return task
 	}
 
 	/**
@@ -527,6 +532,8 @@ export class ClineProvider
 	 */
 	public async postStateToWebview(): Promise<void> {
 		const state = await this.stateCoordinator.getStateToPostToWebview()
+		const currentTask = this.getCurrentTask()
+		this.logger.debug(`[postStateToWebview] Posting state, currentTask: ${currentTask?.taskId ?? "none"}, clineMessages: ${currentTask?.clineMessages?.length ?? 0}`)
 		await this.webviewCoordinator.postMessageToWebview({
 			type: "state",
 			state,

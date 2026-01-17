@@ -89,8 +89,9 @@ function generateAllTypes() {
   output += `/**\n * 语言配置接口\n */\nexport interface LanguageConfig {\n  code: LanguageCode\n  name: string\n  direction: 'ltr' | 'rtl'\n}\n`
   
   fs.writeFileSync(outputPath, output, 'utf8')
-  
+
   const totalKeys = Object.values(namespaces).reduce((sum, data) => sum + extractKeys(data).length, 0)
+  /* global console */
   console.log(`Generated type definitions at: ${outputPath}`)
   console.log(`Namespaces: ${Object.keys(namespaces).join(', ')}`)
   console.log(`Total keys: ${totalKeys}`)

@@ -51,9 +51,9 @@ export const createTaskMetrics = async (args: InsertTaskMetrics) => {
 }
 
 export const updateTaskMetrics = async (id: number, values: UpdateTaskMetrics) => {
-	const updateValues: any = { ...values }
+	const updateValues = { ...values } as Partial<UpdateTaskMetrics>
 	if (values.toolUsage !== undefined) {
-		updateValues.toolUsage = sql`${JSON.stringify(values.toolUsage)}`
+		updateValues.toolUsage = sql`${JSON.stringify(values.toolUsage)}` as any // eslint-disable-line @typescript-eslint/no-explicit-any
 	}
 
 	const records = await db.update(taskMetrics).set(updateValues).where(eq(taskMetrics.id, id)).returning()

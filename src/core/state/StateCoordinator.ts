@@ -220,7 +220,7 @@ export class StateCoordinator {
 			featureRoomoteControlEnabled: false,
 			claudeCodeIsAuthenticated: false,
 			debug: vscode.workspace.getConfiguration("roo-cline").get<boolean>("debug", false),
-			shouldShowAnnouncement: true,
+			shouldShowAnnouncement: false,
 			hasSystemPromptOverride: false,
 			clineMessages: [],
 			renderContext: "sidebar",

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 
-import type { InsertRun, InsertTask, InsertTaskMetrics, InsertToolError } from "../schema.js"
+import type { InsertRun, InsertTask, InsertToolError } from "../schema.js"
 import { schema } from "../schema.js"
 
 import { RecordNotFoundError, RecordNotCreatedError } from "./errors.js"
@@ -42,7 +42,7 @@ export const copyRun = async ({
 				cacheReads: sourceRun.taskMetrics.cacheReads,
 				cost: sourceRun.taskMetrics.cost,
 				duration: sourceRun.taskMetrics.duration,
-				toolUsage: JSON.stringify(toolUsage) as any,
+				toolUsage: JSON.stringify(toolUsage) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
 				createdAt: new Date().toISOString(),
 			})
 			.returning()
@@ -121,22 +121,13 @@ export const copyRun = async ({
 				cacheReads: sourceTask.taskMetrics.cacheReads,
 				cost: sourceTask.taskMetrics.cost,
 				duration: sourceTask.taskMetrics.duration,
-				toolUsage: JSON.stringify(toolUsage),
+				toolUsage: JSON.stringify(toolUsage) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+				createdAt: new Date().toISOString(),
 			}
 
 			const newTaskMetrics = await targetDb
 				.insert(schema.taskMetrics)
-				.values({
-					tokensIn: sourceTask.taskMetrics.tokensIn,
-					tokensOut: sourceTask.taskMetrics.tokensOut,
-					tokensContext: sourceTask.taskMetrics.tokensContext,
-					cacheWrites: sourceTask.taskMetrics.cacheWrites,
-					cacheReads: sourceTask.taskMetrics.cacheReads,
-					cost: sourceTask.taskMetrics.cost,
-					duration: sourceTask.taskMetrics.duration,
-					toolUsage: JSON.stringify(toolUsage) as any,
-					createdAt: new Date().toISOString(),
-				})
+				.values(taskMetricsData)
 				.returning()
 
 			const createdTaskMetrics = newTaskMetrics[0]

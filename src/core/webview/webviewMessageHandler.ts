@@ -483,14 +483,19 @@ export const webviewMessageHandler = async (
 			provider.isViewLaunched = true
 			break
 		case "newTask":
+			provider.log(`[webviewMessageHandler] Received newTask message: "${message.text?.substring(0, 100)}..."`)
 			// Initializing new instance of Cline will make sure that any
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
 			try {
+				provider.log(`[webviewMessageHandler] Creating task...`)
 				await provider.createTask(message.text, message.images)
+				provider.log(`[webviewMessageHandler] Task created successfully, sending newChat invoke`)
 				// Task created successfully - notify the UI to reset
 				await provider.postMessageToWebview({ type: "invoke", invoke: "newChat" })
+				provider.log(`[webviewMessageHandler] newChat invoke sent`)
 			} catch (error) {
+				provider.log(`[webviewMessageHandler] Error creating task: ${error}`)
 				// For all errors, reset the UI and show error
 				await provider.postMessageToWebview({ type: "invoke", invoke: "newChat" })
 				// Show error to user

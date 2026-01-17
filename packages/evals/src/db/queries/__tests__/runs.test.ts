@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 
-import { findRun, createRun, updateRun, getRuns, finishRun, deleteRun, getIncompleteRuns, deleteRunsByIds } from "../runs.js"
+import { findRun, createRun, updateRun, getRuns, deleteRun, getIncompleteRuns, deleteRunsByIds } from "../runs.js"
 import { createTask } from "../tasks.js"
 import { createTaskMetrics } from "../taskMetrics.js"
 import { createToolError } from "../toolErrors.js"

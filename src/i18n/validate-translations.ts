@@ -22,7 +22,7 @@ function flattenObject(obj: any, prefix = ''): Record<string, string> {
   const result: Record<string, string> = {}
   
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const newKey = prefix ? `${prefix}.${key}` : key
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         Object.assign(result, flattenObject(obj[key], newKey))

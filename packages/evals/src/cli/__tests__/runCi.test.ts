@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { describe, it, expect, vi, afterEach } from "vitest"
 import { runCi } from "../runCi.js"
 
 vi.mock("../../exercises/index.js", () => ({
@@ -18,11 +18,11 @@ vi.mock("../../exercises/index.js", () => ({
 			])
 		}
 		return Promise.resolve([])
-	}) as any,
+	}),
 }))
 
 vi.mock("../runEvals.js", () => ({
-	runEvals: vi.fn(() => Promise.resolve()) as any,
+	runEvals: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock("../../db/index.js", () => ({
@@ -33,7 +33,7 @@ vi.mock("../../db/index.js", () => ({
 		createdAt: new Date().toISOString(),
 		settings: null,
 		taskMetricsId: null,
-	})) as any,
+	})),
 	createTask: vi.fn((args) => Promise.resolve({
 		id: 1,
 		runId: args.runId,
@@ -45,21 +45,21 @@ vi.mock("../../db/index.js", () => ({
 		error: null,
 		executionTime: null,
 		toolUsage: null,
-	})) as any,
-	findRun: vi.fn(() => Promise.resolve(null)) as any,
-	getTasks: vi.fn(() => Promise.resolve([])) as any,
+	})),
+	findRun: vi.fn(() => Promise.resolve(null)),
+	getTasks: vi.fn(() => Promise.resolve([])),
 	db: {
 		query: {
 			runs: {
-				findMany: vi.fn(() => Promise.resolve([])) as any,
+				findMany: vi.fn(() => Promise.resolve([])),
 			},
 			tasks: {
-				findMany: vi.fn(() => Promise.resolve([])) as any,
+				findMany: vi.fn(() => Promise.resolve([])),
 			},
 		},
 		delete: vi.fn(() => ({
-			where: vi.fn(() => Promise.resolve()) as any,
-		})) as any,
+			where: vi.fn(() => Promise.resolve()),
+		})),
 	},
 }))
 
@@ -172,6 +172,7 @@ describe("runCi", () => {
 		it("should handle errors from getExercisesForLanguage", async () => {
 			const { getExercisesForLanguage } = await import("../../exercises/index.js")
 			
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(getExercisesForLanguage as any).mockRejectedValue(new Error("Failed to get exercises"))
 
 			await expect(runCi({})).rejects.toThrow("Failed to get exercises")
@@ -180,6 +181,7 @@ describe("runCi", () => {
 		it("should handle errors from createRun", async () => {
 			const { createRun } = await import("../../db/index.js")
 			
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(createRun as any).mockRejectedValue(new Error("Failed to create run"))
 
 			await expect(runCi({})).rejects.toThrow("Failed to create run")
@@ -190,6 +192,7 @@ describe("runCi", () => {
 			const { getExercisesForLanguage } = await import("../../exercises/index.js")
 			
 			// Mock createRun to succeed first, then createTask to fail
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(createRun as any).mockResolvedValue({
 				id: 1,
 				model: "anthropic/claude-sonnet-4",
@@ -197,13 +200,15 @@ describe("runCi", () => {
 				createdAt: new Date().toISOString(),
 				settings: null,
 				taskMetricsId: null,
-			} as any)
+			})
 
 			// Mock getExercisesForLanguage to succeed so we get to createTask step
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(getExercisesForLanguage as any).mockResolvedValue([
 				{ name: "test-exercise", language: "javascript" }
 			])
 
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(createTask as any).mockRejectedValue(new Error("Failed to create task"))
 
 			await expect(runCi({})).rejects.toThrow("Failed to create task")
@@ -215,6 +220,7 @@ describe("runCi", () => {
 			const { runEvals } = await import("../runEvals.js")
 			
 			// Mock createRun to succeed first, then runEvals to fail
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(createRun as any).mockResolvedValue({
 				id: 1,
 				model: "anthropic/claude-sonnet-4",
@@ -222,25 +228,29 @@ describe("runCi", () => {
 				createdAt: new Date().toISOString(),
 				settings: null,
 				taskMetricsId: null,
-			} as any)
+			})
 			
 			// Mock getExercisesForLanguage and createTask to succeed so we get to runEvals step
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(getExercisesForLanguage as any).mockResolvedValue([
 				{ language: "javascript", exercise: "test-exercise" }
 			])
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(createTask as any).mockResolvedValue({
 				id: 1,
 				runId: 1,
 				language: "javascript",
 				exercise: { language: "javascript", exercise: "test-exercise" },
 				createdAt: new Date().toISOString(),
-			} as any)
+			})
 			
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(runEvals as any).mockRejectedValue(new Error("Failed to run evals"))
 
 			await expect(runCi({})).rejects.toThrow("Failed to run evals")
 			
 			// Reset the mock after this test to prevent affecting other tests
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			;(runEvals as any).mockResolvedValue(undefined)
 		})
 	})

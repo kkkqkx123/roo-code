@@ -1,16 +1,9 @@
 import * as fs from "fs"
-import * as fsp from "fs/promises"
 import * as path from "path"
-import * as os from "node:os"
-
-import pWaitFor from "p-wait-for"
-import { execa } from "execa"
 
 import {
 	type TaskEvent,
-	type ClineSay,
 	RooCodeEventName,
-	EVALS_SETTINGS,
 	type ToolUsage,
 } from "@roo-code/types"
 
@@ -22,12 +15,11 @@ import {
 	updateTask,
 	createTaskMetrics,
 	updateTaskMetrics,
-	createToolError,
 } from "../db/index.js"
 import { EVALS_REPO_PATH } from "../exercises/index.js"
 
 import { Logger, getTag, isDockerContainer } from "./utils.js"
-import { runUnitTest } from "./runUnitTest.js"
+// import { runUnitTest } from "./runUnitTest.js" // Temporarily commented out as unused
 
 
 
@@ -90,11 +82,13 @@ type RunTaskOptions = {
 	logger: Logger
 }
 
-export const runTask = async ({ run, task, publish, logger, jobToken }: RunTaskOptions) => {
+export const runTask = async ({ run: _run, task, publish, logger, jobToken }: RunTaskOptions) => {
 	const { language, exercise } = task
-	const prompt = fs.readFileSync(path.resolve(EVALS_REPO_PATH, `prompts/${language}.md`), "utf-8")
-	const workspacePath = path.resolve(EVALS_REPO_PATH, language, exercise)
-	const logDir = `/tmp/evals/runs/${run.id}`
+	// Using fs.readFileSync to read the prompt file
+	fs.readFileSync(path.resolve(EVALS_REPO_PATH, `prompts/${language}.md`), "utf-8")
+	// workspacePath and logDir are used in the original implementation but not in simplified version
+	// const workspacePath = path.resolve(EVALS_REPO_PATH, language, exercise)
+	// const logDir = `/tmp/evals/runs/${run.id}`
 
 	logger.info(`Simplified local execution for task ${task.id} (${language}/${exercise})`)
 
