@@ -45,6 +45,28 @@ export class StateCoordinator {
 	}
 
 	/**
+	 * Applies terminal settings from the current state
+	 */
+	public async applyTerminalSettings(): Promise<void> {
+		try {
+			const state = await this.getState()
+			
+			Terminal.setShellIntegrationTimeout(state.terminalShellIntegrationTimeout ?? Terminal.defaultShellIntegrationTimeout)
+			Terminal.setShellIntegrationDisabled(state.terminalShellIntegrationDisabled ?? false)
+			Terminal.setCommandDelay(state.terminalCommandDelay ?? 0)
+			Terminal.setTerminalZshClearEolMark(state.terminalZshClearEolMark ?? true)
+			Terminal.setTerminalZshOhMy(state.terminalZshOhMy ?? false)
+			Terminal.setTerminalZshP10k(state.terminalZshP10k ?? false)
+			Terminal.setPowershellCounter(state.terminalPowershellCounter ?? false)
+			Terminal.setTerminalZdotdir(state.terminalZdotdir ?? false)
+			
+			console.log("[StateCoordinator] Terminal settings applied")
+		} catch (error) {
+			console.warn(`[StateCoordinator] Failed to apply terminal settings: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	}
+
+	/**
 	 * Updates a global state value
 	 */
 	public async updateGlobalState<K extends keyof GlobalState>(key: K, value: GlobalState[K]): Promise<void> {

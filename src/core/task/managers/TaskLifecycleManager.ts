@@ -272,6 +272,9 @@ export class TaskLifecycleManager {
 	}
 
 	async abortTask(isAbandoned = false): Promise<void> {
+		const provider = this.providerRef.deref()
+		provider?.log(`[TaskLifecycleManager#abortTask] Aborting task, isAbandoned: ${isAbandoned}`)
+		
 		if (isAbandoned) {
 			this.task.abandoned = true
 		}
@@ -283,6 +286,10 @@ export class TaskLifecycleManager {
 		}
 
 		this.task.emit(RooCodeEventName.TaskAborted)
+		
+		// 更新UI状态以反映任务已取消
+		await provider?.postStateToWebview()
+		provider?.log(`[TaskLifecycleManager#abortTask] UI state updated after abort`)
 	}
 
 	async dispose(): Promise<void> {

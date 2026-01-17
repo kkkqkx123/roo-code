@@ -36,6 +36,7 @@ import WorkspaceTracker from "../../integrations/workspace/WorkspaceTracker"
 import { McpHub } from "../../services/mcp/McpHub"
 import { McpServerManager } from "../../services/mcp/McpServerManager"
 import { CodeIndexManager } from "../../services/code-index/manager"
+import { Terminal } from "../../integrations/terminal/Terminal"
 
 import { getWorkspacePath } from "../../utils/path"
 import { getSettingsDirectoryPath } from "../../utils/storage"
@@ -57,40 +58,39 @@ import { createLogger } from "../../utils/logger"
  */
 export class ClineProvider
 	extends EventEmitter<TaskProviderEvents>
-	implements vscode.WebviewViewProvider, TaskProviderLike
-{
+	implements vscode.WebviewViewProvider, TaskProviderLike {
 	public static readonly sideBarId = `${Package.name}.SidebarProvider`
 	public static readonly tabPanelId = `${Package.name}.TabPanelProvider`
-	
+
 	private static activeInstances: Set<ClineProvider> = new Set()
 	private disposables: vscode.Disposable[] = []
-	
+
 	public readonly context: vscode.ExtensionContext
 	private outputChannel: vscode.OutputChannel
 	private renderContext: "sidebar" | "editor"
 	public readonly contextProxy: ContextProxy
 	private logger: ReturnType<typeof createLogger>
-	
+
 	// Webview related
 	private webviewDisposables: vscode.Disposable[] = []
 	private view?: vscode.WebviewView | vscode.WebviewPanel
-	
+
 	// Task related
 	private taskCreationCallback: (task: Task) => void
-	
+
 	// Coordinator instances
 	public taskManager!: TaskManager
 	public taskDelegationCoordinator!: TaskDelegationCoordinator
 	public webviewCoordinator!: WebviewCoordinator
 	public providerCoordinator!: ProviderCoordinator
 	public stateCoordinator!: StateCoordinator
-	
+
 	// Service instances
 	private _workspaceTracker?: WorkspaceTracker
 	private mcpHub?: McpHub
 	private _providerSettingsManager!: ProviderSettingsManager
 	private _customModesManager!: CustomModesManager
-	
+
 	private codeIndexStatusSubscription?: vscode.Disposable
 	private configUpgradeStatusSubscription?: vscode.Disposable
 	private codeIndexManager?: CodeIndexManager
@@ -99,7 +99,7 @@ export class ClineProvider
 
 	// Other properties
 	public isViewLaunched = false
-	
+
 	private currentWorkspacePath: string | undefined
 	public settingsImportedAt?: number
 	public readonly latestAnnouncementId = "" // 禁用更新公告
@@ -111,21 +111,21 @@ export class ClineProvider
 		contextProxy: ContextProxy,
 	) {
 		super()
-		
+
 		this.context = context
 		this.outputChannel = outputChannel
 		this.renderContext = renderContext
 		this.contextProxy = contextProxy
-		
+
 		this.logger = createLogger(outputChannel, `ClineProvider(${renderContext})`)
 		this.logger.info(`Initializing ClineProvider in ${renderContext} mode`)
-		
+
 		this.currentWorkspacePath = getWorkspacePath()
 		this.logger.debug(`Workspace path: ${this.currentWorkspacePath}`)
-		
+
 		ClineProvider.activeInstances.add(this)
 		this.logger.debug(`Added to active instances (total: ${ClineProvider.activeInstances.size})`)
-		
+
 		// Initialize task creation callback
 		this.taskCreationCallback = (instance: Task) => {
 			this.logger.debug(`Task created: ${instance.taskId}`)
@@ -167,27 +167,34 @@ export class ClineProvider
 			instance.on(RooCodeEventName.TaskUserMessage, onTaskUserMessage)
 			instance.on(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated)
 		}
-		
+
 		// Initialize coordinators
 		this.initializeCoordinators()
-		
+
 		// Initialize services
 		this.initializeServices()
-		
+
 		// Set up event handling
 		this.setupEventHandling()
 	}
 
 	/**
-	 * Initializes the coordinator instances
+	 * Initializes terminal settings from state
 	 */
+	private async initializeTerminalSettings(): Promise<void> {
+		await this.stateCoordinator.applyTerminalSettings()
+	}
+
+	/**
+		* Initializes the coordinator instances
+		*/
 	private initializeCoordinators(): void {
 		this.logger.info("Initializing coordinators...")
-		
+
 		// Initialize StateCoordinator first (without TaskManager to avoid circular dependency)
 		this.stateCoordinator = new StateCoordinator(this.contextProxy, this.mcpHub)
 		this.logger.debug("StateCoordinator initialized")
-		
+
 		// Initialize TaskManager with task creation callback
 		this.taskManager = new TaskManager(
 			this.taskCreationCallback,
@@ -196,11 +203,11 @@ export class ClineProvider
 			() => this.stateCoordinator.getState(),
 		)
 		this.logger.debug("TaskManager initialized")
-		
+
 		// Set TaskManager in StateCoordinator to enable isBrowserSessionActive check
 		this.stateCoordinator.setTaskManager(this.taskManager)
 		this.logger.debug("TaskManager set in StateCoordinator")
-		
+
 		// Initialize TaskDelegationCoordinator
 		this.taskDelegationCoordinator = new TaskDelegationCoordinator({
 			getCurrentTask: () => this.taskManager.getCurrentTask(),
@@ -215,17 +222,17 @@ export class ClineProvider
 			globalStoragePath: this.contextProxy.globalStorageUri.fsPath,
 		})
 		this.logger.debug("TaskDelegationCoordinator initialized")
-		
+
 		// Initialize ProviderCoordinator
 		this.providerCoordinator = new ProviderCoordinator(this.context, this.contextProxy)
 		this.logger.debug("ProviderCoordinator initialized")
-		
+
 		// Set up coordinator event forwarding
 		this.taskManager.on(RooCodeEventName.TaskCreated, (task) => {
 			this.emit(RooCodeEventName.TaskCreated, task)
 		})
 		this.logger.debug("Coordinator event forwarding set up")
-		
+
 		this.logger.info("Coordinators initialized successfully")
 	}
 
@@ -234,13 +241,13 @@ export class ClineProvider
 	 */
 	private initializeServices(): void {
 		this.logger.info("Initializing services...")
-		
+
 		this._workspaceTracker = new WorkspaceTracker(this)
 		this.logger.debug("WorkspaceTracker initialized")
-		
+
 		this._providerSettingsManager = new ProviderSettingsManager(this.context)
 		this.logger.debug("ProviderSettingsManager initialized")
-		
+
 		this._customModesManager = new CustomModesManager(this.context, async () => {
 			await this.postStateToWebview()
 		})
@@ -254,7 +261,7 @@ export class ClineProvider
 		// Initialize WebviewCoordinator with provider
 		this.webviewCoordinator = new WebviewCoordinator(this.context, this.outputChannel, this)
 		this.logger.debug("WebviewCoordinator initialized")
-		
+
 		// Initialize MCP Hub
 		McpServerManager.getInstance(this.context, this)
 			.then((hub) => {
@@ -265,11 +272,11 @@ export class ClineProvider
 			.catch((error) => {
 				this.logger.error("Failed to initialize MCP Hub", error)
 			})
-		
+
 		// Set codebase index models
 		this.stateCoordinator.updateGlobalState("codebaseIndexModels", EMBEDDING_MODEL_PROFILES)
 		this.logger.debug("Codebase index models set")
-		
+
 		this.logger.info("Services initialized successfully")
 	}
 
@@ -311,9 +318,12 @@ export class ClineProvider
 		try {
 			await this.webviewCoordinator.resolveWebviewView(webviewView)
 			this.logger.debug("WebviewCoordinator resolved webview view")
-			
+
+			// Initialize terminal settings from state
+			await this.initializeTerminalSettings()
+
 			this.updateCodeIndexStatusSubscription()
-			
+
 			await this.postStateToWebview()
 			this.logger.info("Initial state posted to webview")
 		} catch (error) {
@@ -333,7 +343,7 @@ export class ClineProvider
 		configuration: RooCodeSettings = {},
 	): Promise<Task> {
 		this.logger.debug(`[ClineProvider#createTask] Creating task with text: "${text?.substring(0, 100)}..."`)
-		
+
 		if (configuration) {
 			await this.setValues(configuration)
 		}
@@ -349,7 +359,7 @@ export class ClineProvider
 
 		const task = await this.taskManager.createTask(text || "", options)
 		this.logger.debug(`[ClineProvider#createTask] Task created: ${task.taskId}`)
-		
+
 		return task
 	}
 
@@ -395,7 +405,7 @@ export class ClineProvider
 				}
 			}
 		}
-		
+
 		return await this.taskManager.createTaskWithHistoryItem(historyItem, options)
 	}
 
@@ -442,7 +452,7 @@ export class ClineProvider
 	}
 
 	/**
-	 * Sets a pending edit operation
+	 * Sets a pending edit operation with automatic timeout cleanup
 	 */
 	public setPendingEditOperation(
 		operationId: string,
@@ -728,7 +738,7 @@ export class ClineProvider
 		if (needsRebuild) {
 			task.updateApiConfiguration(providerSettings)
 		} else {
-			;(task as any).apiConfiguration = providerSettings
+			; (task as any).apiConfiguration = providerSettings
 		}
 	}
 
@@ -770,7 +780,7 @@ export class ClineProvider
 	 */
 	public async handleModeSwitch(newMode: string): Promise<void> {
 		this.logger.info(`Switching to mode: ${newMode}`)
-		
+
 		const task = this.taskManager.getCurrentTask()
 
 		if (task) {
@@ -787,7 +797,7 @@ export class ClineProvider
 					this.logger.debug(`Updated task history for ${task.taskId}`)
 				}
 
-				;(task as any)._taskMode = newMode
+				; (task as any)._taskMode = newMode
 			} catch (error) {
 				this.logger.error(`Failed to persist mode switch for task ${task.taskId}`, error)
 				throw error
@@ -1262,19 +1272,19 @@ export class ClineProvider
 
 			await this.taskManager.dispose()
 			this.logger.debug("TaskManager disposed")
-			
+
 			this.webviewCoordinator.dispose()
 			this.logger.debug("WebviewCoordinator disposed")
-			
+
 			this.providerCoordinator.dispose()
 			this.logger.debug("ProviderCoordinator disposed")
-			
+
 			this.stateCoordinator.dispose()
 			this.logger.debug("StateCoordinator disposed")
 
 			this._workspaceTracker?.dispose()
 			this.logger.debug("WorkspaceTracker disposed")
-			
+
 			if (this.mcpHub) {
 				await this.mcpHub.unregisterClient()
 				this.logger.debug("MCP Hub unregistered")
@@ -1293,13 +1303,13 @@ export class ClineProvider
 
 			this.removeAllListeners()
 			this.logger.debug("All event listeners removed")
-			
+
 			ClineProvider.activeInstances.delete(this)
 			this.logger.debug("Removed from active instances")
-			
+
 			McpServerManager.unregisterProvider(this as any)
 			this.logger.debug("Unregistered from MCP server manager")
-			
+
 			this.logger.info("ClineProvider disposed successfully")
 		} catch (error) {
 			this.logger.error("Error during ClineProvider disposal", error)

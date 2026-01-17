@@ -488,6 +488,10 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 		if (chunk.text) {
 			this.currentResponseContent.push({ type: "text", text: chunk.text })
 			provider?.log(`[ApiRequestManager#handleTextChunk] Added text to response content`)
+			
+			// 发送文本到UI界面进行流式显示
+			await this.userInteractionManager.say("text", chunk.text, undefined, true)
+			provider?.log(`[ApiRequestManager#handleTextChunk] Text chunk sent to UI`)
 		}
 	}
 

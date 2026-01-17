@@ -41,6 +41,7 @@ export class WebviewCoordinator {
 			localResourceRoots: [
 				vscode.Uri.joinPath(this.context.extensionUri, "out"),
 				vscode.Uri.joinPath(this.context.extensionUri, "webview-ui/build"),
+				vscode.Uri.joinPath(this.context.extensionUri, "assets"),
 			],
 			enableForms: true,
 		}
