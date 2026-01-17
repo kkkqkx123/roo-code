@@ -1,6 +1,3 @@
-import type { ClineProvider } from "../webview/ClineProvider"
-import type { ProviderSettings } from "@roo-code/types"
-
 export interface IDisposable {
 	dispose(): void
 }
@@ -23,18 +20,27 @@ export class TaskContainer {
 	private disposables: IDisposable[] = []
 	private asyncDisposables: IAsyncDisposable[] = []
 
-	register<T>(token: InjectionToken<T>, instance: any): void {
+	register<T>(token: InjectionToken<T>, instance: T): void {
 		this.services.set(token.symbol, instance)
 		
-		// Track for disposal
-		if (instance && typeof instance.dispose === 'function') {
-			if (instance.dispose.constructor.name === 'AsyncFunction' || 
-				instance.dispose.toString().includes('async') ||
-				instance.dispose.toString().includes('await')) {
-				this.asyncDisposables.push(instance)
-			} else {
-				this.disposables.push(instance)
-			}
+		// Track for disposal - let caller specify async/sync explicitly
+		this.trackForDisposal(instance)
+	}
+
+	registerAsync<T>(token: InjectionToken<T>, instance: T & IAsyncDisposable): void {
+		this.services.set(token.symbol, instance)
+		this.trackForDisposal(instance, true)
+	}
+
+	private trackForDisposal(instance: any, isAsync: boolean = false): void {
+		if (!instance || typeof instance.dispose !== 'function') {
+			return
+		}
+
+		if (isAsync) {
+			this.asyncDisposables.push(instance)
+		} else {
+			this.disposables.push(instance)
 		}
 	}
 
@@ -46,6 +52,10 @@ export class TaskContainer {
 		return service
 	}
 
+	has<T>(token: InjectionToken<T>): boolean {
+		return this.services.has(token.symbol)
+	}
+
 	registerDisposable(disposable: IDisposable): void {
 		this.disposables.push(disposable)
 	}
@@ -55,19 +65,30 @@ export class TaskContainer {
 	}
 
 	async dispose(): Promise<void> {
+		// Check if already disposed
+		if (this.services.size === 0) {
+			return
+		}
+
 		// Dispose async disposables first
-		await Promise.all(this.asyncDisposables.map(async (d) => {
+		const asyncDisposePromises = this.asyncDisposables.map(async (d) => {
 			try {
-				await d.dispose()
+				if (d && typeof d.dispose === 'function') {
+					await d.dispose()
+				}
 			} catch (error) {
 				console.error(`Error disposing async service:`, error)
 			}
-		}))
+		})
+
+		await Promise.all(asyncDisposePromises)
 
 		// Then dispose sync disposables
 		this.disposables.forEach((d) => {
 			try {
-				d.dispose()
+				if (d && typeof d.dispose === 'function') {
+					d.dispose()
+				}
 			} catch (error) {
 				console.error(`Error disposing sync service:`, error)
 			}
@@ -77,6 +98,10 @@ export class TaskContainer {
 		this.services.clear()
 		this.disposables.length = 0
 		this.asyncDisposables.length = 0
+	}
+
+	isDisposed(): boolean {
+		return this.services.size === 0
 	}
 
 	// Cleanup dead weak references

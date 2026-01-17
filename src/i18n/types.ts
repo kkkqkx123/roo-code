@@ -303,6 +303,42 @@ export interface TranslationParams {
 
   // Additional missing keys from type errors
   'common:errors.command_template_content': Record<string, never>
+
+  // Chat namespace - checkpoints
+  'chat:checkpoint.regular': Record<string, never>
+  'chat:checkpoint.initializingWarning': Record<string, never>
+  'chat:checkpoint.menu.viewDiff': Record<string, never>
+  'chat:checkpoint.menu.viewDiffFromInit': Record<string, never>
+  'chat:checkpoint.menu.viewDiffWithCurrent': Record<string, never>
+  'chat:checkpoint.menu.restore': Record<string, never>
+  'chat:checkpoint.menu.restoreFiles': Record<string, never>
+  'chat:checkpoint.menu.restoreFilesDescription': Record<string, never>
+  'chat:checkpoint.menu.restoreContext': Record<string, never>
+  'chat:checkpoint.menu.restoreContextDescription': Record<string, never>
+  'chat:checkpoint.menu.restoreFilesAndContext': Record<string, never>
+  'chat:checkpoint.menu.confirm': Record<string, never>
+  'chat:checkpoint.menu.cancel': Record<string, never>
+  'chat:checkpoint.menu.cannotUndo': Record<string, never>
+  'chat:checkpoint.menu.restoreFilesAndContextDescription': Record<string, never>
+  'chat:checkpoint.menu.more': Record<string, never>
+  'chat:checkpoint.progress.title': Record<string, never>
+  'chat:checkpoint.progress.initializing': Record<string, never>
+  'chat:checkpoint.progress.staging': Record<string, never>
+  'chat:checkpoint.progress.committing': Record<string, never>
+  'chat:checkpoint.progress.completed': Record<string, never>
+  'chat:checkpoint.progress.error': Record<string, never>
+  'chat:checkpoint.progress.processing': Record<string, never>
+  'chat:checkpoint.progress.done': Record<string, never>
+  'chat:checkpoint.progress.failed': Record<string, never>
+  'chat:checkpoint.progress.inProgress': Record<string, never>
+  'chat:checkpoint.history.title': Record<string, never>
+  'chat:checkpoint.history.empty': Record<string, never>
+  'chat:checkpoint.history.current': Record<string, never>
+  'chat:checkpoint.history.defaultMessage': Record<string, never>
+  'chat:checkpoint.history.collapse': Record<string, never>
+  'chat:checkpoint.history.expand': Record<string, never>
+  'chat:checkpoint.history.moreItems': { count: number }
+  'chat:checkpoint.current': Record<string, never>
 }
 
 /**

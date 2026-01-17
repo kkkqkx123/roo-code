@@ -12,6 +12,8 @@ type CheckpointMenuBaseProps = {
 	ts: number
 	commitHash: string
 	checkpoint: Checkpoint
+	hasApiContext?: boolean // 新增：是否有API上下文可恢复
+	showContextRestore?: boolean // 新增：是否显示上下文恢复选项
 }
 type CheckpointMenuControlledProps = {
 	onOpenChange: (open: boolean) => void
@@ -21,7 +23,14 @@ type CheckpointMenuUncontrolledProps = {
 }
 type CheckpointMenuProps = CheckpointMenuBaseProps & (CheckpointMenuControlledProps | CheckpointMenuUncontrolledProps)
 
-export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: CheckpointMenuProps) => {
+export const CheckpointMenu = ({ 
+  ts, 
+  commitHash, 
+  checkpoint, 
+  hasApiContext = false, 
+  showContextRestore = true, 
+  onOpenChange 
+}: CheckpointMenuProps) => {
 	const { t } = useTranslation()
 	const [internalRestoreOpen, setInternalRestoreOpen] = useState(false)
 	const [restoreConfirming, setRestoreConfirming] = useState(false)
@@ -155,14 +164,16 @@ export const CheckpointMenu = ({ ts, commitHash, checkpoint, onOpenChange }: Che
 								{t("chat:checkpoint.menu.restoreFilesDescription")}
 							</div>
 						</div>
-						<div className="flex flex-col gap-1 group hover:text-foreground">
-							<Button variant="secondary" onClick={onRestoreContextOnly} data-testid="restore-context-btn">
-								{t("chat:checkpoint.menu.restoreContext")}
-							</Button>
-							<div className="text-muted transition-colors group-hover:text-foreground">
-								{t("chat:checkpoint.menu.restoreContextDescription")}
+						{showContextRestore && hasApiContext && (
+							<div className="flex flex-col gap-1 group hover:text-foreground">
+								<Button variant="secondary" onClick={onRestoreContextOnly} data-testid="restore-context-btn">
+									{t("chat:checkpoint.menu.restoreContext")}
+								</Button>
+								<div className="text-muted transition-colors group-hover:text-foreground">
+									{t("chat:checkpoint.menu.restoreContextDescription")}
+								</div>
 							</div>
-						</div>
+						)}
 						<div className="flex flex-col gap-1 group hover:text-foreground">
 							{!restoreConfirming ? (
 								<Button

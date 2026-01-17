@@ -1,7 +1,25 @@
 import type { IDisposable } from "./TaskContainer"
 
+// Event type definitions for type safety
+export enum TaskEvent {
+	TokenUsageUpdated = 'taskTokenUsageUpdated',
+	StreamingStateChanged = 'taskStreamingStateChanged',
+	TaskStatusChanged = 'taskStatusChanged',
+	TaskCompleted = 'taskCompleted',
+	TaskFailed = 'taskFailed',
+	TaskDisposed = 'taskDisposed',
+	MessageReceived = 'messageReceived',
+	ToolExecutionStarted = 'toolExecutionStarted',
+	ToolExecutionCompleted = 'toolExecutionCompleted',
+	CheckpointSaved = 'checkpointSaved',
+	CheckpointRestored = 'checkpointRestored'
+}
+
+// Union type for backward compatibility
+export type EventType = TaskEvent | string
+
 export interface EventListener {
-	(event: string, data: any): void
+	(event: EventType, data: any): void
 }
 
 export interface EventSubscription {
@@ -13,10 +31,12 @@ export interface EventSubscription {
  * 使用WeakRef防止内存泄漏
  */
 export class TaskEventBus implements IDisposable {
-	private listeners = new Map<string, Set<WeakRef<EventListener>>>()
-	private subscriptions = new Map<WeakRef<EventListener>, Set<string>>()
+	private listeners = new Map<EventType, Set<WeakRef<EventListener>>>()
+	private subscriptions = new Map<WeakRef<EventListener>, Set<EventType>>()
+	private cleanupTimer?: NodeJS.Timeout
+	private cleanupInterval = 5000 // Cleanup every 5 seconds
 
-	emit(event: string, data: any): void {
+	emit(event: EventType, data: any): void {
 		const listeners = this.listeners.get(event)
 		if (!listeners) return
 
@@ -25,9 +45,9 @@ export class TaskEventBus implements IDisposable {
 			.map(ref => ref.deref())
 			.filter(listener => listener !== undefined) as EventListener[]
 
-		// Clean up dead references
+		// Schedule cleanup if needed
 		if (activeListeners.length < listeners.size) {
-			this.cleanupDeadReferences(event)
+			this.scheduleCleanup()
 		}
 
 		// Notify active listeners
@@ -40,7 +60,7 @@ export class TaskEventBus implements IDisposable {
 		})
 	}
 
-	on(event: string, listener: EventListener): EventSubscription {
+	on(event: EventType, listener: EventListener): EventSubscription {
 		if (!this.listeners.has(event)) {
 			this.listeners.set(event, new Set())
 		}
@@ -59,7 +79,7 @@ export class TaskEventBus implements IDisposable {
 		}
 	}
 
-	off(event: string, listener: EventListener): void {
+	off(event: EventType, listener: EventListener): void {
 		const listeners = this.listeners.get(event)
 		if (!listeners) return
 
@@ -83,7 +103,7 @@ export class TaskEventBus implements IDisposable {
 		}
 	}
 
-	removeAllListeners(event?: string): void {
+	removeAllListeners(event?: EventType): void {
 		if (event) {
 			// Remove specific event listeners
 			const listeners = this.listeners.get(event)
@@ -112,7 +132,7 @@ export class TaskEventBus implements IDisposable {
 		}
 	}
 
-	private cleanupSubscription(listenerRef: WeakRef<EventListener>, event: string): void {
+	private cleanupSubscription(listenerRef: WeakRef<EventListener>, event: EventType): void {
 		const events = this.subscriptions.get(listenerRef)
 		if (events) {
 			events.delete(event)
@@ -122,25 +142,46 @@ export class TaskEventBus implements IDisposable {
 		}
 	}
 
-	private cleanupDeadReferences(event: string): void {
-		const listeners = this.listeners.get(event)
-		if (!listeners) return
+	private scheduleCleanup(): void {
+		if (!this.cleanupTimer) {
+			this.cleanupTimer = setTimeout(() => {
+				this.cleanupAllDeadReferences()
+				this.cleanupTimer = undefined
+			}, this.cleanupInterval)
+		}
+	}
 
-		const deadRefs: WeakRef<EventListener>[] = []
-		for (const ref of listeners) {
-			if (ref.deref() === undefined) {
-				deadRefs.push(ref)
+	private cleanupAllDeadReferences(): void {
+		for (const [event, listeners] of this.listeners) {
+			const deadRefs: WeakRef<EventListener>[] = []
+			for (const ref of listeners) {
+				if (ref.deref() === undefined) {
+					deadRefs.push(ref)
+				}
+			}
+
+			deadRefs.forEach(ref => {
+				listeners.delete(ref)
+				// Clean up subscription tracking
+				this.subscriptions.delete(ref)
+			})
+
+			// Remove empty event sets
+			if (listeners.size === 0) {
+				this.listeners.delete(event)
 			}
 		}
+	}
 
-		deadRefs.forEach(ref => {
-			listeners.delete(ref)
-			// Clean up subscription tracking
-			this.subscriptions.delete(ref)
-		})
+	setCleanupInterval(interval: number): void {
+		this.cleanupInterval = interval
 	}
 
 	dispose(): void {
+		if (this.cleanupTimer) {
+			clearTimeout(this.cleanupTimer)
+			this.cleanupTimer = undefined
+		}
 		this.removeAllListeners()
 		this.listeners.clear()
 		this.subscriptions.clear()

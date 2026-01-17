@@ -172,9 +172,30 @@
 			"cancel": "Cancel",
 			"cannotUndo": "This action cannot be undone.",
 			"restoreFilesAndContextDescription": "Completely restores to checkpoint state, including both files and conversation context.",
-			"more": "More options"
-		},
-		"current": "Current"
+		"more": "More options"
+	},
+	"progress": {
+		"title": "Checkpoint Progress",
+		"initializing": "Initializing checkpoint...",
+		"staging": "Staging files...",
+		"committing": "Creating checkpoint...",
+		"completed": "Checkpoint created successfully",
+		"error": "Checkpoint creation failed",
+		"processing": "Processing...",
+		"done": "Done",
+		"failed": "Failed",
+		"inProgress": "In progress"
+	},
+	"history": {
+		"title": "Checkpoint History",
+		"empty": "No checkpoint history",
+		"current": "Current state",
+		"defaultMessage": "Auto checkpoint",
+		"collapse": "Collapse",
+		"expand": "Expand all",
+		"moreItems": "{{count}} more checkpoints"
+	},
+	"current": "Current"
 	},
 	"contextManagement": {
 		"tokens": "tokens",

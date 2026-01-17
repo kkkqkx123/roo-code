@@ -31,6 +31,27 @@ export interface CheckpointDecision {
   reason: string
   riskLevel?: CommandRiskLevel
   confidence?: number
+  riskDetails?: RiskDetails // 新增：风险评估详情
+}
+
+/**
+ * 风险评估详情
+ */
+export interface RiskDetails {
+  matchedPatterns: string[] // 匹配的风险模式
+  shellType: ShellType // 检测到的Shell类型
+  commandAnalysis: CommandAnalysis // 命令分析结果
+}
+
+/**
+ * 命令分析结果
+ */
+export interface CommandAnalysis {
+  hasFileOperations: boolean // 是否包含文件操作
+  hasSystemOperations: boolean // 是否包含系统操作
+  hasPermissionChanges: boolean // 是否包含权限修改
+  hasDataLossRisk: boolean // 是否有数据丢失风险
+  estimatedImpact: 'low' | 'medium' | 'high' // 预估影响级别
 }
 
 /**
@@ -79,12 +100,132 @@ export class CheckpointDecisionEngine {
 
     // Check if command explicitly requires checkpoints
     if (this.isCheckpointCommand(command, shellConfig)) {
-      return { shouldCheckpoint: true, reason: "command_required" }
+      return { 
+        shouldCheckpoint: true, 
+        reason: "command_required",
+        riskDetails: this.generateRiskDetails(command, shellType)
+      }
     }
 
     // Assess risk level and make decision based on risk
     const riskLevel = this.assessCommandRisk(command, shellType)
-    return this.decideByRiskLevel(riskLevel, shellConfig)
+    const decision = this.decideByRiskLevel(riskLevel, shellConfig)
+    
+    // 添加风险评估详情
+    if (riskLevel !== CommandRiskLevel.LOW) {
+      decision.riskDetails = this.generateRiskDetails(command, shellType)
+    }
+    
+    return decision
+  }
+
+  /**
+   * 生成风险评估详情
+   */
+  private generateRiskDetails(command: string, shellType: ShellType): RiskDetails {
+    const normalizedCommand = command.trim().toLowerCase()
+    const matchedPatterns: string[] = []
+    
+    // 检测匹配的风险模式
+    const criticalPatterns = this.getCriticalPatterns(shellType)
+    const highRiskPatterns = this.getHighRiskPatterns(shellType)
+    const mediumRiskPatterns = this.getMediumRiskPatterns(shellType)
+    
+    for (const pattern of criticalPatterns) {
+      if (this.isPatternMatch(normalizedCommand, pattern)) {
+        matchedPatterns.push(`CRITICAL: ${pattern}`)
+      }
+    }
+    
+    for (const pattern of highRiskPatterns) {
+      if (this.isPatternMatch(normalizedCommand, pattern)) {
+        matchedPatterns.push(`HIGH: ${pattern}`)
+      }
+    }
+    
+    for (const pattern of mediumRiskPatterns) {
+      if (this.isPatternMatch(normalizedCommand, pattern)) {
+        matchedPatterns.push(`MEDIUM: ${pattern}`)
+      }
+    }
+    
+    // 分析命令类型
+    const commandAnalysis = this.analyzeCommand(command, shellType)
+    
+    return {
+      matchedPatterns,
+      shellType,
+      commandAnalysis
+    }
+  }
+
+  /**
+   * 分析命令类型和潜在影响
+   */
+  private analyzeCommand(command: string, shellType: ShellType): CommandAnalysis {
+    const normalizedCommand = command.trim().toLowerCase()
+    
+    // 文件操作检测
+    const fileOperationPatterns = [
+      "rm", "del", "remove", "delete", "mv", "move", "cp", "copy",
+      "git reset", "git clean", "find . -delete"
+    ]
+    
+    // 系统操作检测
+    const systemOperationPatterns = [
+      "shutdown", "reboot", "kill", "pkill", "taskkill", "stop-computer"
+    ]
+    
+    // 权限修改检测
+    const permissionPatterns = [
+      "chmod", "chown", "sudo", "set-executionpolicy"
+    ]
+    
+    // 数据丢失风险检测
+    const dataLossPatterns = [
+      "rm -rf", "del /f /s /q", "format", "dd if=/dev/zero"
+    ]
+    
+    const hasFileOperations = fileOperationPatterns.some(pattern => 
+      normalizedCommand.includes(pattern)
+    )
+    
+    const hasSystemOperations = systemOperationPatterns.some(pattern => 
+      normalizedCommand.includes(pattern)
+    )
+    
+    const hasPermissionChanges = permissionPatterns.some(pattern => 
+      normalizedCommand.includes(pattern)
+    )
+    
+    const hasDataLossRisk = dataLossPatterns.some(pattern => 
+      normalizedCommand.includes(pattern)
+    )
+    
+    // 预估影响级别
+    let estimatedImpact: 'low' | 'medium' | 'high' = 'low'
+    if (hasDataLossRisk) estimatedImpact = 'high'
+    else if (hasSystemOperations || hasPermissionChanges) estimatedImpact = 'medium'
+    else if (hasFileOperations) estimatedImpact = 'low'
+    
+    return {
+      hasFileOperations,
+      hasSystemOperations,
+      hasPermissionChanges,
+      hasDataLossRisk,
+      estimatedImpact
+    }
+  }
+
+  /**
+   * 检查模式匹配
+   */
+  private isPatternMatch(command: string, pattern: string): boolean {
+    if (pattern.endsWith("$")) {
+      const exactPattern = pattern.slice(0, -1)
+      return command === exactPattern || command.startsWith(exactPattern + " ")
+    }
+    return command.includes(pattern)
   }
 
   /**

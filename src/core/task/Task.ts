@@ -39,12 +39,10 @@ import { ApiStream } from "../../api/transform/stream"
 
 // shared
 import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
-import { getApiMetrics } from "../../shared/getApiMetrics"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
 import { defaultModeSlug } from "../../shared/modes"
 import { DiffStrategy, type ToolResponse } from "../../shared/tools"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
-import { getModelMaxOutputTokens } from "../../shared/api"
 
 // services
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
@@ -55,7 +53,6 @@ import { DiffViewProvider } from "../../integrations/editor/DiffViewProvider"
 import { RooTerminalProcess } from "../../integrations/terminal/types"
 
 // utils
-import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../shared/cost"
 import { getWorkspacePath } from "../../utils/path"
 
 // core modules
@@ -64,7 +61,6 @@ import { FileContextTracker } from "../context-tracking/FileContextTracker"
 import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
 import { AssistantMessageParser } from "../assistant-message/AssistantMessageParser"
-import { manageContext, willManageContext } from "../context-management"
 import { ClineProvider } from "../webview/ClineProvider"
 import { MultiSearchReplaceDiffStrategy } from "../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../diff/strategies/multi-file-search-replace"
@@ -75,12 +71,9 @@ import {
 import {
 	type CheckpointDiffOptions,
 	type CheckpointRestoreOptions,
-	checkpointSave,
-	checkpointRestore,
-	checkpointDiff,
 } from "../checkpoints"
 import { summarizeConversation } from "../condense"
-import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
+import { AutoApprovalHandler } from "../auto-approval"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 
 // Managers
@@ -106,8 +99,8 @@ import {
 } from "./managers"
 
 // New architecture components
-import { TaskContainer, TOKENS, type IDisposable, type IAsyncDisposable } from "./TaskContainer"
-import { TaskEventBus, type EventListener } from "./TaskEventBus"
+import { TaskContainer, TOKENS } from "./TaskContainer"
+import { TaskEventBus } from "./TaskEventBus"
 
 export interface TaskOptions extends CreateTaskOptions {
 	provider: ClineProvider
