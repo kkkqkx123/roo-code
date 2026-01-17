@@ -22,7 +22,7 @@ const DEFAULT_BINARY_EXTENSIONS_TO_IGNORE = new Set([
 const MAX_FILE_SIZE_FOR_DETECTION = 10 * 1024 * 1024
 
 function getBinaryFileIgnorePatterns(): Set<string> {
-	const config = vscode.workspace.getConfiguration("roo-cline")
+	const config = vscode.workspace.getConfiguration("coder")
 	const patterns = config.get<string[]>("binaryFileIgnorePatterns", [])
 	return new Set(patterns.map((p) => p.toLowerCase()))
 }

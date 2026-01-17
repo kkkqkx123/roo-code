@@ -149,7 +149,11 @@ export class UserInteractionManager {
 		contextCondense?: ContextCondense,
 		contextTruncation?: ContextTruncation,
 	): Promise<ClineMessage | undefined> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[UserInteractionManager#say] Starting say, type: ${type}, partial: ${partial}`)
+		
 		if (this.stateManager.abort) {
+			provider?.log(`[UserInteractionManager#say] Aborted, returning undefined`)
 			return undefined
 		}
 
@@ -169,6 +173,7 @@ export class UserInteractionManager {
 					lastMessage.contextCondense = contextCondense
 					lastMessage.contextTruncation = contextTruncation
 					await this.messageManager.updateClineMessage(lastMessage)
+					provider?.log(`[UserInteractionManager#say] Updated partial message`)
 					return lastMessage
 				} else {
 					const partialMessage: ClineMessage = {
@@ -184,6 +189,7 @@ export class UserInteractionManager {
 						contextTruncation,
 					}
 					await this.messageManager.addToClineMessages(partialMessage)
+					provider?.log(`[UserInteractionManager#say] Added partial message`)
 					if (!options.isNonInteractive) {
 						this.lastMessageTs = sayTs
 					}
@@ -195,8 +201,10 @@ export class UserInteractionManager {
 					lastMessage.partial = false
 					lastMessage.progressStatus = progressStatus
 					await this.messageManager.updateClineMessage(lastMessage)
+					provider?.log(`[UserInteractionManager#say] Finalized partial message`)
 					return lastMessage
 				}
+				provider?.log(`[UserInteractionManager#say] No partial message to finalize, returning undefined`)
 				return undefined
 			}
 		}
@@ -213,7 +221,10 @@ export class UserInteractionManager {
 			contextTruncation,
 		}
 
+		provider?.log(`[UserInteractionManager#say] About to add message to clineMessages, current count: ${this.messageManager.getClineMessages().length}`)
 		await this.messageManager.addToClineMessages(sayMessage)
+		provider?.log(`[UserInteractionManager#say] Message added, new count: ${this.messageManager.getClineMessages().length}`)
+		
 		if (!options.isNonInteractive) {
 			this.lastMessageTs = sayTs
 		}

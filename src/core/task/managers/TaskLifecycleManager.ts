@@ -51,20 +51,28 @@ export class TaskLifecycleManager {
 		}
 
 		if (task) {
+			provider?.log(`[TaskLifecycleManager#startTask] About to say text message`)
 			await this.task.say("text", task)
+			provider?.log(`[TaskLifecycleManager#startTask] Text message said, clineMessages count: ${this.task.clineMessages.length}`)
 		}
 
 		if (images && images.length > 0) {
 			for (const image of images) {
+				provider?.log(`[TaskLifecycleManager#startTask] About to say user_feedback message`)
 				await this.task.say("user_feedback", "", [image])
+				provider?.log(`[TaskLifecycleManager#startTask] User feedback message said, clineMessages count: ${this.task.clineMessages.length}`)
 			}
 		}
 
 		await this.prepareTaskHistory()
-		provider?.log(`[TaskLifecycleManager#startTask] Task history prepared`)
+		provider?.log(`[TaskLifecycleManager#startTask] Task history prepared, clineMessages count: ${this.task.clineMessages.length}`)
 
 		await this.detectToolProtocol()
 		provider?.log(`[TaskLifecycleManager#startTask] Tool protocol detected: ${this.task.taskToolProtocol}`)
+
+		provider?.log(`[TaskLifecycleManager#startTask] Posting state to webview before starting task loop`)
+		await provider?.postStateToWebview()
+		provider?.log(`[TaskLifecycleManager#startTask] State posted to webview`)
 
 		await this.initiateTaskLoop()
 		provider?.log(`[TaskLifecycleManager#startTask] Task loop completed`)
@@ -235,6 +243,8 @@ export class TaskLifecycleManager {
 			throw new Error("Provider reference lost")
 		}
 
+		provider?.log(`[TaskLifecycleManager#initiateTaskLoop] Starting task loop`)
+
 		getCheckpointService(this.task)
 
 		const userContent: Anthropic.TextBlockParam[] = [{ type: "text", text: this.metadata.task || "" }]
@@ -242,17 +252,23 @@ export class TaskLifecycleManager {
 		let includeFileDetails = true
 
 		this.task.emit(RooCodeEventName.TaskStarted)
+		provider?.log(`[TaskLifecycleManager#initiateTaskLoop] Task started event emitted`)
 
 		while (!this.task.abort) {
+			provider?.log(`[TaskLifecycleManager#initiateTaskLoop] Starting request iteration`)
 			const didEndLoop = await this.task.recursivelyMakeClineRequests(nextUserContent, includeFileDetails)
 			includeFileDetails = false
 
 			if (didEndLoop) {
+				provider?.log(`[TaskLifecycleManager#initiateTaskLoop] Task loop ended`)
 				break
 			} else {
+				provider?.log(`[TaskLifecycleManager#initiateTaskLoop] No tools used, continuing loop`)
 				nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(this.task.taskToolProtocol ?? "xml") }]
 			}
 		}
+		
+		provider?.log(`[TaskLifecycleManager#initiateTaskLoop] Task loop completed`)
 	}
 
 	async abortTask(isAbandoned = false): Promise<void> {

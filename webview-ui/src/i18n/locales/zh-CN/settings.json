@@ -35,7 +35,7 @@
 		"ui": "UI",
 		"experimental": "实验性",
 		"language": "语言",
-		"about": "关于 Roo Code"
+		"about": "关于 Coder"
 	},
 	"about": {
 		"bugReport": {
@@ -53,7 +53,7 @@
 		"contact": {
 			"label": "需要联系我们？请发送邮件至"
 		},
-		"community": "想要获取使用技巧或与其他 Roo Code 用户交流？加入 <redditLink>reddit.com/r/RooCode</redditLink> 或 <discordLink>discord.gg/roocode</discordLink>",
+		"community": "想要获取使用技巧或与其他 Coder 用户交流？加入 <redditLink>reddit.com/r/RooCode</redditLink> 或 <discordLink>discord.gg/roocode</discordLink>",
 		"contactAndCommunity": "联系与社区",
 		"manageSettings": "管理设置"
 	},
@@ -775,7 +775,7 @@
 		}
 	},
 	"modelPicker": {
-		"automaticFetch": "自动获取 <serviceLink>{{serviceName}}</serviceLink> 上可用的最新模型列表。如果您不确定选择哪个模型，Roo Code 与 <defaultModelLink>{{defaultModelId}}</defaultModelLink> 配合最佳。您还可以搜索\"free\"以查找当前可用的免费选项。",
+		"automaticFetch": "自动获取 <serviceLink>{{serviceName}}</serviceLink> 上可用的最新模型列表。如果您不确定选择哪个模型，Coder 与 <defaultModelLink>{{defaultModelId}}</defaultModelLink> 配合最佳。您还可以搜索\"free\"以查找当前可用的免费选项。",
 		"label": "模型",
 		"searchPlaceholder": "搜索",
 		"noMatchFound": "未找到匹配项",
@@ -786,7 +786,7 @@
 		"feedback": "如果您有任何问题或反馈，请随时在 <githubLink>github.com/RooCodeInc/Roo-Code</githubLink> 上提出问题或加入 <redditLink>reddit.com/r/RooCode</redditLink> 或 <discordLink>discord.gg/roocode</discordLink>",
 		"telemetry": {
 			"label": "允许匿名数据收集",
-			"description": "通过发送匿名使用数据和错误报告来帮助改进 Roo Code。此遥测不会收集代码、提示 或个人信息。详细信息请参阅我们的<privacyLink>隐私政策</privacyLink>。您可以随时关闭此功能。"
+			"description": "通过发送匿名使用数据和错误报告来帮助改进 Coder。此遥测不会收集代码、提示 或个人信息。详细信息请参阅我们的<privacyLink>隐私政策</privacyLink>。您可以随时关闭此功能。"
 		},
 		"settings": {
 			"import": "导入",

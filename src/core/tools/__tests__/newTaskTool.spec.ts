@@ -14,10 +14,10 @@ vi.mock("vscode", () => ({
 // Mock Package module
 vi.mock("../../../shared/package", () => ({
 	Package: {
-		name: "roo-cline",
+		name: "coder",
 		publisher: "RooVeterinaryInc",
 		version: "1.0.0",
-		outputChannel: "Roo-Code",
+		outputChannel: "Coder",
 	},
 }))
 
@@ -581,7 +581,7 @@ describe("newTaskTool", () => {
 			})
 
 			// Verify that VSCode configuration was accessed with Package.name
-			expect(mockGetConfiguration).toHaveBeenCalledWith("roo-cline")
+			expect(mockGetConfiguration).toHaveBeenCalledWith("coder")
 			expect(mockGet).toHaveBeenCalledWith("newTaskRequireTodos", false)
 		})
 

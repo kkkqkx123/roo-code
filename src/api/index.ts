@@ -12,6 +12,7 @@ import {
 	HumanRelayHandler,
 	OpenAiNativeHandler,
 	OpenAiHandler,
+	QwenCodeHandler,
 } from "./providers"
 
 export interface SingleCompletionHandler {
@@ -84,8 +85,6 @@ export interface ApiHandler {
 export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 	const { apiProvider, ...options } = configuration
 
-	const anthropicStyleProviders: ProviderName[] = ["anthropic", "claude-code"]
-
 	switch (apiProvider) {
 		case "anthropic":
 			return new AnthropicHandler(options)
@@ -97,6 +96,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new GeminiHandler(options)
 		case "openai-native":
 			return new OpenAiNativeHandler(options)
+		case "qwen-code":
+			return new QwenCodeHandler(options)
 		case "human-relay":
 			return new HumanRelayHandler()
 		default:

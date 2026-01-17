@@ -277,7 +277,10 @@ export class ClineProvider
 	 * Sets up event handling
 	 */
 	private setupEventHandling(): void {
-		// Set up any additional event handling needed
+		this.on(RooCodeEventName.TaskUserMessage, async (taskId: string) => {
+			this.logger.debug(`[ClineProvider] TaskUserMessage event received for task ${taskId}`)
+			await this.postStateToWebview()
+		})
 	}
 
 	/**

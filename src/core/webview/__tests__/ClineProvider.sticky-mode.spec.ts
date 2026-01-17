@@ -47,7 +47,7 @@ vi.mock("vscode", () => ({
 	},
 	extensions: {
 		getExtension: vi.fn().mockImplementation((extensionId: string) => {
-			if (extensionId === "roo-cline.roo-code") {
+			if (extensionId === "coder.coder") {
 				return {
 					packageJSON: {
 						version: "1.0.0",

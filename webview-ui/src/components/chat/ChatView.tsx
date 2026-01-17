@@ -379,8 +379,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							if (secondLastMessage?.ask === "command_output") {
 								setSendingDisabled(true)
 								setSelectedImages([])
-								setClineAsk(undefined)
-								setEnableButtons(false)
+								// Don't reset clineAsk and enableButtons here as it breaks the cancel button functionality
+								// The streaming state should be determined by isStreaming, not by these flags
 							}
 							break
 						case "api_req_finished":

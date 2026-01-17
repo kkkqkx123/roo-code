@@ -36,6 +36,69 @@ const wasmPlugin = (): Plugin => ({
 	},
 })
 
+const copyLocalesPlugin = (): Plugin => ({
+	name: "copy-locales",
+	async writeBundle() {
+		const localesDir = path.resolve(__dirname, "src/i18n/locales")
+		const outDir = path.resolve(__dirname, "../src/webview-ui/build/i18n/locales")
+
+		try {
+			await fs.promises.mkdir(outDir, { recursive: true })
+
+			const languages = await fs.promises.readdir(localesDir)
+
+			for (const language of languages) {
+				const langDir = path.join(localesDir, language)
+				const outLangDir = path.join(outDir, language)
+				const stat = await fs.promises.stat(langDir)
+
+				if (stat.isDirectory()) {
+					await fs.promises.mkdir(outLangDir, { recursive: true })
+					const files = await fs.promises.readdir(langDir)
+
+					for (const file of files) {
+						if (file.endsWith(".json")) {
+							const srcFile = path.join(langDir, file)
+							const destFile = path.join(outLangDir, file)
+							await fs.promises.copyFile(srcFile, destFile)
+						}
+					}
+				}
+			}
+
+			console.log("[copy-locales] Copied locale files to build directory")
+		} catch (error) {
+			console.warn("[copy-locales] Failed to copy locale files:", error)
+		}
+	},
+})
+
+const copyCodiconsPlugin = (): Plugin => ({
+	name: "copy-codicons",
+	async writeBundle() {
+		const codiconsDir = path.resolve(__dirname, "node_modules/@vscode/codicons/dist")
+		const outDir = path.resolve(__dirname, "../src/webview-ui/build/node_modules/@vscode/codicons/dist")
+
+		try {
+			await fs.promises.mkdir(outDir, { recursive: true })
+
+			const files = await fs.promises.readdir(codiconsDir)
+
+			for (const file of files) {
+				if (file.endsWith(".css") || file.endsWith(".ttf") || file.endsWith(".svg") || file.endsWith(".woff") || file.endsWith(".woff2")) {
+					const srcFile = path.join(codiconsDir, file)
+					const destFile = path.join(outDir, file)
+					await fs.promises.copyFile(srcFile, destFile)
+				}
+			}
+
+			console.log("[copy-codicons] Copied codicon font files to build directory")
+		} catch (error) {
+			console.warn("[copy-codicons] Failed to copy codicon font files:", error)
+		}
+	},
+})
+
 const persistPortPlugin = (): Plugin => ({
 	name: "write-port-to-file",
 	configureServer(viteDevServer) {
@@ -83,7 +146,7 @@ export default defineConfig(({ mode }) => {
 		define["process.env.PKG_OUTPUT_CHANNEL"] = JSON.stringify("Roo-Code-Nightly")
 	}
 
-	const plugins: PluginOption[] = [react(), tailwindcss(), persistPortPlugin(), wasmPlugin(), sourcemapPlugin()]
+	const plugins: PluginOption[] = [react(), tailwindcss(), copyLocalesPlugin(), copyCodiconsPlugin(), persistPortPlugin(), wasmPlugin(), sourcemapPlugin()]
 
 	return {
 		plugins,
@@ -187,7 +250,7 @@ export default defineConfig(({ mode }) => {
 				"dagre", // Explicitly include dagre for pre-bundling
 				// Add other known large mermaid dependencies if identified
 			],
-			exclude: ["@vscode/codicons", "vscode-oniguruma", "shiki"],
+			exclude: ["vscode-oniguruma", "shiki"],
 		},
 		assetsInclude: ["**/*.wasm", "**/*.wav"],
 	}

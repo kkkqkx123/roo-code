@@ -107,8 +107,10 @@ export class StateCoordinator {
 
 		const isBrowserSessionActive = this.taskManager?.getCurrentTask()?.getBrowserSession()?.isSessionActive() ?? false
 
+		const currentTask = this.taskManager?.getCurrentTask()
+
 		return {
-			version: vscode.extensions.getExtension("roo-cline.roo-code")?.packageJSON?.version ?? "",
+			version: vscode.extensions.getExtension("coder.coder")?.packageJSON?.version ?? "",
 			apiConfiguration,
 			customInstructions: stateValues.customInstructions ?? "",
 			apiModelId: stateValues.apiModelId,
@@ -185,29 +187,6 @@ export class StateCoordinator {
 			condensingApiConfigId: stateValues.condensingApiConfigId,
 			customCondensingPrompt: stateValues.customCondensingPrompt,
 			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
-			
-			// Terminal command checkpoint configurations
-			checkpointBeforeHighRiskCommands: stateValues.checkpointBeforeHighRiskCommands ?? false,
-			checkpointAfterHighRiskCommands: stateValues.checkpointAfterHighRiskCommands ?? false,
-			checkpointOnCommandError: stateValues.checkpointOnCommandError ?? true,
-			checkpointCommands: stateValues.checkpointCommands ?? [],
-			noCheckpointCommands: stateValues.noCheckpointCommands ?? [],
-			checkpointShellSpecific: stateValues.checkpointShellSpecific ?? {},
-			codebaseIndexConfig: {
-				codebaseIndexEnabled: stateValues.codebaseIndexConfig?.codebaseIndexEnabled ?? false,
-				codebaseIndexQdrantUrl:
-					stateValues.codebaseIndexConfig?.codebaseIndexQdrantUrl ?? "http://localhost:6333",
-				codebaseIndexEmbedderProvider:
-					stateValues.codebaseIndexConfig?.codebaseIndexEmbedderProvider ?? "openai",
-				codebaseIndexEmbedderBaseUrl: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderBaseUrl ?? "",
-				codebaseIndexEmbedderModelId: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderModelId ?? "",
-				codebaseIndexEmbedderModelDimension:
-					stateValues.codebaseIndexConfig?.codebaseIndexEmbedderModelDimension,
-				codebaseIndexOpenAiCompatibleBaseUrl:
-					stateValues.codebaseIndexConfig?.codebaseIndexOpenAiCompatibleBaseUrl,
-				codebaseIndexSearchMaxResults: stateValues.codebaseIndexConfig?.codebaseIndexSearchMaxResults,
-				codebaseIndexSearchMinScore: stateValues.codebaseIndexConfig?.codebaseIndexSearchMinScore,
-			},
 			profileThresholds: stateValues.profileThresholds ?? {},
 			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,
 			maxDiagnosticMessages: stateValues.maxDiagnosticMessages ?? 50,
@@ -215,17 +194,39 @@ export class StateCoordinator {
 			includeCurrentTime: stateValues.includeCurrentTime ?? true,
 			includeCurrentCost: stateValues.includeCurrentCost ?? true,
 			maxGitStatusFiles: stateValues.maxGitStatusFiles ?? 0,
-			taskSyncEnabled: false,
-			remoteControlEnabled: false,
-			featureRoomoteControlEnabled: false,
-			claudeCodeIsAuthenticated: false,
-			debug: vscode.workspace.getConfiguration("roo-cline").get<boolean>("debug", false),
+			requestDelaySeconds: stateValues.requestDelaySeconds,
+			clineMessages: currentTask?.clineMessages ?? [],
+			currentTaskItem: currentTask
+				? {
+						id: currentTask.taskId,
+						number: currentTask.taskNumber,
+						ts: Date.now(),
+						task: currentTask.metadata.task || "",
+						tokensIn: 0,
+						tokensOut: 0,
+						totalCost: 0,
+				  }
+				: undefined,
+			uriScheme: undefined,
 			shouldShowAnnouncement: false,
-			hasSystemPromptOverride: false,
-			clineMessages: [],
+			checkpointBeforeHighRiskCommands: stateValues.checkpointBeforeHighRiskCommands ?? false,
+			checkpointAfterHighRiskCommands: stateValues.checkpointAfterHighRiskCommands ?? false,
+			checkpointOnCommandError: stateValues.checkpointOnCommandError ?? true,
+			checkpointCommands: stateValues.checkpointCommands ?? [],
+			noCheckpointCommands: stateValues.noCheckpointCommands ?? [],
+			checkpointShellSpecific: stateValues.checkpointShellSpecific ?? {},
+			cwd,
 			renderContext: "sidebar",
-			hasOpenedModeSelector: false,
+			settingsImportedAt: undefined,
 			isBrowserSessionActive,
+			hasOpenedModeSelector: stateValues.hasOpenedModeSelector ?? false,
+			lastShownAnnouncementId: stateValues.lastShownAnnouncementId,
+			hasSystemPromptOverride: undefined,
+			remoteControlEnabled: false,
+			taskSyncEnabled: false,
+			featureRoomoteControlEnabled: false,
+			claudeCodeIsAuthenticated: undefined,
+			debug: vscode.workspace.getConfiguration("coder").get<boolean>("debug", false),
 		}
 	}
 

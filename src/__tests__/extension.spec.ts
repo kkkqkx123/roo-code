@@ -64,8 +64,8 @@ vi.mock("../utils/outputChannelLogger", () => ({
 
 vi.mock("../shared/package", () => ({
 	Package: {
-		name: "roo-cline",
-		outputChannel: "Roo-Code",
+		name: "coder",
+		outputChannel: "Coder",
 		version: "1.0.0",
 	},
 }))
@@ -308,7 +308,7 @@ describe("extension.ts", () => {
 
 			await activate(mockContext)
 
-			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("roo-cline.activationCompleted")
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("coder.activationCompleted")
 		})
 
 		it("should return API instance", async () => {

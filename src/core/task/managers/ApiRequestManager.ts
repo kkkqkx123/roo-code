@@ -116,9 +116,13 @@ export class ApiRequestManager {
 	}
 
 	public async *attemptApiRequest(): ApiStream {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Starting API request`)
+		
 		this.currentResponseContent = []
 
 		if (this.apiConfiguration.rateLimitSeconds && this.apiConfiguration.rateLimitSeconds > 0) {
+			provider?.log(`[ApiRequestManager#attemptApiRequest] Checking rate limit`)
 			const lastRequestTime = this.getLastGlobalApiRequestTime()
 			const now = performance.now()
 			
@@ -126,23 +130,33 @@ export class ApiRequestManager {
 				const timeSinceLastRequest = now - lastRequestTime
 				const requiredDelay = this.apiConfiguration.rateLimitSeconds * 1000
 				
+				provider?.log(`[ApiRequestManager#attemptApiRequest] Time since last request: ${timeSinceLastRequest}ms, required delay: ${requiredDelay}ms`)
+				
 				if (timeSinceLastRequest < requiredDelay) {
 					const delayCalls = Math.ceil((requiredDelay - timeSinceLastRequest) / 1000)
+					provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit active, delaying ${delayCalls} seconds`)
 					for (let i = 0; i < delayCalls; i++) {
 						await delay(1000)
 					}
+				} else {
+					provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit satisfied`)
 				}
 			}
 			
 			this.setLastGlobalApiRequestTime(performance.now())
+			provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit check completed`)
 		}
 
 		const systemPrompt = await this.getSystemPrompt()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got system prompt`)
+		
 		const messages = this.messageManager.getApiConversationHistory()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got conversation history, message count: ${messages.length}`)
 
 		this.currentSystemPrompt = systemPrompt
 		this.currentMessages = messages
 
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Creating API message stream`)
 		const stream = await this.api.createMessage(systemPrompt, messages, {
 			taskId: this.stateManager.taskId,
 			mode: this.stateManager.taskMode,
@@ -150,7 +164,9 @@ export class ApiRequestManager {
 			toolProtocol: this.stateManager.taskToolProtocol,
 		})
 
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got stream, starting to yield`)
 		yield* stream
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Stream yield completed`)
 	}
 
 	async getSystemPrompt(): Promise<string> {
@@ -180,6 +196,9 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 		userContent: any[],
 		includeFileDetails: boolean = false,
 	): Promise<boolean> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Starting request loop`)
+		
 		interface StackItem {
 			userContent: any[]
 			includeFileDetails: boolean
@@ -198,6 +217,7 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 				throw new Error(`Task ${this.stateManager.taskId} aborted`)
 			}
 
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Sending api_req_started message`)
 			await this.userInteractionManager.say(
 				"api_req_started",
 				JSON.stringify({
@@ -207,13 +227,30 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 					),
 				}),
 			)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] api_req_started message sent`)
 
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Posting state to webview after api_req_started`)
+			await provider?.postStateToWebview()
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] State posted to webview`)
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process user content`)
 			const parsedUserContent = await this.processUserContent(currentUserContent, currentIncludeFileDetails)
-			const environmentDetails = await getEnvironmentDetails(
-				{ cwd: this.cwd } as any,
-				currentIncludeFileDetails,
-			)
-
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User content processed`)
+			
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to get environment details`)
+			
+			// 获取当前任务实例
+			const currentTaskProvider = this.stateManager.getProvider()
+			const currentTask = currentTaskProvider?.getCurrentTask()
+			
+			if (!currentTask) {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] No current task found, skipping environment details`)
+				throw new Error("No current task available for environment details")
+			}
+			
+			const environmentDetails = await getEnvironmentDetails(currentTask, currentIncludeFileDetails)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Environment details retrieved`)
+			
 			const finalUserContent = [...parsedUserContent, { type: "text", text: environmentDetails }]
 
 			const shouldAddUserMessage =
@@ -221,15 +258,20 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 				currentItem.userMessageWasRemoved
 
 			if (shouldAddUserMessage) {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Adding user message to history`)
 				await this.messageManager.addToApiConversationHistory({
 					role: "user",
 					content: finalUserContent,
 				})
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User message added to history`)
 			}
 
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process stream`)
 			await this.processStream(currentItem, stack)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Stream processed`)
 		}
 
+		provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Request loop completed`)
 		return false
 	}
 
@@ -238,6 +280,9 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 	}
 
 	private async processStream(currentItem: any, stack: any[]): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#processStream] Starting stream processing`)
+		
 		this.resetStreamingState()
 
 		let retryCount = 0
@@ -245,20 +290,25 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 		let currentRequestIndex: number | undefined
 
 		try {
+			provider?.log(`[ApiRequestManager#processStream] About to start new API request`)
 			// 开始新的API请求，分配请求索引
 			currentRequestIndex = this.messageManager.startNewApiRequest()
 			this.currentRequestIndex = currentRequestIndex
-			console.log(`[ApiRequestManager] Started new API request with index: ${currentRequestIndex}`)
+			provider?.log(`[ApiRequestManager#processStream] Started new API request with index: ${currentRequestIndex}`)
 
 			while (retryCount <= maxRetries) {
 				try {
+					provider?.log(`[ApiRequestManager#processStream] Retry attempt: ${retryCount}`)
 					// 在请求前创建检查点，关联请求索引
 					if (this.checkpointManager && currentRequestIndex !== undefined) {
+						provider?.log(`[ApiRequestManager#processStream] Creating checkpoint for request index: ${currentRequestIndex}`)
 						await this.checkpointManager.createCheckpoint(currentRequestIndex)
-						console.log(`[ApiRequestManager] Created checkpoint for request index: ${currentRequestIndex}`)
+						provider?.log(`[ApiRequestManager#processStream] Checkpoint created`)
 					}
 
+					provider?.log(`[ApiRequestManager#processStream] About to call attemptApiRequest`)
 					const stream = await this.attemptApiRequest()
+					provider?.log(`[ApiRequestManager#processStream] Got stream, starting to iterate`)
 					const iterator = stream[Symbol.asyncIterator]()
 
 					let item = await iterator.next()
@@ -268,10 +318,12 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 						item = await iterator.next()
 					}
 					
+					provider?.log(`[ApiRequestManager#processStream] Stream iteration completed successfully`)
 					// Success, exit the retry loop
 					return
 					
 				} catch (error) {
+					provider?.log(`[ApiRequestManager#processStream] API error on attempt ${retryCount + 1}: ${error}`)
 					// 处理API错误，使用相同的请求索引重试
 					await this.handleApiError(error, retryCount, maxRetries)
 					retryCount++
@@ -282,7 +334,7 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 			// 确保请求结束，清理状态
 			this.messageManager.endCurrentApiRequest()
 			this.currentRequestIndex = undefined
-			console.log(`[ApiRequestManager] Ended API request with index: ${currentRequestIndex}`)
+			provider?.log(`[ApiRequestManager#processStream] Ended API request with index: ${currentRequestIndex}`)
 		}
 	}
 
@@ -315,6 +367,9 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 	}
 
 	private async handleStreamChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleStreamChunk] Processing chunk type: ${chunk.type}`)
+		
 		switch (chunk.type) {
 			case "reasoning":
 				await this.handleReasoningChunk(chunk)
@@ -332,10 +387,15 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 				await this.handleTextChunk(chunk)
 				break
 		}
+		
+		provider?.log(`[ApiRequestManager#handleStreamChunk] Chunk processed: ${chunk.type}`)
 	}
 
 	private async handleReasoningChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleReasoningChunk] Processing reasoning chunk: "${chunk.text?.substring(0, 50)}..."`)
 		await this.userInteractionManager.say("reasoning", chunk.text, undefined, true)
+		provider?.log(`[ApiRequestManager#handleReasoningChunk] Reasoning chunk sent to UI`)
 	}
 
 	private handleUsageChunk(chunk: any): void {
@@ -422,8 +482,12 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 	}
 
 	private async handleTextChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleTextChunk] Processing text chunk: "${chunk.text?.substring(0, 50)}..."`)
+		
 		if (chunk.text) {
 			this.currentResponseContent.push({ type: "text", text: chunk.text })
+			provider?.log(`[ApiRequestManager#handleTextChunk] Added text to response content`)
 		}
 	}
 

@@ -5,12 +5,14 @@ import { findLastIndex } from "../../../shared/array"
 import { restoreTodoListForTask } from "../../tools/UpdateTodoListTool"
 import type { TaskStateManager } from "./TaskStateManager"
 import type { ClineProvider } from "../../webview/ClineProvider"
+import { RooCodeEventName } from "@roo-code/types"
 
 export interface MessageManagerOptions {
 	stateManager: TaskStateManager
 	taskId: string
 	globalStoragePath: string
 	task?: any // Add optional task reference for token usage updates
+	eventBus?: any // Add optional event bus reference
 }
 
 export class MessageManager {
@@ -18,6 +20,7 @@ export class MessageManager {
 	private taskId: string
 	private globalStoragePath: string
 	private task?: any // Store task reference for token usage updates
+	private eventBus?: any // Store event bus reference
 
 	apiConversationHistory: ApiMessage[] = []
 	clineMessages: ClineMessage[] = []
@@ -29,6 +32,7 @@ export class MessageManager {
 		this.taskId = options.taskId
 		this.globalStoragePath = options.globalStoragePath
 		this.task = options.task
+		this.eventBus = options.eventBus
 		
 		// 从保存的历史中恢复对话索引
 		this.initializeConversationIndex()
@@ -154,8 +158,18 @@ export class MessageManager {
 	}
 
 	async addToClineMessages(message: ClineMessage, providerRef?: WeakRef<ClineProvider>, cloudSyncedMessageTimestamps?: Set<number>): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[MessageManager#addToClineMessages] Adding message, type: ${message.type}, say: ${message.say}, current count: ${this.clineMessages.length}`)
+		
 		this.clineMessages.push(message)
 		await this.saveClineMessages()
+		
+		provider?.log(`[MessageManager#addToClineMessages] Message saved, new count: ${this.clineMessages.length}`)
+		
+		if (this.eventBus) {
+			provider?.log(`[MessageManager#addToClineMessages] Emitting TaskUserMessage event`)
+			this.eventBus.emit(RooCodeEventName.TaskUserMessage, this.taskId)
+		}
 	}
 
 	async overwriteClineMessages(newMessages: ClineMessage[], providerRef?: WeakRef<ClineProvider>, cloudSyncedMessageTimestamps?: Set<number>): Promise<void> {
@@ -176,6 +190,10 @@ export class MessageManager {
 		if (index !== -1) {
 			this.clineMessages[index] = message
 			await this.saveClineMessages()
+			
+			if (this.eventBus) {
+				this.eventBus.emit(RooCodeEventName.TaskUserMessage, this.taskId)
+			}
 		}
 	}
 

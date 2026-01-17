@@ -24,6 +24,8 @@ import { Task } from "../task/Task"
 import { formatReminderSection } from "./reminder"
 
 export async function getEnvironmentDetails(cline: Task, includeFileDetails: boolean = false) {
+	console.log(`[getEnvironmentDetails] Starting environment details collection, includeFileDetails: ${includeFileDetails}`)
+	
 	let details = ""
 
 	const clineProvider = cline.providerRef.deref()
@@ -36,11 +38,13 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	// It could be useful for cline to know if the user went from one or no
 	// file to another between messages, so we always include this context.
+	console.log(`[getEnvironmentDetails] Getting visible file paths...`)
 	const visibleFilePaths = vscode.window.visibleTextEditors
 		?.map((editor) => editor.document?.uri?.fsPath)
 		.filter(Boolean)
 		.map((absolutePath) => path.relative(cline.cwd, absolutePath))
 		.slice(0, maxWorkspaceFiles)
+	console.log(`[getEnvironmentDetails] Got ${visibleFilePaths.length} visible file paths`)
 
 	// Filter paths through rooIgnoreController
 	const allowedVisibleFiles = cline.rooIgnoreController
@@ -52,6 +56,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		details += `\n${allowedVisibleFiles}`
 	}
 
+	console.log(`[getEnvironmentDetails] Getting open tab paths...`)
 	const { maxOpenTabsContext } = state ?? {}
 	const maxTabs = maxOpenTabsContext ?? 20
 	const openTabPaths = vscode.window.tabGroups.all
@@ -61,6 +66,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		.filter(Boolean)
 		.map((absolutePath) => path.relative(cline.cwd, absolutePath).toPosix())
 		.slice(0, maxTabs)
+	console.log(`[getEnvironmentDetails] Got ${openTabPaths.length} open tab paths`)
 
 	// Filter paths through rooIgnoreController
 	const allowedOpenTabs = cline.rooIgnoreController
@@ -72,6 +78,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		details += `\n${allowedOpenTabs}`
 	}
 
+	console.log(`[getEnvironmentDetails] Getting terminal information...`)
 	// Get task-specific and background terminals.
 	const busyTerminals = [
 		...TerminalRegistry.getTerminals(true, cline.taskId),
@@ -83,16 +90,24 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		...TerminalRegistry.getBackgroundTerminals(false),
 	]
 
+	console.log(`[getEnvironmentDetails] Found ${busyTerminals.length} busy terminals, ${inactiveTerminals.length} inactive terminals`)
+
 	if (busyTerminals.length > 0) {
 		if (cline.didEditFile) {
+			console.log(`[getEnvironmentDetails] Waiting 300ms after file edit...`)
 			await delay(300) // Delay after saving file to let terminals catch up.
+			console.log(`[getEnvironmentDetails] Delay completed`)
 		}
 
 		// Wait for terminals to cool down.
+		console.log(`[getEnvironmentDetails] Waiting for terminals to cool down...`)
 		await pWaitFor(() => busyTerminals.every((t) => !TerminalRegistry.isProcessHot(t.id)), {
 			interval: 100,
 			timeout: 5_000,
-		}).catch(() => {})
+		}).catch(() => {
+			console.log(`[getEnvironmentDetails] Terminal cool down timeout or error`)
+		})
+		console.log(`[getEnvironmentDetails] Terminal cool down completed`)
 	}
 
 	// Reset, this lets us know when to wait for saved files to update terminals.
@@ -173,7 +188,9 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	// console.log(`[Task#getEnvironmentDetails] terminalDetails: ${terminalDetails}`)
 
 	// Add recently modified files section.
+	console.log(`[getEnvironmentDetails] Getting recently modified files...`)
 	const recentlyModifiedFiles = cline.fileContextTracker.getAndClearRecentlyModifiedFiles()
+	console.log(`[getEnvironmentDetails] Got ${recentlyModifiedFiles.length} recently modified files`)
 
 	if (recentlyModifiedFiles.length > 0) {
 		details +=
@@ -192,6 +209,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	// Add current time information with timezone (if enabled).
 	if (includeCurrentTime) {
+		console.log(`[getEnvironmentDetails] Adding current time...`)
 		const now = new Date()
 
 		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -200,14 +218,17 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		const timeZoneOffsetMinutes = Math.abs(Math.round((Math.abs(timeZoneOffset) - timeZoneOffsetHours) * 60))
 		const timeZoneOffsetStr = `${timeZoneOffset >= 0 ? "+" : "-"}${timeZoneOffsetHours}:${timeZoneOffsetMinutes.toString().padStart(2, "0")}`
 		details += `\n\n# Current Time\nCurrent time in ISO 8601 UTC format: ${now.toISOString()}\nUser time zone: ${timeZone}, UTC${timeZoneOffsetStr}`
+		console.log(`[getEnvironmentDetails] Current time added`)
 	}
 
 	// Add git status information (if enabled with maxGitStatusFiles > 0).
 	if (maxGitStatusFiles > 0) {
+		console.log(`[getEnvironmentDetails] Getting git status...`)
 		const gitStatus = await getGitStatus(cline.cwd, maxGitStatusFiles)
 		if (gitStatus) {
 			details += `\n\n# Git Status\n${gitStatus}`
 		}
+		console.log(`[getEnvironmentDetails] Git status completed`)
 	}
 
 	// Add context tokens information (if enabled).
@@ -287,6 +308,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	}
 
 	if (includeFileDetails) {
+		console.log(`[getEnvironmentDetails] Including file details...`)
 		details += `\n\n# Current Workspace Directory (${cline.cwd.toPosix()}) Files\n`
 		const isDesktop = arePathsEqual(cline.cwd, path.join(os.homedir(), "Desktop"))
 
@@ -294,14 +316,20 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			// Don't want to immediately access desktop since it would show
 			// permission popup.
 			details += "(Desktop files not shown automatically. Use list_files to explore if needed.)"
+			console.log(`[getEnvironmentDetails] Desktop directory detected, skipping file listing`)
 		} else {
 			const maxFiles = maxWorkspaceFiles ?? 200
+			console.log(`[getEnvironmentDetails] Max files limit: ${maxFiles}`)
 
 			// Early return for limit of 0
 			if (maxFiles === 0) {
 				details += "(Workspace files context disabled. Use list_files to explore if needed.)"
+				console.log(`[getEnvironmentDetails] File listing disabled (maxFiles = 0)`)
 			} else {
+				console.log(`[getEnvironmentDetails] About to list files...`)
 				const [files, didHitLimit] = await listFiles(cline.cwd, true, maxFiles)
+				console.log(`[getEnvironmentDetails] Listed ${files.length} files, hit limit: ${didHitLimit}`)
+				
 				const { showRooIgnoredFiles = false } = state ?? {}
 
 				const result = formatResponse.formatFilesList(
@@ -313,8 +341,11 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 				)
 
 				details += result
+				console.log(`[getEnvironmentDetails] File listing completed`)
 			}
 		}
+	} else {
+		console.log(`[getEnvironmentDetails] File details not requested`)
 	}
 
 	const todoListEnabled =
@@ -322,5 +353,9 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			? state.apiConfiguration.todoListEnabled
 			: true
 	const reminderSection = todoListEnabled ? formatReminderSection(cline.todoList) : ""
-	return `<environment_details>\n${details.trim()}\n${reminderSection}\n</environment_details>`
+	
+	console.log(`[getEnvironmentDetails] Formatting final result...`)
+	const result = `<environment_details>\n${details.trim()}\n${reminderSection}\n</environment_details>`
+	console.log(`[getEnvironmentDetails] Completed, result length: ${result.length}`)
+	return result
 }

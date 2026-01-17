@@ -1,6 +1,6 @@
 {
-	"greeting": "Welcome to Roo Code!",
-	"introduction": "With a range of built-in and extensible Modes, Roo Code lets you plan, architect, code, debug and boost your productivity like never before.",
+	"greeting": "Welcome to Coder!",
+	"introduction": "With a range of built-in and extensible Modes, Coder lets you plan, architect, code, debug and boost your productivity like never before.",
 	"notice": "To get started, this extension needs an API provider.",
 	"start": "Let's go!",
 	"routers": {
@@ -31,8 +31,8 @@
 	"startRouter": "We recommend using an LLM Router:",
 	"startCustom": "Or you can bring your provider API key:",
 	"telemetry": {
-		"helpImprove": "Help Improve Roo Code",
-		"helpImproveMessage": "Roo Code collects error and usage data to help us fix bugs and improve the extension. This telemetry does not collect code, prompts or personal information. You can turn this off in <settingsLink>settings</settingsLink>."
+		"helpImprove": "Help Improve Coder",
+		"helpImproveMessage": "Coder collects error and usage data to help us fix bugs and improve the extension. This telemetry does not collect code, prompts or personal information. You can turn this off in <settingsLink>settings</settingsLink>."
 	},
 	"importSettings": "Import Settings"
 }

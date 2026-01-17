@@ -191,10 +191,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	fuzzyMatchThreshold: number
 	didEditFile: boolean = false
 
-	// LLM Messages & Chat Messages
-	apiConversationHistory: ApiMessage[] = []
-	clineMessages: ClineMessage[] = []
-
 	// Ask
 	private askResponse?: ClineAskResponse
 	private askResponseText?: string
@@ -441,6 +437,22 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return this.messageQueueManager.queuedMessages
 	}
 
+	public get clineMessages(): ClineMessage[] {
+		return this.taskMessageManager.getClineMessages()
+	}
+
+	public set clineMessages(messages: ClineMessage[]) {
+		this.taskMessageManager.clineMessages = messages
+	}
+
+	public get apiConversationHistory(): ApiMessage[] {
+		return this.taskMessageManager.getApiConversationHistory()
+	}
+
+	public set apiConversationHistory(history: ApiMessage[]) {
+		this.taskMessageManager.apiConversationHistory = history
+	}
+
 	public get tokenUsage(): TokenUsage | undefined {
 		return this.usageTracker.getTokenUsage()
 	}
@@ -485,9 +497,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.setUserMessageContent([])
 }
 
-public async overwriteClineMessages(newMessages: ClineMessage[]) {
+	public async overwriteClineMessages(newMessages: ClineMessage[]) {
 		await this.taskMessageManager.overwriteClineMessages(newMessages, this.providerRef, this.cloudSyncedMessageTimestamps)
-		this.clineMessages = newMessages
 		this.cloudSyncedMessageTimestamps.clear()
 		for (const msg of newMessages) {
 			if (msg.partial !== true) {
@@ -817,6 +828,7 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 			taskId: this.taskId,
 			globalStoragePath: this.globalStoragePath,
 			task: taskRef, // Pass weak reference instead of direct reference
+			eventBus: this.eventBus, // Pass event bus reference
 		})
 		this.container.register(TOKENS.TaskMessageManager, messageManager)
 

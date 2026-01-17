@@ -1,4 +1,4 @@
-// pnpm --filter roo-cline test core/webview/__tests__/webviewMessageHandler.mcp.spec.ts
+// pnpm --filter coder test core/webview/__tests__/webviewMessageHandler.mcp.spec.ts
 
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { webviewMessageHandler } from "../webviewMessageHandler"

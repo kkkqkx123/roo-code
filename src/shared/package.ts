@@ -8,8 +8,8 @@ import { publisher, name, version } from "../package.json"
 // the build, so we still need this override mechanism.
 export const Package = {
 	publisher,
-	name: process.env.PKG_NAME || "roo-cline",
+	name: process.env.PKG_NAME || "coder",
 	version: process.env.PKG_VERSION || version,
-	outputChannel: process.env.PKG_OUTPUT_CHANNEL || "Roo-Code",
+	outputChannel: process.env.PKG_OUTPUT_CHANNEL || "Coder",
 	sha: process.env.PKG_SHA,
 } as const
