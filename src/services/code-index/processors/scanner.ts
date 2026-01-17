@@ -435,7 +435,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				onError(
 					new Error(
 						t("embeddings:scanner.failedToProcessBatchWithError", {
-							maxRetries: MAX_BATCH_RETRIES,
+							maxRetries: String(MAX_BATCH_RETRIES),
 							errorMessage,
 						}),
 					),

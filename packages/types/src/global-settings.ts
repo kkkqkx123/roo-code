@@ -57,8 +57,6 @@ export const globalSettingsSchema = z.object({
 	taskHistory: z.array(historyItemSchema).optional(),
 	dismissedUpsells: z.array(z.string()).optional(),
 
-	// Image generation settings (experimental) - flattened for simplicity
-	imageGenerationProvider: z.enum(["roo"]).optional(),
 
 	condensingApiConfigId: z.string().optional(),
 	customCondensingPrompt: z.string().optional(),

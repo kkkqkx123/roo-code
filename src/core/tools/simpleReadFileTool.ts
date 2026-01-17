@@ -94,7 +94,7 @@ export async function simpleReadFileTool(
 		if (maxReadFileLine === 0) {
 			lineSnippet = t("tools:readFile.definitionsOnly")
 		} else if (maxReadFileLine > 0) {
-			lineSnippet = t("tools:readFile.maxLines", { max: maxReadFileLine })
+			lineSnippet = t("tools:readFile.maxLines", { max: String(maxReadFileLine) })
 		}
 
 		const completeMessage = JSON.stringify({

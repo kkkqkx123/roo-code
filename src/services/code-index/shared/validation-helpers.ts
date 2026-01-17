@@ -222,8 +222,8 @@ export function formatEmbeddingError(error: any, maxRetries: number): Error {
 	if (statusCode === 401) {
 		return new Error(t("embeddings:authenticationFailed"))
 	} else if (statusCode) {
-		return new Error(t("embeddings:failedWithStatus", { attempts: maxRetries, statusCode, errorMessage }))
+		return new Error(t("embeddings:failedWithStatus", { attempts: String(maxRetries), statusCode: String(statusCode), errorMessage }))
 	} else {
-		return new Error(t("embeddings:failedWithError", { attempts: maxRetries, errorMessage }))
+		return new Error(t("embeddings:failedWithError", { attempts: String(maxRetries), errorMessage }))
 	}
 }

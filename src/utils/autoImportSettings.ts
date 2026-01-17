@@ -54,7 +54,7 @@ export async function autoImportSettings(
 			outputChannel.appendLine(`[AutoImport] Failed to import settings: ${result.error}`)
 
 			// Show a warning but don't fail the extension activation
-			vscode.window.showWarningMessage(t("common:warnings.auto_import_failed", { error: result.error }))
+			vscode.window.showWarningMessage(t("common:warnings.auto_import_failed", { error: result.error || "Unknown error" }))
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error)

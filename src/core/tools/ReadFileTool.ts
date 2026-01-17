@@ -205,13 +205,13 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					let lineSnippet = ""
 					if (fileResult.lineRanges && fileResult.lineRanges.length > 0) {
 						const ranges = fileResult.lineRanges.map((range) =>
-							t("tools:readFile.linesRange", { start: range.start, end: range.end }),
+							t("tools:readFile.linesRange", { start: String(range.start), end: String(range.end) }),
 						)
 						lineSnippet = ranges.join(", ")
 					} else if (maxReadFileLine === 0) {
 						lineSnippet = t("tools:readFile.definitionsOnly")
 					} else if (maxReadFileLine > 0) {
-						lineSnippet = t("tools:readFile.maxLines", { max: maxReadFileLine })
+						lineSnippet = t("tools:readFile.maxLines", { max: String(maxReadFileLine) })
 					}
 
 					const readablePath = getReadablePath(task.cwd, relPath)
@@ -288,13 +288,13 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				let lineSnippet = ""
 				if (fileResult.lineRanges && fileResult.lineRanges.length > 0) {
 					const ranges = fileResult.lineRanges.map((range) =>
-						t("tools:readFile.linesRange", { start: range.start, end: range.end }),
+						t("tools:readFile.linesRange", { start: String(range.start), end: String(range.end) }),
 					)
 					lineSnippet = ranges.join(", ")
 				} else if (maxReadFileLine === 0) {
 					lineSnippet = t("tools:readFile.definitionsOnly")
 				} else if (maxReadFileLine > 0) {
-					lineSnippet = t("tools:readFile.maxLines", { max: maxReadFileLine })
+					lineSnippet = t("tools:readFile.maxLines", { max: String(maxReadFileLine) })
 				}
 
 				const completeMessage = JSON.stringify({

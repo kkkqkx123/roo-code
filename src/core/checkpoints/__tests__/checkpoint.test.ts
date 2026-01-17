@@ -463,7 +463,7 @@ describe("Checkpoint functionality", () => {
 					const provider = mockTask.providerRef.deref()
 					provider?.postMessageToWebview({
 						type: "checkpointInitWarning",
-						checkpointWarning: i18nModule.t("common:errors.wait_checkpoint_long_time", { timeout: 5 }),
+						checkpointWarning: i18nModule.t("common:errors.wait_checkpoint_long_time", { timeout: String(5) }),
 					})
 				}
 
@@ -570,11 +570,11 @@ describe("Checkpoint functionality", () => {
 			vi.clearAllMocks()
 
 			// Test warning message i18n key
-			const warningMessage = i18nModule.t("common:errors.wait_checkpoint_long_time", { timeout: 5 })
+			const warningMessage = i18nModule.t("common:errors.wait_checkpoint_long_time", { timeout: String(5) })
 			expect(warningMessage).toBe("Checkpoint initialization is taking longer than 5 seconds...")
 
 			// Test timeout error message i18n key
-			const errorMessage = i18nModule.t("common:errors.init_checkpoint_fail_long_time", { timeout: 30 })
+			const errorMessage = i18nModule.t("common:errors.init_checkpoint_fail_long_time", { timeout: String(30) })
 			expect(errorMessage).toBe("Checkpoint initialization failed after 30 seconds")
 		})
 	})

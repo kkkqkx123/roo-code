@@ -94,7 +94,8 @@
 			"errorOutput": "Error output: {{output}}",
 			"processExitedWithError": "Claude Code process exited with code {{exitCode}}. Error output: {{output}}",
 			"stoppedWithReason": "Claude Code stopped with reason: {{reason}}",
-			"apiKeyModelPlanMismatch": "API keys and subscription plans allow different models. Make sure the selected model is included in your plan."
+			"apiKeyModelPlanMismatch": "API keys and subscription plans allow different models. Make sure the selected model is included in your plan.",
+			"notAuthenticated": "Not authenticated with Claude Code. Please sign in using the Claude Code OAuth flow."
 		},
 		"message": {
 			"no_active_task_to_delete": "No active task to delete messages from",

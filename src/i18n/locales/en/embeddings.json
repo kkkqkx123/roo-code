@@ -13,11 +13,11 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Failed to connect to Qdrant vector database. Please ensure Qdrant is running and accessible at {{qdrantUrl}}. Error: {{errorMessage}}",
-		"vectorDimensionMismatch": "Failed to update vector index for new model. Please try clearing the index and starting again. Details: {{errorMessage}}"
+		"vectorDimensionMismatch": "Failed to update vector index for new model. Please try clearing of index and starting again. Details: {{errorMessage}}"
 	},
 	"validation": {
-		"authenticationFailed": "Authentication failed. Please check your API key in the settings.",
-		"connectionFailed": "Failed to connect to the embedder service. Please check your connection settings and ensure the service is running.",
+		"authenticationFailed": "Authentication failed. Please check your API key in settings.",
+		"connectionFailed": "Failed to connect to embedder service. Please check your connection settings and ensure that service is running.",
 		"modelNotAvailable": "The specified model is not available. Please check your model configuration.",
 		"configurationError": "Invalid embedder configuration. Please review your settings.",
 		"serviceUnavailable": "The embedder service is not available. Please ensure it is running and accessible.",
@@ -35,7 +35,7 @@
 		"openAiCompatibleConfigMissing": "OpenAI Compatible configuration missing for embedder creation",
 		"geminiConfigMissing": "Gemini configuration missing for embedder creation",
 		"invalidEmbedderType": "Invalid embedder type configured: {{embedderProvider}}",
-		"vectorDimensionNotDeterminedOpenAiCompatible": "Could not determine vector dimension for model '{{modelId}}' with provider '{{provider}}'. Please ensure the 'Embedding Dimension' is correctly set in the OpenAI-Compatible provider settings.",
+		"vectorDimensionNotDeterminedOpenAiCompatible": "Could not determine vector dimension for model '{{modelId}}' with provider '{{provider}}'. Please ensure that 'Embedding Dimension' is correctly set in the OpenAI-Compatible provider settings.",
 		"vectorDimensionNotDetermined": "Could not determine vector dimension for model '{{modelId}}' with provider '{{provider}}'. Check model profiles or configuration.",
 		"qdrantUrlMissing": "Qdrant URL missing for vector store creation",
 		"codeIndexingNotConfigured": "Cannot create services: Code indexing is not properly configured"
@@ -54,6 +54,5 @@
 	"textWithPrefixExceedsTokenLimit": "Text with prefix exceeds token limit ({{text}} + {{prefix}} > {{tokenLimit}}). Skipping.",
 	"openai": {
 		"invalidResponseFormat": "Invalid response format from OpenAI API"
-	}
 	}
 }

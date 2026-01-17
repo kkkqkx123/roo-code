@@ -105,8 +105,8 @@ export async function taskMetadata({
 		number: taskNumber,
 		ts: timestamp,
 		task: hasMessages
-			? taskMessage!.text?.trim() || t("common:tasks.incomplete", { taskNumber })
-			: t("common:tasks.no_messages", { taskNumber }),
+			? taskMessage!.text?.trim() || t("common:tasks.incomplete", { taskNumber: String(taskNumber) })
+			: t("common:tasks.no_messages", { taskNumber: String(taskNumber) }),
 		tokensIn: tokenUsage.totalTokensIn,
 		tokensOut: tokenUsage.totalTokensOut,
 		cacheWrites: tokenUsage.totalCacheWrites,

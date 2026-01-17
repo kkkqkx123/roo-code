@@ -1927,11 +1927,9 @@ export class McpHub {
 
 			// If there were errors, notify the user
 			if (disconnectionErrors.length > 0) {
-				const errorSummary = disconnectionErrors.map((e) => `${e.serverName}: ${e.error}`).join("\n")
 				vscode.window.showWarningMessage(
 					t("mcp:errors.disconnect_servers_partial", {
-						count: disconnectionErrors.length,
-						errors: errorSummary,
+						count: String(disconnectionErrors.length),
 					}),
 				)
 			}

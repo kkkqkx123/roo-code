@@ -120,7 +120,7 @@ export async function validateImageForProcessing(
 			reason: "size_limit",
 			notice: t("tools:readFile.imageTooLarge", {
 				size: imageSizeFormatted,
-				max: maxImageFileSize,
+				max: String(maxImageFileSize),
 			}),
 			sizeInMB: imageSizeInMB,
 		}
@@ -152,7 +152,7 @@ export async function processImageFile(fullPath: string): Promise<ImageProcessin
 	const { dataUrl, buffer } = await readImageAsDataUrlWithBuffer(fullPath)
 	const imageSizeInKB = Math.round(imageStats.size / 1024)
 	const imageSizeInMB = imageStats.size / (1024 * 1024)
-	const noticeText = t("tools:readFile.imageWithSize", { size: imageSizeInKB })
+	const noticeText = t("tools:readFile.imageWithSize", { size: String(imageSizeInKB) })
 
 	return {
 		dataUrl,

@@ -61,9 +61,9 @@ export class OpenAiEmbedder extends OpenAiNativeHandler implements IEmbedder {
 					if (estimatedTokens > MAX_ITEM_TOKENS) {
 						console.warn(
 							t("embeddings:textWithPrefixExceedsTokenLimit", {
-								index,
-								estimatedTokens,
-								maxTokens: MAX_ITEM_TOKENS,
+								text: text.substring(0, 50),
+								prefix: queryPrefix,
+								tokenLimit: String(MAX_ITEM_TOKENS),
 							}),
 						)
 						// Return original text if adding prefix would exceed limit
@@ -89,9 +89,9 @@ export class OpenAiEmbedder extends OpenAiNativeHandler implements IEmbedder {
 				if (itemTokens > MAX_ITEM_TOKENS) {
 					console.warn(
 						t("embeddings:textExceedsTokenLimit", {
-							index: i,
-							itemTokens,
-							maxTokens: MAX_ITEM_TOKENS,
+							index: String(i),
+							itemTokens: String(itemTokens),
+							maxTokens: String(MAX_ITEM_TOKENS),
 						}),
 					)
 					processedIndices.push(i)
@@ -156,9 +156,9 @@ export class OpenAiEmbedder extends OpenAiNativeHandler implements IEmbedder {
 					const delayMs = INITIAL_DELAY_MS * Math.pow(2, attempts)
 					console.warn(
 						t("embeddings:rateLimitRetry", {
-							delayMs,
-							attempt: attempts + 1,
-							maxRetries: MAX_RETRIES,
+							delayMs: String(delayMs),
+							attempt: String(attempts + 1),
+							maxRetries: String(MAX_RETRIES),
 						}),
 					)
 					await new Promise((resolve) => setTimeout(resolve, delayMs))
@@ -173,7 +173,7 @@ export class OpenAiEmbedder extends OpenAiNativeHandler implements IEmbedder {
 			}
 		}
 
-		throw new Error(t("embeddings:failedMaxAttempts", { attempts: MAX_RETRIES }))
+		throw new Error(t("embeddings:failedMaxAttempts", { attempts: String(MAX_RETRIES) }))
 	}
 
 	/**

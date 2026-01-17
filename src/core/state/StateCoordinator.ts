@@ -217,7 +217,6 @@ export class StateCoordinator {
 			maxGitStatusFiles: stateValues.maxGitStatusFiles ?? 0,
 			taskSyncEnabled: false,
 			remoteControlEnabled: false,
-			imageGenerationProvider: stateValues.imageGenerationProvider,
 			featureRoomoteControlEnabled: false,
 			claudeCodeIsAuthenticated: false,
 			debug: vscode.workspace.getConfiguration("roo-cline").get<boolean>("debug", false),

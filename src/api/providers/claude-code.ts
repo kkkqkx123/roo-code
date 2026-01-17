@@ -126,12 +126,7 @@ export class ClaudeCodeHandler implements ApiHandler, SingleCompletionHandler {
 		const accessToken = await claudeCodeOAuthManager.getAccessToken()
 
 		if (!accessToken) {
-			throw new Error(
-				t("common:errors.claudeCode.notAuthenticated", {
-					defaultValue:
-						"Not authenticated with Claude Code. Please sign in using the Claude Code OAuth flow.",
-				}),
-			)
+			throw new Error(t("common:errors.claudeCode.notAuthenticated"))
 		}
 
 		// Get user email for generating user_id metadata
@@ -301,12 +296,7 @@ export class ClaudeCodeHandler implements ApiHandler, SingleCompletionHandler {
 		const accessToken = await claudeCodeOAuthManager.getAccessToken()
 
 		if (!accessToken) {
-			throw new Error(
-				t("common:errors.claudeCode.notAuthenticated", {
-					defaultValue:
-						"Not authenticated with Claude Code. Please sign in using the Claude Code OAuth flow.",
-				}),
-			)
+			throw new Error(t("common:errors.claudeCode.notAuthenticated"))
 		}
 
 		// Get user email for generating user_id metadata

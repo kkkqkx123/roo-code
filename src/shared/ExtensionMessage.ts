@@ -255,7 +255,6 @@ export type ExtensionState = Pick<
 	| "profileThresholds"
 	| "includeDiagnosticMessages"
 	| "maxDiagnosticMessages"
-	| "imageGenerationProvider"
 	| "includeTaskHistoryInEnhance"
 	| "reasoningBlockCollapsed"
 	| "enterBehavior"
@@ -342,7 +341,6 @@ export interface ClineSayTool {
 		| "switchMode"
 		| "newTask"
 		| "finishTask"
-		| "imageGenerated"
 		| "runSlashCommand"
 		| "updateTodoList"
 	path?: string
@@ -379,7 +377,6 @@ export interface ClineSayTool {
 		}>
 	}>
 	question?: string
-	imageData?: string // Base64 encoded image data for generated images
 	// Properties for runSlashCommand tool
 	command?: string
 	args?: string

@@ -4,7 +4,6 @@ export const EXPERIMENT_IDS = {
 	MULTI_FILE_APPLY_DIFF: "multiFileApplyDiff",
 	POWER_STEERING: "powerSteering",
 	PREVENT_FOCUS_DISRUPTION: "preventFocusDisruption",
-	IMAGE_GENERATION: "imageGeneration",
 	RUN_SLASH_COMMAND: "runSlashCommand",
 	MULTIPLE_NATIVE_TOOL_CALLS: "multipleNativeToolCalls",
 } as const satisfies Record<string, ExperimentId>
@@ -21,7 +20,6 @@ export const experimentConfigsMap: Record<ExperimentKey, ExperimentConfig> = {
 	MULTI_FILE_APPLY_DIFF: { enabled: false },
 	POWER_STEERING: { enabled: false },
 	PREVENT_FOCUS_DISRUPTION: { enabled: false },
-	IMAGE_GENERATION: { enabled: false },
 	RUN_SLASH_COMMAND: { enabled: false },
 	MULTIPLE_NATIVE_TOOL_CALLS: { enabled: false },
 }

@@ -151,7 +151,7 @@ export const webviewMessageHandler = async (
 		}
 
 		if (messageIndex === -1) {
-			await vscode.window.showErrorMessage(t("common:errors.message.message_not_found", { messageTs }))
+			await vscode.window.showErrorMessage(t("common:errors.message.message_not_found", { messageTs: messageTs.toString() }))
 			return
 		}
 
@@ -275,7 +275,7 @@ export const webviewMessageHandler = async (
 		const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentCline)
 
 		if (messageIndex === -1) {
-			const errorMessage = t("common:errors.message.message_not_found", { messageTs })
+			const errorMessage = t("common:errors.message.message_not_found", { messageTs: messageTs.toString() })
 			console.error("[handleEditMessageConfirm]", errorMessage)
 			await vscode.window.showErrorMessage(errorMessage)
 			return
@@ -1774,7 +1774,7 @@ export const webviewMessageHandler = async (
 						})
 
 						// Show error message
-						vscode.window.showErrorMessage(t("common:errors.mode_import_failed", { error: result.error }))
+						vscode.window.showErrorMessage(t("common:errors.mode_import_failed", { error: result.error ?? "Unknown error" }))
 					}
 				} else {
 					// User cancelled the file dialog - reset the importing state

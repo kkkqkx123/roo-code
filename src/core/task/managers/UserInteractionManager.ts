@@ -221,7 +221,7 @@ export class UserInteractionManager {
 	}
 
 	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string): Promise<ToolResponse> {
-		const message = t("common:errors.missing_param", { toolName, paramName, relPath })
+		const message = t("common:errors.missing_param", { toolName, paramName, relPath: relPath ?? "" })
 		await this.say("error", message)
 		return formatResponse.toolError(
 			formatResponse.missingToolParameterError(paramName, this.stateManager.taskToolProtocol ?? "xml"),

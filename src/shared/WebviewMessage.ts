@@ -146,7 +146,6 @@ export interface WebviewMessage {
 		| "deleteCommand"
 		| "createCommand"
 		| "insertTextIntoTextarea"
-		| "imageGenerationSettings"
 		| "queueMessage"
 		| "removeQueuedMessage"
 		| "editQueuedMessage"

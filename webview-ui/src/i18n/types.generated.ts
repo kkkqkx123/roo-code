@@ -198,16 +198,12 @@ export interface chatParams {
   'chat:errorDetails.title': Record<string, never>
   'chat:errorReadingFile': Record<string, never>
   'chat:feedback.youSaid': Record<string, never>
-  'chat:fileOperations.didGenerateImage': Record<string, never>
   'chat:fileOperations.didRead': Record<string, never>
   'chat:fileOperations.wantsToApplyBatchChanges': Record<string, never>
   'chat:fileOperations.wantsToCreate': Record<string, never>
   'chat:fileOperations.wantsToEdit': Record<string, never>
   'chat:fileOperations.wantsToEditOutsideWorkspace': Record<string, never>
   'chat:fileOperations.wantsToEditProtected': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImage': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImageOutsideWorkspace': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImageProtected': Record<string, never>
   'chat:fileOperations.wantsToInsert': Record<string, never>
   'chat:fileOperations.wantsToInsertAtEnd': Record<string, never>
   'chat:fileOperations.wantsToInsertWithLineNumber': { lineNumber: string }
@@ -1493,16 +1489,12 @@ export interface TranslationParams {
   'chat:errorDetails.title': Record<string, never>
   'chat:errorReadingFile': Record<string, never>
   'chat:feedback.youSaid': Record<string, never>
-  'chat:fileOperations.didGenerateImage': Record<string, never>
   'chat:fileOperations.didRead': Record<string, never>
   'chat:fileOperations.wantsToApplyBatchChanges': Record<string, never>
   'chat:fileOperations.wantsToCreate': Record<string, never>
   'chat:fileOperations.wantsToEdit': Record<string, never>
   'chat:fileOperations.wantsToEditOutsideWorkspace': Record<string, never>
   'chat:fileOperations.wantsToEditProtected': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImage': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImageOutsideWorkspace': Record<string, never>
-  'chat:fileOperations.wantsToGenerateImageProtected': Record<string, never>
   'chat:fileOperations.wantsToInsert': Record<string, never>
   'chat:fileOperations.wantsToInsertAtEnd': Record<string, never>
   'chat:fileOperations.wantsToInsertWithLineNumber': { lineNumber: string }

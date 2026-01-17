@@ -94,7 +94,8 @@
       "errorOutput": "错误输出：{{output}}",
       "processExitedWithError": "Claude Code 进程退出，退出码：{{exitCode}}。错误输出：{{output}}",
       "stoppedWithReason": "Claude Code 停止，原因：{{reason}}",
-      "apiKeyModelPlanMismatch": "API密钥和订阅计划允许不同的模型。请确保所选模型包含在您的计划中。"
+      "apiKeyModelPlanMismatch": "API密钥和订阅计划允许不同的模型。请确保所选模型包含在您的计划中。",
+      "notAuthenticated": "未通过 Claude Code 身份验证。请使用 Claude Code OAuth 流程登录。"
     },
     "message": {
       "no_active_task_to_delete": "没有可删除消息的活跃任务",

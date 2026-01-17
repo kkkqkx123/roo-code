@@ -10,7 +10,6 @@ export const experimentIds = [
 	"powerSteering",
 	"multiFileApplyDiff",
 	"preventFocusDisruption",
-	"imageGeneration",
 	"runSlashCommand",
 	"multipleNativeToolCalls",
 ] as const
@@ -27,7 +26,6 @@ export const experimentsSchema = z.object({
 	powerSteering: z.boolean().optional(),
 	multiFileApplyDiff: z.boolean().optional(),
 	preventFocusDisruption: z.boolean().optional(),
-	imageGeneration: z.boolean().optional(),
 	runSlashCommand: z.boolean().optional(),
 	multipleNativeToolCalls: z.boolean().optional(),
 })

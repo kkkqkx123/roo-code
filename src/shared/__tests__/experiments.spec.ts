@@ -29,7 +29,6 @@ describe("experiments", () => {
 				powerSteering: false,
 				multiFileApplyDiff: false,
 				preventFocusDisruption: false,
-				imageGeneration: false,
 				runSlashCommand: false,
 				multipleNativeToolCalls: false,
 			}
@@ -41,7 +40,6 @@ describe("experiments", () => {
 				powerSteering: true,
 				multiFileApplyDiff: false,
 				preventFocusDisruption: false,
-				imageGeneration: false,
 				runSlashCommand: false,
 				multipleNativeToolCalls: false,
 			}
@@ -53,7 +51,6 @@ describe("experiments", () => {
 				powerSteering: false,
 				multiFileApplyDiff: false,
 				preventFocusDisruption: false,
-				imageGeneration: false,
 				runSlashCommand: false,
 				multipleNativeToolCalls: false,
 			}

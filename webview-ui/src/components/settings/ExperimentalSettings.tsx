@@ -1,7 +1,7 @@
 import { HTMLAttributes } from "react"
 import { FlaskConical } from "lucide-react"
 
-import type { Experiments, ImageGenerationProvider } from "@roo-code/types"
+import type { Experiments } from "@roo-code/types"
 
 import { EXPERIMENT_IDS, experimentConfigsMap } from "@roo/experiments"
 
@@ -12,15 +12,12 @@ import { SetExperimentEnabled } from "./types"
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
 import { ExperimentalFeature } from "./ExperimentalFeature"
-import { ImageGenerationSettings } from "./ImageGenerationSettings"
 
 type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	experiments: Experiments
 	setExperimentEnabled: SetExperimentEnabled
 	apiConfiguration?: any
 	setApiConfigurationField?: any
-	imageGenerationProvider?: ImageGenerationProvider
-	setImageGenerationProvider?: (provider: ImageGenerationProvider) => void
 }
 
 export const ExperimentalSettings = ({
@@ -28,8 +25,6 @@ export const ExperimentalSettings = ({
 	setExperimentEnabled,
 	apiConfiguration,
 	setApiConfigurationField,
-	imageGenerationProvider,
-	setImageGenerationProvider,
 	className,
 	...props
 }: ExperimentalSettingsProps) => {
@@ -59,23 +54,6 @@ export const ExperimentalSettings = ({
 									onChange={(enabled) =>
 										setExperimentEnabled(EXPERIMENT_IDS.MULTI_FILE_APPLY_DIFF, enabled)
 									}
-								/>
-							)
-						}
-						if (
-							config[0] === "IMAGE_GENERATION" &&
-							setImageGenerationProvider
-						) {
-							return (
-								<ImageGenerationSettings
-									key={config[0]}
-									enabled={experiments[EXPERIMENT_IDS.IMAGE_GENERATION] ?? false}
-									onChange={(enabled) =>
-										setExperimentEnabled(EXPERIMENT_IDS.IMAGE_GENERATION, enabled)
-									}
-									imageGenerationProvider={imageGenerationProvider}
-									setImageGenerationProvider={setImageGenerationProvider}
-									setImageGenerationSelectedModel={() => {}}
 								/>
 							)
 						}
