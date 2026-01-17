@@ -351,7 +351,7 @@ describe("Cline - API Tests", () => {
 			expect(() => task.cancelCurrentRequest()).not.toThrow()
 		})
 
-		it("should be called during dispose", () => {
+		it("should be called during dispose", async () => {
 			const task = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
@@ -367,7 +367,7 @@ describe("Cline - API Tests", () => {
 			vi.spyOn(task.messageQueueManager, "dispose").mockImplementation(() => {})
 			vi.spyOn(task, "removeAllListeners").mockImplementation(() => task as any)
 
-			task.dispose()
+			await task.dispose()
 
 			expect(cancelSpy).toHaveBeenCalled()
 		})

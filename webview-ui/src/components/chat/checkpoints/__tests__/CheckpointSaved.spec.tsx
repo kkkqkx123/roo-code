@@ -49,6 +49,10 @@ describe("CheckpointSaved popover visibility", () => {
 		checkpoint: { from: "prev123", to: "abc123" } as Record<string, unknown>,
 	}
 
+	beforeEach(() => {
+		lastOnOpenChange = undefined
+	})
+
 	it("shows menu while popover is open and hides when closed", async () => {
 		const { getByTestId } = render(<CheckpointSaved {...baseProps} />)
 
@@ -92,8 +96,8 @@ describe("CheckpointSaved popover visibility", () => {
 		lastOnOpenChange?.(true)
 
 		// Enter confirm state
-		const restoreFilesAndTaskBtn = await waitFor(() => getByTestId("restore-files-and-task-btn"))
-		await userEvent.click(restoreFilesAndTaskBtn)
+		const restoreFilesAndContextBtn = await waitFor(() => getByTestId("restore-files-and-context-btn"))
+		await userEvent.click(restoreFilesAndContextBtn)
 
 		// Confirm warning should be visible
 		expect(getByTestId("checkpoint-confirm-warning")).toBeTruthy()
@@ -148,7 +152,7 @@ describe("CheckpointSaved popover visibility", () => {
 		})
 
 		// Enter confirm and confirm restore -> popover closes; menu then hides
-		await userEvent.click(getByTestId("restore-files-and-task-btn"))
+		await userEvent.click(getByTestId("restore-files-and-context-btn"))
 		await userEvent.click(getByTestId("confirm-restore-btn"))
 		await waitFor(() => {
 			expect(popoverRoot().getAttribute("data-open")).toBe("false")

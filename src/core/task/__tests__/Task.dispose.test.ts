@@ -55,10 +55,10 @@ describe("Task dispose method", () => {
 		})
 	})
 
-	afterEach(() => {
+	afterEach(async () => {
 		// Clean up
 		if (task && !task.abort) {
-			task.dispose()
+			await task.dispose()
 		}
 	})
 

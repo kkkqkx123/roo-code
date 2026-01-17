@@ -25,6 +25,7 @@ export class UserInteractionManager {
 	private askResponseImages?: string[]
 	public lastMessageTs?: number
 	private autoApprovalTimeoutRef?: NodeJS.Timeout
+	private waitForResponseTimeoutRef?: NodeJS.Timeout
 
 	constructor(options: UserInteractionManagerOptions) {
 		this.stateManager = options.stateManager
@@ -125,9 +126,10 @@ export class UserInteractionManager {
 		return new Promise((resolve) => {
 			const checkResponse = () => {
 				if (this.lastMessageTs !== askTs) {
+					this.waitForResponseTimeoutRef = undefined
 					resolve()
 				} else {
-					setTimeout(checkResponse, 100)
+					this.waitForResponseTimeoutRef = setTimeout(checkResponse, 100)
 				}
 			}
 			checkResponse()
@@ -279,5 +281,20 @@ export class UserInteractionManager {
 
 	getInteractiveAsk(): ClineMessage | undefined {
 		return this.interactiveAsk
+	}
+
+	dispose(): void {
+		this.cancelAutoApprovalTimeout()
+		if (this.waitForResponseTimeoutRef) {
+			clearTimeout(this.waitForResponseTimeoutRef)
+			this.waitForResponseTimeoutRef = undefined
+		}
+		this.idleAsk = undefined
+		this.resumableAsk = undefined
+		this.interactiveAsk = undefined
+		this.askResponse = undefined
+		this.askResponseText = undefined
+		this.askResponseImages = undefined
+		this.lastMessageTs = undefined
 	}
 }

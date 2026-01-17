@@ -177,10 +177,9 @@ describe("Task grounding sources handling", () => {
 		} as ProviderSettings
 	})
 
-	// Helper function to mock addToApiConversationHistory to update the task's apiConversationHistory
+	// Helper function to mock addToApiConversationHistory to update task's apiConversationHistory
 	function mockAddToApiConversationHistory(task: Task) {
-		const originalAddToApiConversationHistory = (task as any).addToApiConversationHistory
-		vi.spyOn(task as any, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
+		vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
 		const message = args[0]
 		const reasoning = args[1] as string | undefined
 			// Add the message to the task's apiConversationHistory
@@ -235,7 +234,7 @@ Sources: [1](https://example.com), [2](https://another.com)
 		]
 
 		// Spy on addToApiConversationHistory to check what gets persisted
-		const addToApiHistorySpy = vi.spyOn(task as any, "addToApiConversationHistory")
+		const addToApiHistorySpy = vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory")
 
 		// Simulate the logic from Task.ts that strips grounding sources
 		let cleanAssistantMessage = assistantMessageWithSources
@@ -247,7 +246,7 @@ Sources: [1](https://example.com), [2](https://another.com)
 		}
 
 		// Add the cleaned message to API history
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: cleanAssistantMessage }],
 		})
@@ -288,7 +287,7 @@ Sources: [1](https://example.com), [2](https://another.com)
 				.trim()
 		}
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: cleanAssistantMessage }],
 		})

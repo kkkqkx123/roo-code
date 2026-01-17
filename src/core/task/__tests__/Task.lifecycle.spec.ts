@@ -211,7 +211,7 @@ describe("Cline - Task Lifecycle", () => {
 
 			const emitSpy = vi.spyOn(task, "emit")
 
-			vi.spyOn(task, "dispose").mockImplementation(() => {})
+			vi.spyOn(task, "dispose").mockImplementation(async () => {})
 
 			await task.abortTask()
 
@@ -228,7 +228,7 @@ describe("Cline - Task Lifecycle", () => {
 				startTask: false,
 			})
 
-			const disposeSpy = vi.spyOn(task, "dispose").mockImplementation(() => {})
+			const disposeSpy = vi.spyOn(task, "dispose").mockImplementation(async () => {})
 
 			await task.abortTask()
 
@@ -248,7 +248,7 @@ describe("Cline - Task Lifecycle", () => {
 
 			expect(typeof taskLike.abortTask).toBe("function")
 
-			vi.spyOn(task, "dispose").mockImplementation(() => {})
+			vi.spyOn(task, "dispose").mockImplementation(async () => {})
 
 			await taskLike.abortTask()
 

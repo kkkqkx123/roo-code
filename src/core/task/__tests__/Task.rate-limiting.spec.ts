@@ -186,10 +186,6 @@ describe("Cline - Subtask Rate Limiting", () => {
 		mockDelay.mockClear()
 	})
 
-	afterEach(() => {
-		Task.resetGlobalApiRequestTime()
-	})
-
 	it("should enforce rate limiting across parent and subtask", async () => {
 		const getStateSpy = vi.spyOn(mockProvider, "getState")
 

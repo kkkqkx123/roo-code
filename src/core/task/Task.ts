@@ -105,6 +105,10 @@ import {
 	ConversationHistoryManager,
 } from "./managers"
 
+// New architecture components
+import { TaskContainer, TOKENS, type IDisposable, type IAsyncDisposable } from "./TaskContainer"
+import { TaskEventBus, type EventListener } from "./TaskEventBus"
+
 export interface TaskOptions extends CreateTaskOptions {
 	provider: ClineProvider
 	apiConfiguration: ProviderSettings
@@ -185,7 +189,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	terminalProcess?: RooTerminalProcess
 
 	// Computer User
-	browserSessionManager: BrowserSessionManager
+	private _browserSessionManager?: BrowserSessionManager
 
 	// Editing
 	diffViewProvider: DiffViewProvider
@@ -233,23 +237,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	// ConversationRewindManager for high-level message operations (lazy initialized)
 	private _conversationRewindManager?: ConversationRewindManager
 
-	// Managers
-	private stateManager: TaskStateManager
-	private apiRequestManager: ApiRequestManager
-	private taskMessageManager: TaskMessageManager
-	private toolExecutor: ToolExecutor
-	private userInteractionManager: UserInteractionManager
-	private fileEditorManager: FileEditorManager
-	private checkpointManager: CheckpointManager
-	private contextManager: ContextManager
-	private usageTracker: UsageTracker
-	private configurationManager: ConfigurationManager
-	private subtaskManager: SubtaskManager
-	private taskLifecycleManager: TaskLifecycleManager
-	private streamingManager: StreamingManager
-	private promptManager: PromptManager
-	public messageQueueManager: MessageQueueManager
-	private conversationHistoryManager: ConversationHistoryManager
+	// New Architecture Components
+	private container: TaskContainer
+	private eventBus: TaskEventBus
+	private taskRef: WeakRef<Task>
 
 	constructor({
 		provider,
@@ -327,17 +318,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.globalStoragePath = provider.context.globalStorageUri.fsPath
 
 		this.urlContentFetcher = new UrlContentFetcher(provider.context)
-		this.browserSessionManager = new BrowserSessionManager({
-			taskId: this.taskId,
-			context: provider.context,
-			providerRef: this.providerRef,
-			onStatusUpdate: (message: string) => {
-				this.say("browser_session_status", message)
-			},
-			onWebviewUpdate: (isActive: boolean) => {
-				this.broadcastBrowserSessionUpdate(isActive)
-			},
-		})
 		this.diffEnabled = enableDiff
 		this.fuzzyMatchThreshold = fuzzyMatchThreshold
 		this.consecutiveMistakeLimit = consecutiveMistakeLimit ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT
@@ -350,141 +330,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.taskNumber = taskNumber
 		this.initialStatus = initialStatus
 
-		// Initialize managers
-		this.stateManager = new TaskStateManager({
-			taskId: this.taskId,
-			rootTaskId: this.rootTaskId,
-			parentTaskId: this.parentTaskId,
-			taskNumber: this.taskNumber,
-			workspacePath: this.workspacePath,
-			metadata: this.metadata,
-			provider,
-			apiConfiguration,
-			historyItem,
-			initialTodos,
-			initialStatus,
-		})
+		// Initialize new architecture components
+		this.taskRef = new WeakRef(this)
+		this.container = new TaskContainer()
+		this.eventBus = new TaskEventBus()
 
-		this.taskMessageManager = new TaskMessageManager({
-			stateManager: this.stateManager,
-			taskId: this.taskId,
-			globalStoragePath: this.globalStoragePath,
-		})
-
-		this.contextManager = new ContextManager({
-			cwd: this.cwd,
-			provider,
-			taskId: this.taskId,
-		})
-
-		this.fileEditorManager = new FileEditorManager({
-			cwd: this.cwd,
-			fuzzyMatchThreshold: this.fuzzyMatchThreshold,
-			enableDiff: this.diffEnabled,
-			provider,
-		})
-
-		this.toolExecutor = new ToolExecutor({
-			consecutiveMistakeLimit: this.consecutiveMistakeLimit,
-		})
-
-		this.userInteractionManager = new UserInteractionManager({
-			stateManager: this.stateManager,
-			messageManager: this.taskMessageManager,
-		})
-
-		this.checkpointManager = new CheckpointManager({
-			stateManager: this.stateManager,
-			messageManager: this.taskMessageManager,
-			taskId: this.taskId,
-			enableCheckpoints: this.enableCheckpoints,
-			checkpointTimeout: this.checkpointTimeout,
-		})
-
-		this.usageTracker = new UsageTracker({
-			emitTokenUsage: (tokenUsage, toolUsage) => {
-				this.emit(RooCodeEventName.TaskTokenUsageUpdated, this.taskId, tokenUsage, toolUsage)
-			},
-		})
-
-		this.streamingManager = new StreamingManager({
-			taskId: this.taskId,
-			onStreamingStateChange: (state) => {
-				this.emit(RooCodeEventName.TaskStreamingStateChanged, this.taskId, state)
-			},
-			onStreamingContentUpdate: (content) => {
-				this.emit(RooCodeEventName.TaskStreamingContentUpdated, this.taskId, content)
-			},
-		})
-
-		this.apiRequestManager = new ApiRequestManager({
-			stateManager: this.stateManager,
-			messageManager: this.taskMessageManager,
-			userInteractionManager: this.userInteractionManager,
-			contextManager: this.contextManager,
-			usageTracker: this.usageTracker,
-			fileEditorManager: this.fileEditorManager,
-			api: this.api,
-			apiConfiguration,
-			cwd: this.cwd,
-			streamingManager: this.streamingManager,
-			checkpointManager: this.checkpointManager,
-			getSystemPrompt: () => this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled),
-			getLastGlobalApiRequestTime: () => Task.lastGlobalApiRequestTime,
-			setLastGlobalApiRequestTime: (time: number) => {
-				Task.lastGlobalApiRequestTime = time
-			},
-		})
-
-		this.promptManager = new PromptManager({
-			taskId: this.taskId,
-			providerRef: this.providerRef,
-			workspacePath: this.cwd,
-			diffStrategy: this.diffStrategy,
-			rooIgnoreController: this.rooIgnoreController,
-		})
-
-		this.messageQueueManager = new MessageQueueManager({
-			taskId: this.taskId,
-			providerRef: this.providerRef,
-			onUserMessage: (taskId) => {
-				this.emit(RooCodeEventName.TaskUserMessage, taskId)
-			},
-		})
-
-		this.conversationHistoryManager = new ConversationHistoryManager({
-			taskId: this.taskId,
-		})
-
-		this.configurationManager = new ConfigurationManager({
-			taskId: this.taskId,
-			providerRef: this.providerRef,
-			onConfigurationUpdate: (newConfig) => {
-				this.updateApiConfiguration(newConfig)
-			},
-		})
-
-		this.subtaskManager = new SubtaskManager({
-			task: this,
-			providerRef: this.providerRef,
-			taskId: this.taskId,
-			rootTaskId: this.rootTaskId,
-			parentTaskId: this.parentTaskId,
-			taskNumber: this.taskNumber,
-			workspacePath: this.workspacePath,
-			apiConfiguration,
-		})
-
-		this.taskLifecycleManager = new TaskLifecycleManager({
-			task: this,
-			providerRef: this.providerRef,
-			taskId: this.taskId,
-			taskNumber: this.taskNumber,
-			workspacePath: this.workspacePath,
-			apiConfiguration,
-			metadata: this.metadata,
-			enableCheckpoints: this.enableCheckpoints,
-		})
+		// Initialize managers using dependency injection
+		this.initializeManagers(provider, apiConfiguration, historyItem, initialTodos)
 
 		// Sync task mode from state manager after initialization
 		this.stateManager.waitForModeInitialization().then(() => {
@@ -493,12 +345,20 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			// Initialize the assistant message parser based on the locked tool protocol.
 			const effectiveProtocol = this._taskToolProtocol || "xml"
-			this.streamingManager.setAssistantMessageParser(effectiveProtocol !== "native" ? new AssistantMessageParser() : undefined)
+			try {
+				this.streamingManager.setAssistantMessageParser(effectiveProtocol !== "native" ? new AssistantMessageParser() : undefined)
+			} catch (error) {
+				console.warn("[Task] Failed to set assistant message parser:", error)
+			}
 		}).catch((error) => {
 			console.error("[Task] Failed to initialize task mode:", error)
 			this._taskMode = defaultModeSlug
 			this._taskToolProtocol = "xml"
-			this.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
+			try {
+				this.streamingManager.setAssistantMessageParser(new AssistantMessageParser())
+			} catch (error) {
+				console.warn("[Task] Failed to set assistant message parser in catch block:", error)
+			}
 		})
 
 		// Only set up diff strategy if diff is enabled.
@@ -590,6 +450,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	public get tokenUsage(): TokenUsage | undefined {
 		return this.usageTracker.getTokenUsage()
+	}
+
+	public set tokenUsage(tokenUsage: TokenUsage) {
+		this.usageTracker.setTokenUsage(tokenUsage)
 	}
 
 	public cancelCurrentRequest(): void {
@@ -857,18 +721,218 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 		}
 	}
 
-	public dispose(): void {
-		// Cancel any current request
-		this.cancelCurrentRequest()
-		
-		// Remove all event listeners first to prevent memory leaks
+	public async dispose(): Promise<void> {
 		try {
 			this.removeAllListeners()
 		} catch (error) {
 			console.error("Error removing event listeners:", error)
 		}
 		
-		this.taskLifecycleManager.dispose()
+		this.cancelCurrentRequest()
+		
+		// Dispose container and all services
+		await this.container.dispose()
+		this.eventBus.dispose()
+	}
+
+	/**
+	 * Initialize all managers using dependency injection to avoid circular references
+	 */
+	private initializeManagers(
+		provider: ClineProvider,
+		apiConfiguration: ProviderSettings,
+		historyItem?: HistoryItem,
+		initialTodos?: TodoItem[]
+	): void {
+		const taskRef = new WeakRef(this)
+
+		// Create state manager first (other managers depend on it)
+		const stateManager = new TaskStateManager({
+			taskId: this.taskId,
+			rootTaskId: this.rootTaskId,
+			parentTaskId: this.parentTaskId,
+			taskNumber: this.taskNumber,
+			workspacePath: this.workspacePath,
+			metadata: this.metadata,
+			provider,
+			apiConfiguration,
+			historyItem,
+			initialTodos,
+			initialStatus: this.initialStatus,
+		})
+		this.container.register(TOKENS.TaskStateManager, stateManager)
+
+		// Create message manager
+		const messageManager = new TaskMessageManager({
+			stateManager,
+			taskId: this.taskId,
+			globalStoragePath: this.globalStoragePath,
+			task: taskRef, // Pass weak reference instead of direct reference
+		})
+		this.container.register(TOKENS.TaskMessageManager, messageManager)
+
+		// Create context manager
+		const contextManager = new ContextManager({
+			cwd: this.cwd,
+			provider,
+			taskId: this.taskId,
+		})
+		this.container.register(TOKENS.ContextManager, contextManager)
+
+		// Create file editor manager
+		const fileEditorManager = new FileEditorManager({
+			cwd: this.cwd,
+			fuzzyMatchThreshold: this.fuzzyMatchThreshold,
+			enableDiff: this.diffEnabled,
+			provider,
+		})
+		this.container.register(TOKENS.FileEditorManager, fileEditorManager)
+
+		// Create tool executor
+		const toolExecutor = new ToolExecutor({
+			consecutiveMistakeLimit: this.consecutiveMistakeLimit,
+		})
+		this.container.register(TOKENS.ToolExecutor, toolExecutor)
+
+		// Create user interaction manager
+		const userInteractionManager = new UserInteractionManager({
+			stateManager,
+			messageManager,
+		})
+		this.container.register(TOKENS.UserInteractionManager, userInteractionManager)
+
+		// Create checkpoint manager
+		const checkpointManager = new CheckpointManager({
+			stateManager,
+			messageManager,
+			taskId: this.taskId,
+			enableCheckpoints: this.enableCheckpoints,
+			checkpointTimeout: this.checkpointTimeout,
+		})
+		this.container.register(TOKENS.CheckpointManager, checkpointManager)
+
+		// Create usage tracker with event bus instead of direct callback
+		const usageTracker = new UsageTracker({
+			emitTokenUsage: (tokenUsage, toolUsage) => {
+				this.emit(RooCodeEventName.TaskTokenUsageUpdated, this.taskId, tokenUsage, toolUsage)
+			},
+		})
+		this.container.register(TOKENS.UsageTracker, usageTracker)
+
+		// Create streaming manager with event bus
+		const streamingManager = new StreamingManager({
+			taskId: this.taskId,
+			onStreamingStateChange: (state) => {
+				this.eventBus.emit(RooCodeEventName.TaskStreamingStateChanged, {
+					taskId: this.taskId,
+					state
+				})
+			},
+			onStreamingContentUpdate: (content) => {
+				this.eventBus.emit(RooCodeEventName.TaskStreamingContentUpdated, {
+					taskId: this.taskId,
+					content
+				})
+			},
+		})
+		this.container.register(TOKENS.StreamingManager, streamingManager)
+
+		// Create prompt manager
+		const promptManager = new PromptManager({
+			taskId: this.taskId,
+			providerRef: this.providerRef,
+			workspacePath: this.cwd,
+			diffStrategy: this.diffStrategy,
+			rooIgnoreController: this.rooIgnoreController,
+		})
+		this.container.register(TOKENS.PromptManager, promptManager)
+
+		// Create message queue manager with event bus
+		const messageQueueManager = new MessageQueueManager({
+			taskId: this.taskId,
+			providerRef: this.providerRef,
+			onUserMessage: (taskId) => {
+				this.eventBus.emit(RooCodeEventName.TaskUserMessage, { taskId })
+			},
+		})
+		this.container.register(TOKENS.MessageQueueManager, messageQueueManager)
+
+		// Create conversation history manager
+		const conversationHistoryManager = new ConversationHistoryManager({
+			taskId: this.taskId,
+		})
+		this.container.register(TOKENS.ConversationHistoryManager, conversationHistoryManager)
+
+		// Create configuration manager
+		const configurationManager = new ConfigurationManager({
+			taskId: this.taskId,
+			providerRef: this.providerRef,
+			onConfigurationUpdate: (newConfig) => {
+				this.updateApiConfiguration(newConfig)
+			},
+		})
+		this.container.register(TOKENS.ConfigurationManager, configurationManager)
+
+		// Create subtask manager (still needs direct task reference for now)
+		const subtaskManager = new SubtaskManager({
+			task: this,
+			providerRef: this.providerRef,
+			taskId: this.taskId,
+			rootTaskId: this.rootTaskId,
+			parentTaskId: this.parentTaskId,
+			taskNumber: this.taskNumber,
+			workspacePath: this.workspacePath,
+			apiConfiguration,
+		})
+		this.container.register(TOKENS.SubtaskManager, subtaskManager)
+
+		// Create task lifecycle manager
+		const taskLifecycleManager = new TaskLifecycleManager({
+			task: this,
+			providerRef: this.providerRef,
+			taskId: this.taskId,
+			taskNumber: this.taskNumber,
+			workspacePath: this.workspacePath,
+			apiConfiguration,
+			metadata: this.metadata,
+			enableCheckpoints: this.enableCheckpoints,
+		})
+		this.container.register(TOKENS.TaskLifecycleManager, taskLifecycleManager)
+
+		// Create API request manager (complex dependencies)
+		const apiRequestManager = new ApiRequestManager({
+			stateManager,
+			messageManager,
+			userInteractionManager,
+			contextManager,
+			usageTracker,
+			fileEditorManager,
+			api: this.api,
+			apiConfiguration,
+			cwd: this.cwd,
+			streamingManager,
+			checkpointManager,
+			getSystemPrompt: () => promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled),
+			getLastGlobalApiRequestTime: () => Task.lastGlobalApiRequestTime,
+			setLastGlobalApiRequestTime: (time: number) => {
+				Task.lastGlobalApiRequestTime = time
+			},
+		})
+		this.container.register(TOKENS.ApiRequestManager, apiRequestManager)
+
+		// Create browser session manager
+		const browserSessionManager = new BrowserSessionManager({
+			taskId: this.taskId,
+			context: provider.context,
+			providerRef: this.providerRef,
+			onStatusUpdate: (message: string) => {
+				this.say("browser_session_status", message)
+			},
+			onWebviewUpdate: (isActive: boolean) => {
+				this.broadcastBrowserSessionUpdate(isActive)
+			},
+		})
+		this.container.register(TOKENS.BrowserSessionManager, browserSessionManager)
 	}
 
 	public async startSubtask(message: string, initialTodos: TodoItem[], mode: string) {
@@ -965,6 +1029,84 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 			this._conversationRewindManager = new ConversationRewindManager(this)
 		}
 		return this._conversationRewindManager
+	}
+
+	// Manager getter methods using container
+	private get stateManager(): TaskStateManager {
+		return this.container.get(TOKENS.TaskStateManager)
+	}
+
+	private get taskMessageManager(): TaskMessageManager {
+		return this.container.get(TOKENS.TaskMessageManager)
+	}
+
+	private get contextManager(): ContextManager {
+		return this.container.get(TOKENS.ContextManager)
+	}
+
+	private get fileEditorManager(): FileEditorManager {
+		return this.container.get(TOKENS.FileEditorManager)
+	}
+
+	private get toolExecutor(): ToolExecutor {
+		return this.container.get(TOKENS.ToolExecutor)
+	}
+
+	private get userInteractionManager(): UserInteractionManager {
+		return this.container.get(TOKENS.UserInteractionManager)
+	}
+
+	private get checkpointManager(): CheckpointManager {
+		return this.container.get(TOKENS.CheckpointManager)
+	}
+
+	private get usageTracker(): UsageTracker {
+		return this.container.get(TOKENS.UsageTracker)
+	}
+
+	private get streamingManager(): StreamingManager {
+		try {
+			return this.container.get(TOKENS.StreamingManager)
+		} catch (error) {
+			// Container might be disposed, return undefined-safe behavior
+			console.warn("[Task] StreamingManager not available in container:", error)
+			return {} as StreamingManager
+		}
+	}
+
+	private get promptManager(): PromptManager {
+		return this.container.get(TOKENS.PromptManager)
+	}
+
+	public get messageQueueManager(): MessageQueueManager {
+		return this.container.get(TOKENS.MessageQueueManager)
+	}
+
+	private get conversationHistoryManager(): ConversationHistoryManager {
+		return this.container.get(TOKENS.ConversationHistoryManager)
+	}
+
+	private get configurationManager(): ConfigurationManager {
+		return this.container.get(TOKENS.ConfigurationManager)
+	}
+
+	private get subtaskManager(): SubtaskManager {
+		return this.container.get(TOKENS.SubtaskManager)
+	}
+
+	private get taskLifecycleManager(): TaskLifecycleManager {
+		return this.container.get(TOKENS.TaskLifecycleManager)
+	}
+
+	private get apiRequestManager(): ApiRequestManager {
+		return this.container.get(TOKENS.ApiRequestManager)
+	}
+
+	private get browserSessionManager(): BrowserSessionManager {
+		if (!this._browserSessionManager) {
+			this._browserSessionManager = this.container.get(TOKENS.BrowserSessionManager)
+		}
+		return this._browserSessionManager
 	}
 
 	public getAssistantMessageParser(): any {

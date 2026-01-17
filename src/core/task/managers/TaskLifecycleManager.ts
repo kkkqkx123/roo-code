@@ -271,10 +271,6 @@ export class TaskLifecycleManager {
 
 		const provider = this.providerRef.deref()
 
-		if (this.task.messageQueueManager) {
-			this.task.messageQueueManager.dispose()
-		}
-
 		if (provider) {
 			if (this.task.rooIgnoreController) {
 				this.task.rooIgnoreController.dispose()

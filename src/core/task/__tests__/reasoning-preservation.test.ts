@@ -185,10 +185,13 @@ describe("Task reasoning preservation", () => {
 		} as ProviderSettings
 	})
 
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
+
 	// Helper function to mock addToApiConversationHistory to update the task's apiConversationHistory
 function mockAddToApiConversationHistory(task: Task) {
-	const originalAddToApiConversationHistory = (task as any).addToApiConversationHistory
-	vi.spyOn(task as any, "addToApiConversationHistory").mockImplementation(async (message: any, reasoning?: any) => {
+	vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory").mockImplementation(async (message: any, reasoning?: any) => {
 		// Add the message to the task's apiConversationHistory
 		const messageWithTs = {
 			...message,
@@ -286,7 +289,7 @@ function mockAddToApiConversationHistory(task: Task) {
 		const reasoningMessage = "Let me think about this step by step. First, I need to..."
 
 		// Spy on addToApiConversationHistory
-		const addToApiHistorySpy = vi.spyOn(task as any, "addToApiConversationHistory")
+		const addToApiHistorySpy = vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory")
 
 		// Simulate what happens in the streaming loop when preserveReasoning is true
 		let finalAssistantMessage = assistantMessage
@@ -294,7 +297,7 @@ function mockAddToApiConversationHistory(task: Task) {
 			finalAssistantMessage = `<think>${reasoningMessage}</think>\n${assistantMessage}`
 		}
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: finalAssistantMessage }],
 		})
@@ -356,7 +359,7 @@ function mockAddToApiConversationHistory(task: Task) {
 		const reasoningMessage = "Let me think about this step by step. First, I need to..."
 
 		// Spy on addToApiConversationHistory
-		const addToApiHistorySpy = vi.spyOn(task as any, "addToApiConversationHistory")
+		const addToApiHistorySpy = vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory")
 
 		// Simulate what happens in the streaming loop when preserveReasoning is false
 		let finalAssistantMessage = assistantMessage
@@ -364,7 +367,7 @@ function mockAddToApiConversationHistory(task: Task) {
 			finalAssistantMessage = `<think>${reasoningMessage}</think>\n${assistantMessage}`
 		}
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: finalAssistantMessage }],
 		})
@@ -416,7 +419,7 @@ function mockAddToApiConversationHistory(task: Task) {
 		const reasoningMessage = "" // Empty reasoning
 
 		// Spy on addToApiConversationHistory
-		const addToApiHistorySpy = vi.spyOn(task as any, "addToApiConversationHistory")
+		const addToApiHistorySpy = vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory")
 
 		// Simulate what happens in the streaming loop
 		let finalAssistantMessage = assistantMessage
@@ -424,7 +427,7 @@ function mockAddToApiConversationHistory(task: Task) {
 			finalAssistantMessage = `<think>${reasoningMessage}</think>\n${assistantMessage}`
 		}
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: finalAssistantMessage }],
 		})
@@ -478,7 +481,7 @@ function mockAddToApiConversationHistory(task: Task) {
 			finalAssistantMessage = `<think>${reasoningMessage}</think>\n${assistantMessage}`
 		}
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: finalAssistantMessage }],
 		})
@@ -511,7 +514,7 @@ function mockAddToApiConversationHistory(task: Task) {
 			getResponseId: vi.fn().mockReturnValue("resp_test"),
 		} as any
 
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "assistant",
 			content: [{ type: "text", text: "Here is my response." }],
 		})
@@ -560,13 +563,14 @@ function mockAddToApiConversationHistory(task: Task) {
 					supportsPromptCache: true,
 				},
 			}),
+			getEncryptedContent: vi.fn().mockReturnValue(undefined),
 		} as any
 
 		// Simulate the new path: passing reasoning as a parameter
 		const reasoningText = "Let me analyze this carefully. First, I'll consider the requirements..."
 		const assistantText = "Here is my response."
 
-		await (task as any).addToApiConversationHistory(
+		await (task as any).taskMessageManager.addToApiConversationHistory(
 			{
 				role: "assistant",
 				content: [{ type: "text", text: assistantText }],

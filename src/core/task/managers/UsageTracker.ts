@@ -29,6 +29,11 @@ export class UsageTracker {
 	constructor(options: UsageTrackerOptions) {
 		const emitIntervalMs = options.emitIntervalMs ?? 2000
 
+		// Initialize snapshots as undefined to ensure first emission works correctly
+		// This ensures hasTokenUsageChanged returns true on first call
+		this.tokenUsageSnapshot = undefined
+		this.toolUsageSnapshot = undefined
+
 		this.debouncedEmitTokenUsage = debounce(
 			(tokenUsage: TokenUsage, toolUsage: ToolUsage) => {
 				const tokenChanged = hasTokenUsageChanged(tokenUsage, this.tokenUsageSnapshot)
@@ -129,5 +134,10 @@ export class UsageTracker {
 
 	combineMessages(messages: ClineMessage[]): ClineMessage[] {
 		return combineApiRequests(combineCommandSequences(messages))
+	}
+
+	dispose(): void {
+		this.debouncedEmitTokenUsage.cancel()
+		this.clearSnapshot()
 	}
 }

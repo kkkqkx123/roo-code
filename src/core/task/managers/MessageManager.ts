@@ -10,12 +10,14 @@ export interface MessageManagerOptions {
 	stateManager: TaskStateManager
 	taskId: string
 	globalStoragePath: string
+	task?: any // Add optional task reference for token usage updates
 }
 
 export class MessageManager {
 	private stateManager: TaskStateManager
 	private taskId: string
 	private globalStoragePath: string
+	private task?: any // Store task reference for token usage updates
 
 	apiConversationHistory: ApiMessage[] = []
 	clineMessages: ClineMessage[] = []
@@ -26,6 +28,7 @@ export class MessageManager {
 		this.stateManager = options.stateManager
 		this.taskId = options.taskId
 		this.globalStoragePath = options.globalStoragePath
+		this.task = options.task
 		
 		// 从保存的历史中恢复对话索引
 		this.initializeConversationIndex()
@@ -185,6 +188,11 @@ export class MessageManager {
 			this.clineMessages = messages
 		}
 		await saveTaskMessages({ messages: this.clineMessages, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+		
+		// Notify the task to update token usage
+		if (this.task && typeof this.task.saveClineMessages === 'function') {
+			await this.task.saveClineMessages()
+		}
 	}
 
 	findMessageByTimestamp(ts: number): ClineMessage | undefined {
@@ -240,5 +248,11 @@ export class MessageManager {
 		if (provider) {
 			await provider.postStateToWebview()
 		}
+	}
+
+	dispose(): void {
+		this.apiConversationHistory = []
+		this.clineMessages = []
+		this.task = undefined
 	}
 }

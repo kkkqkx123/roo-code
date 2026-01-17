@@ -213,10 +213,13 @@ describe("flushPendingToolResultsToHistory", () => {
 		mockProvider.updateTaskHistory = vi.fn().mockResolvedValue(undefined)
 	})
 
-	// Helper function to mock addToApiConversationHistory to update the task's apiConversationHistory
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
+
+	// Helper function to mock addToApiConversationHistory to update task's apiConversationHistory
 	function mockAddToApiConversationHistory(task: Task) {
-		const originalAddToApiConversationHistory = (task as any).addToApiConversationHistory
-		vi.spyOn(task as any, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
+		vi.spyOn((task as any).taskMessageManager, "addToApiConversationHistory").mockImplementation(async (...args: any[]): Promise<void> => {
 		const message = args[0]
 		const reasoning = args[1] as string | undefined
 			// Add the message to the task's apiConversationHistory
@@ -360,7 +363,7 @@ describe("flushPendingToolResultsToHistory", () => {
 		const beforeTs = Date.now()
 
 		// First add a user message with tool results to the API conversation history
-		await (task as any).addToApiConversationHistory({
+		await (task as any).taskMessageManager.addToApiConversationHistory({
 			role: "user",
 			content: [
 				{
