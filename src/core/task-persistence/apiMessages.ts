@@ -30,10 +30,19 @@ export type ApiMessage = Anthropic.MessageParam & {
 	// For non-destructive truncation: points to the truncationId of the marker that hides this message
 	// 对话索引，用于检查点恢复
 	conversationIndex?: number
-	// Messages with truncationParent are filtered out when sending to API if the marker exists
+	// Messages with truncationParent are filtered out when sending to API if marker exists
 	truncationParent?: string
 	// Identifies a message as a truncation boundary marker
 	isTruncationMarker?: boolean
+	// 检查点元数据，用于保存完整上下文
+	checkpointMetadata?: {
+		isCheckpoint: boolean
+		requestIndex?: number
+		checkpointHash?: string
+		systemPrompt?: string
+		toolProtocol?: string
+		contextTokens?: number
+	}
 }
 
 export async function readApiMessages({

@@ -801,8 +801,8 @@ export const webviewMessageHandler = async (
 		case "killBrowserSession":
 			{
 				const task = provider.getCurrentTask()
-				if (task?.browserSessionManager) {
-					await task.browserSessionManager.getBrowserSession().closeBrowser()
+				if (task) {
+					await task.getBrowserSession().closeBrowser()
 					await provider.postStateToWebview()
 				}
 			}
@@ -856,7 +856,7 @@ export const webviewMessageHandler = async (
 					)
 					const browserSessionMessages =
 						browserSessionStartIndex !== -1 ? messages.slice(browserSessionStartIndex) : []
-					const isBrowserSessionActive = task.browserSessionManager?.isSessionActive() ?? false
+					const isBrowserSessionActive = task.isBrowserSessionActive()
 					await panelManager.updateBrowserSession(browserSessionMessages, isBrowserSessionActive)
 				}
 			}

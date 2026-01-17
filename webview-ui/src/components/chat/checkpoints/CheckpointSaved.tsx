@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 import { CheckpointMenu } from "./CheckpointMenu"
-import { checkpointSchema } from "./schema"
+import { checkpointSchema, checkpointMetadataSchema } from "./schema"
 import { GitCommitVertical } from "lucide-react"
 
 type CheckpointSavedProps = {
@@ -72,6 +72,27 @@ export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: Checkpoin
 		return result.data
 	}, [checkpoint])
 
+	const hasApiContext = useMemo(() => {
+		if (!checkpoint) return false
+		
+		try {
+			const metadata = checkpoint as any
+			
+			// 检查是否有checkpointMetadata字段
+			if (!metadata.checkpointMetadata) return false
+			
+			// 验证checkpointMetadata是否包含必要的上下文信息
+			const parsed = checkpointMetadataSchema.safeParse(metadata.checkpointMetadata)
+			if (!parsed.success) return false
+			
+			// 检查是否包含系统提示词或工具协议
+			const { systemPrompt, toolProtocol } = parsed.data
+			return !!(systemPrompt || toolProtocol)
+		} catch {
+			return false
+		}
+	}, [checkpoint])
+
 	if (!metadata) {
 		return null
 	}
@@ -99,6 +120,8 @@ export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: Checkpoin
 					ts={props.ts}
 					commitHash={props.commitHash}
 					checkpoint={metadata}
+					hasApiContext={hasApiContext}
+					showContextRestore={false} // 当前检查点不显示上下文恢复
 					onOpenChange={handlePopoverOpenChange}
 				/>
 			</div>

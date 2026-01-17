@@ -38,6 +38,14 @@ export class CheckpointManager {
 	}
 
 	/**
+	 * 设置检查点关联的请求索引
+	 */
+	setCheckpointRequestIndex(commitHash: string, requestIndex: number): void {
+		this.checkpointRequestIndexes.set(commitHash, requestIndex)
+		console.log(`[CheckpointManager] Associated checkpoint ${commitHash} with request index ${requestIndex}`)
+	}
+
+	/**
 	 * 保存检查点，返回检查点信息
 	 */
 	async checkpointSave(force: boolean = false, suppressMessage: boolean = false): Promise<{ commit?: string } | undefined> {
@@ -248,28 +256,57 @@ export class CheckpointManager {
 	 */
 	private async restoreTaskStateFromHistory(history: ApiMessage[]): Promise<void> {
 		try {
-			// 1. 检测工具协议（从最近的助手消息中）
-			let toolProtocol: string | undefined
+			// 1. 首先查找检查点消息（包含完整上下文）
+			let checkpointMessage: ApiMessage | undefined
+			for (let i = history.length - 1; i >= 0; i--) {
+				const message = history[i]
+				if (message.checkpointMetadata?.isCheckpoint) {
+					checkpointMessage = message
+					break
+				}
+			}
+
+			// 2. 如果找到检查点消息，从中恢复完整上下文
+			if (checkpointMessage && checkpointMessage.checkpointMetadata) {
+				const { systemPrompt, toolProtocol } = checkpointMessage.checkpointMetadata
+
+				// 恢复工具协议
+				if (toolProtocol && this.stateManager.setTaskToolProtocol) {
+					this.stateManager.setTaskToolProtocol(toolProtocol as ToolProtocol)
+					console.log(`[CheckpointManager] Restored tool protocol from checkpoint metadata: ${toolProtocol}`)
+				}
+
+				// 系统提示词由PromptManager动态生成，不需要手动恢复
+				// 检查点元数据中的systemPrompt仅用于记录和调试
+				if (systemPrompt) {
+					console.log(`[CheckpointManager] Checkpoint metadata contains system prompt (length: ${systemPrompt.length})`)
+				}
+
+				return
+			}
+
+			// 3. 回退：从最近的助手消息中检测工具协议
+			let detectedToolProtocol: string | undefined
 			for (let i = history.length - 1; i >= 0; i--) {
 				const message = history[i]
 				if (message.role === "assistant" && Array.isArray(message.content)) {
 					// 检查是否包含工具使用块来判断协议类型
 					const hasToolUse = message.content.some((block: any) => block.type === "tool_use")
 					if (hasToolUse) {
-						toolProtocol = "native"
+						detectedToolProtocol = "native"
 						break
 					}
 				}
 			}
 
-			// 2. 恢复工具协议
-			if (toolProtocol && this.stateManager.setTaskToolProtocol) {
-				this.stateManager.setTaskToolProtocol(toolProtocol as ToolProtocol)
+			// 恢复检测到的工具协议
+			if (detectedToolProtocol && this.stateManager.setTaskToolProtocol) {
+				this.stateManager.setTaskToolProtocol(detectedToolProtocol as ToolProtocol)
 			}
 
-			// 3. 系统提示词由PromptManager管理，不需要从对话历史恢复
+			// 4. 系统提示词由PromptManager管理，不需要从对话历史恢复
 
-			console.log(`[CheckpointManager] Restored task state from history: toolProtocol=${toolProtocol}`)
+			console.log(`[CheckpointManager] Restored task state from history: toolProtocol=${detectedToolProtocol}`)
 		} catch (error) {
 			console.error(`[CheckpointManager] Failed to restore task state from history:`, error)
 			// 不影响主恢复流程，继续执行

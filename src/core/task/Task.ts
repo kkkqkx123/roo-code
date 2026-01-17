@@ -576,6 +576,62 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 		return this.checkpointManager.checkpointSave(force, suppressMessage)
 	}
 
+	/**
+	 * 创建包含完整API上下文的检查点
+	 * 在创建检查点前保存系统提示词和工具协议等上下文信息
+	 */
+	public async checkpointSaveWithFullContext(requestIndex: number, suppressMessage: boolean = false): Promise<{ commit?: string } | undefined> {
+		try {
+			// 1. 获取当前系统提示词
+			const systemPrompt = await this.promptManager.getSystemPrompt(
+				this.apiConfiguration,
+				this.todoList,
+				this.diffEnabled
+			)
+
+			// 2. 获取当前工具协议
+			const toolProtocol = this.stateManager.taskToolProtocol
+
+			// 3. 获取当前上下文token数
+			const { contextTokens } = this.getTokenUsage()
+
+			// 4. 创建包含完整上下文的检查点消息
+			const checkpointMessage = {
+				role: "system" as const,
+				content: `Checkpoint at request ${requestIndex}`,
+				ts: Date.now(),
+				conversationIndex: requestIndex,
+				checkpointMetadata: {
+					isCheckpoint: true,
+					requestIndex,
+					systemPrompt,
+					toolProtocol,
+					contextTokens,
+				},
+			} as any
+
+			// 5. 添加到API对话历史
+			await this.taskMessageManager.addToApiConversationHistory(checkpointMessage)
+
+			// 6. 创建文件系统检查点
+			const result = await this.checkpointManager.checkpointSave(false, suppressMessage)
+
+			// 7. 关联检查点hash与请求索引
+			if (result && result.commit) {
+				this.checkpointManager.setCheckpointRequestIndex(result.commit, requestIndex)
+				console.log(
+					`[Task] Created checkpoint with full context: hash=${result.commit}, requestIndex=${requestIndex}, ` +
+					`contextTokens=${contextTokens}, toolProtocol=${toolProtocol}`
+				)
+			}
+
+			return result
+		} catch (error) {
+			console.error("[Task] Failed to create checkpoint with full context:", error)
+			return undefined
+		}
+	}
+
 	public async checkpointRestore(options: CheckpointRestoreOptions) {
 		return this.checkpointManager.checkpointRestore(options)
 	}
@@ -979,6 +1035,16 @@ public async overwriteClineMessages(newMessages: ClineMessage[]) {
 	// Public method for testing
 	public async getSystemPrompt(): Promise<string> {
 		return this.promptManager.getSystemPrompt(this.apiConfiguration, this.todoList, this.diffEnabled)
+	}
+
+	/**
+	 * 设置系统提示词（用于检查点恢复）
+	 * 注意：系统提示词通常由PromptManager动态生成，此方法仅用于检查点恢复场景
+	 */
+	public setSystemPrompt(systemPrompt: string): void {
+		console.log("[Task] System prompt restoration is handled by PromptManager, this method is for checkpoint metadata only")
+		// 系统提示词的恢复由PromptManager处理，这里只是占位方法
+		// 实际的恢复逻辑在PromptManager中，因为它需要访问provider状态
 	}
 
 	private async backoffAndAnnounce(retryAttempt: number, error: any): Promise<void> {

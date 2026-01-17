@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { CheckpointMenu } from "./CheckpointMenu"
-import { checkpointSchema } from "./schema"
+import { checkpointSchema, checkpointMetadataSchema } from "./schema"
 import { Button } from "@/components/ui"
 
 interface CheckpointHistoryItem {
@@ -53,6 +53,28 @@ export const CheckpointHistory = ({
       return t("chat:checkpoint.history.defaultMessage", "自动检查点")
     } catch {
       return t("chat:checkpoint.history.defaultMessage", "自动检查点")
+    }
+  }
+
+  const hasApiContext = (checkpoint: CheckpointHistoryItem): boolean => {
+    // 检查检查点是否包含完整的API上下文元数据
+    if (!checkpoint.checkpoint) return false
+    
+    try {
+      const metadata = checkpoint.checkpoint as any
+      
+      // 检查是否有checkpointMetadata字段
+      if (!metadata.checkpointMetadata) return false
+      
+      // 验证checkpointMetadata是否包含必要的上下文信息
+      const parsed = checkpointMetadataSchema.safeParse(metadata.checkpointMetadata)
+      if (!parsed.success) return false
+      
+      // 检查是否包含系统提示词或工具协议
+      const { systemPrompt, toolProtocol } = parsed.data
+      return !!(systemPrompt || toolProtocol)
+    } catch {
+      return false
     }
   }
 
@@ -137,7 +159,7 @@ export const CheckpointHistory = ({
                 ts={checkpoint.ts}
                 commitHash={checkpoint.commitHash}
                 checkpoint={checkpointSchema.parse(checkpoint.checkpoint || {})}
-                hasApiContext={!!checkpoint.checkpoint}
+                hasApiContext={hasApiContext(checkpoint)}
                 showContextRestore={index > 0} // 只有非第一个检查点显示上下文恢复
                 onOpenChange={(open) => 
                   setSelectedCheckpoint(open ? checkpoint.commitHash : null)
