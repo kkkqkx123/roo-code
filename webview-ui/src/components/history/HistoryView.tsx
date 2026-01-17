@@ -38,7 +38,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		showAllWorkspaces,
 		setShowAllWorkspaces,
 	} = useTaskSearch()
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 
 	const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
 	const [isSelectionMode, setIsSelectionMode] = useState(false)
@@ -134,7 +134,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 							<SelectTrigger className="flex-1">
 								<SelectValue>
 									{t("history:workspace.prefix")}{" "}
-									{t(`history:workspace.${showAllWorkspaces ? "all" : "current"}`)}
+									{tDynamic(`history:workspace.${showAllWorkspaces ? "all" : "current"}`)}
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
@@ -155,7 +155,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 						<Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
 							<SelectTrigger className="flex-1">
 								<SelectValue>
-									{t("history:sort.prefix")} {t(`history:sort.${sortOption}`)}
+									{t("history:sort.prefix")} {tDynamic(`history:sort.${sortOption}`)}
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
@@ -212,8 +212,8 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 								</span>
 								<span className="ml-auto text-vscode-descriptionForeground text-xs">
 									{t("history:selectedItems", {
-										selected: selectedTaskIds.length,
-										total: tasks.length,
+										selected: String(selectedTaskIds.length),
+										total: String(tasks.length),
 									})}
 								</span>
 							</div>
@@ -253,7 +253,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 			{isSelectionMode && selectedTaskIds.length > 0 && (
 				<div className="fixed bottom-0 left-0 right-2 bg-vscode-editor-background border-t border-vscode-panel-border p-2 flex justify-between items-center">
 					<div className="text-vscode-foreground">
-						{t("history:selectedItems", { selected: selectedTaskIds.length, total: tasks.length })}
+						{t("history:selectedItems", { selected: String(selectedTaskIds.length), total: String(tasks.length) })}
 					</div>
 					<div className="flex gap-2">
 						<Button variant="secondary" onClick={() => setSelectedTaskIds([])}>

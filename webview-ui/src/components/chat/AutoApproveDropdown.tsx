@@ -26,7 +26,7 @@ interface AutoApproveDropdownProps {
 export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }: AutoApproveDropdownProps) => {
 	const [open, setOpen] = React.useState(false)
 	const portalContainer = useRooPortal("roo-portal")
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 
 	const {
 		autoApprovalEnabled,
@@ -145,7 +145,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 			: t("chat:autoApprove.tooltipStatus", {
 					toggles: settingsArray
 						.filter((setting) => toggles[setting.key])
-						.map((setting) => t(setting.labelKey))
+						.map((setting) => tDynamic(setting.labelKey))
 						.join(", "),
 				})
 
@@ -176,7 +176,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 							? t("chat:autoApprove.triggerLabelOff")
 							: enabledCount === totalCount
 								? t("chat:autoApprove.triggerLabelAll")
-								: t("chat:autoApprove.triggerLabel", { count: enabledCount })}
+								: t("chat:autoApprove.triggerLabel_other", { count: String(enabledCount) })}
 					</span>
 					<span className="inline min-[300px]:hidden min-w-0">
 						{!effectiveAutoApprovalEnabled
@@ -213,7 +213,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 						{settingsArray.map(({ key, labelKey, descriptionKey, icon }) => {
 							const isEnabled = toggles[key]
 							return (
-								<StandardTooltip key={key} content={t(descriptionKey)}>
+								<StandardTooltip key={key} content={tDynamic(descriptionKey)}>
 									<Button
 										variant={isEnabled ? "primary" : "secondary"}
 										onClick={() => onAutoApproveToggle(key, !isEnabled)}
@@ -227,7 +227,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 										disabled={!effectiveAutoApprovalEnabled}
 										data-testid={`auto-approve-${key}`}>
 										<span className={`codicon codicon-${icon} text-sm flex-shrink-0`} />
-										<span className="flex-1 truncate">{t(labelKey)}</span>
+										<span className="flex-1 truncate">{tDynamic(labelKey)}</span>
 									</Button>
 								</StandardTooltip>
 							)
@@ -240,7 +240,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={t("chat:autoApprove.selectAll")}
+								aria-label={tDynamic("chat:autoApprove.selectAll")}
 								onClick={handleSelectAll}
 								disabled={!effectiveAutoApprovalEnabled}
 								className={cn(
@@ -253,7 +253,7 @@ export const AutoApproveDropdown = ({ disabled = false, triggerClassName = "" }:
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={t("chat:autoApprove.selectNone")}
+								aria-label={tDynamic("chat:autoApprove.selectNone")}
 								onClick={handleSelectNone}
 								disabled={!effectiveAutoApprovalEnabled}
 								className={cn(

@@ -21,15 +21,20 @@ type CheckpointMenuControlledProps = {
 type CheckpointMenuUncontrolledProps = {
 	onOpenChange?: undefined
 }
-type CheckpointMenuProps = CheckpointMenuBaseProps & (CheckpointMenuControlledProps | CheckpointMenuUncontrolledProps)
+type CheckpointMenuProps = CheckpointMenuBaseProps & (CheckpointMenuControlledProps | CheckpointMenuUncontrolledProps) & {
+  onRestore?: (commitHash: string, restoreType: 'files_only' | 'context_only' | 'files_and_context') => void
+  onDiff?: (commitHash: string, mode: 'checkpoint' | 'from-init' | 'to-current') => void
+}
 
-export const CheckpointMenu = ({ 
-  ts, 
-  commitHash, 
-  checkpoint, 
-  hasApiContext = false, 
-  showContextRestore = true, 
-  onOpenChange 
+export const CheckpointMenu = ({
+  ts,
+  commitHash,
+  checkpoint,
+  hasApiContext = false,
+  showContextRestore = true,
+  onOpenChange,
+  onRestore,
+  onDiff
 }: CheckpointMenuProps) => {
 	const { t } = useTranslation()
 	const [internalRestoreOpen, setInternalRestoreOpen] = useState(false)
@@ -62,66 +67,90 @@ export const CheckpointMenu = ({
 	)
 
 	const onCheckpointDiff = useCallback(() => {
-		vscode.postMessage({
-			type: "checkpointDiff",
-			payload: { ts, previousCommitHash, commitHash, mode: "checkpoint" },
-		})
-	}, [ts, previousCommitHash, commitHash])
+		if (onDiff) {
+			onDiff(commitHash, "checkpoint")
+		} else {
+			vscode.postMessage({
+				type: "checkpointDiff",
+				payload: { ts, previousCommitHash, commitHash, mode: "checkpoint" },
+			})
+		}
+	}, [ts, previousCommitHash, commitHash, onDiff])
 
 	const onDiffFromInit = useCallback(() => {
-		vscode.postMessage({
-			type: "checkpointDiff",
-			payload: { ts, commitHash, mode: "from-init" },
-		})
-	}, [ts, commitHash])
+		if (onDiff) {
+			onDiff(commitHash, "from-init")
+		} else {
+			vscode.postMessage({
+				type: "checkpointDiff",
+				payload: { ts, commitHash, mode: "from-init" },
+			})
+		}
+	}, [ts, commitHash, onDiff])
 
 	const onDiffWithCurrent = useCallback(() => {
-		vscode.postMessage({
-			type: "checkpointDiff",
-			payload: { ts, commitHash, mode: "to-current" },
-		})
-	}, [ts, commitHash])
+		if (onDiff) {
+			onDiff(commitHash, "to-current")
+		} else {
+			vscode.postMessage({
+				type: "checkpointDiff",
+				payload: { ts, commitHash, mode: "to-current" },
+			})
+		}
+	}, [ts, commitHash, onDiff])
 
 
 
 	const onRestoreFilesOnly = useCallback(() => {
-		vscode.postMessage({ 
-			type: "checkpointRestore", 
-			payload: { 
-				ts, 
-				commitHash, 
-				mode: "restore",
-				restoreType: "files_only"
-			} 
-		})
+		if (onRestore) {
+			onRestore(commitHash, "files_only")
+		} else {
+			vscode.postMessage({
+				type: "checkpointRestore",
+				payload: {
+					ts,
+					commitHash,
+					mode: "restore",
+					restoreType: "files_only"
+				}
+			})
+		}
 		setRestoreOpen(false)
-	}, [ts, commitHash, setRestoreOpen])
+	}, [ts, commitHash, setRestoreOpen, onRestore])
 
 	const onRestoreContextOnly = useCallback(() => {
-		vscode.postMessage({ 
-			type: "checkpointRestore", 
-			payload: { 
-				ts, 
-				commitHash, 
-				mode: "restore",
-				restoreType: "context_only"
-			} 
-		})
+		if (onRestore) {
+			onRestore(commitHash, "context_only")
+		} else {
+			vscode.postMessage({
+				type: "checkpointRestore",
+				payload: {
+					ts,
+					commitHash,
+					mode: "restore",
+					restoreType: "context_only"
+				}
+			})
+		}
 		setRestoreOpen(false)
-	}, [ts, commitHash, setRestoreOpen])
+	}, [ts, commitHash, setRestoreOpen, onRestore])
 
 	const onRestoreFilesAndContext = useCallback(() => {
-		vscode.postMessage({ 
-			type: "checkpointRestore", 
-			payload: { 
-				ts, 
-				commitHash, 
-				mode: "restore",
-				restoreType: "files_and_context"
-			} 
-		})
+		if (onRestore) {
+			onRestore(commitHash, "files_and_context")
+		} else {
+			vscode.postMessage({
+				type: "checkpointRestore",
+				payload: {
+					ts,
+					commitHash,
+					mode: "restore",
+					restoreType: "files_and_context"
+				}
+			})
+		}
 		setRestoreOpen(false)
-	}, [ts, commitHash, setRestoreOpen])
+	}, [ts, commitHash, setRestoreOpen, onRestore])
 
 	const handleOpenChange = useCallback(
 		(open: boolean) => {

@@ -31,9 +31,7 @@ export const ClaudeCode: React.FC<ClaudeCodeProps> = ({
 							variant="secondary"
 							size="sm"
 							onClick={() => vscode.postMessage({ type: "claudeCodeSignOut" })}>
-							{t("settings:providers.claudeCode.signOutButton", {
-								defaultValue: "Sign Out",
-							})}
+							{t("settings:providers.claudeCode.signOutButton")}
 						</Button>
 					</div>
 				) : (
@@ -41,9 +39,7 @@ export const ClaudeCode: React.FC<ClaudeCodeProps> = ({
 						variant="primary"
 						onClick={() => vscode.postMessage({ type: "claudeCodeSignIn" })}
 						className="w-fit">
-						{t("settings:providers.claudeCode.signInButton", {
-							defaultValue: "Sign in to Claude Code",
-						})}
+						{t("settings:providers.claudeCode.signInButton")}
 					</Button>
 				)}
 			</div>

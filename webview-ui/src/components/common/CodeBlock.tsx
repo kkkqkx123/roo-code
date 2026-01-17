@@ -185,7 +185,7 @@ const CodeBlock = memo(
 		const preRef = useRef<HTMLDivElement>(null)
 		const copyButtonWrapperRef = useRef<HTMLDivElement>(null)
 		const { showCopyFeedback, copyWithFeedback } = useCopyToClipboard()
-		const { t } = useAppTranslation()
+		const { t, tDynamic } = useAppTranslation()
 		const isMountedRef = useRef(true)
 		const buttonPositionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 		const collapseTimeout1Ref = useRef<NodeJS.Timeout | null>(null)
@@ -650,7 +650,7 @@ const CodeBlock = memo(
 						style={{ gap: 0 }}>
 						{showCollapseButton && (
 							<StandardTooltip
-								content={t(`chat:codeblock.tooltips.${windowShade ? "expand" : "collapse"}`)}
+								content={tDynamic(`chat:codeblock.tooltips.${windowShade ? "expand" : "collapse"}`)}
 								side="top">
 								<CodeBlockButton
 									onClick={() => {

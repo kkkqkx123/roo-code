@@ -33,7 +33,7 @@ const PromptsSettings = ({
 	includeTaskHistoryInEnhance: propsIncludeTaskHistoryInEnhance,
 	setIncludeTaskHistoryInEnhance: propsSetIncludeTaskHistoryInEnhance,
 }: PromptsSettingsProps) => {
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 	const {
 		listApiConfigMeta,
 		enhancementApiConfigId,
@@ -155,13 +155,13 @@ const PromptsSettings = ({
 						<SelectContent>
 							{Object.keys(supportPrompt.default).map((type) => (
 								<SelectItem key={type} value={type} data-testid={`${type}-option`}>
-									{t(`prompts:supportPrompts.types.${type}.label`)}
+									{tDynamic(`prompts:supportPrompts.types.${type}.label`)}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
 					<div className="text-sm text-vscode-descriptionForeground mt-1">
-						{t(`prompts:supportPrompts.types.${activeSupportOption}.description`)}
+						{tDynamic(`prompts:supportPrompts.types.${activeSupportOption}.description`)}
 					</div>
 				</div>
 

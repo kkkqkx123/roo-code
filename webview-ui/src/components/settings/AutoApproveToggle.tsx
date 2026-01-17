@@ -90,21 +90,21 @@ type AutoApproveToggleProps = AutoApproveToggles & {
 }
 
 export const AutoApproveToggle = ({ onToggle, ...props }: AutoApproveToggleProps) => {
-	const { t } = useAppTranslation()
+	const { tDynamic } = useAppTranslation()
 
 	return (
 		<div className={cn("flex flex-row flex-wrap gap-2 py-2")}>
 			{Object.values(autoApproveSettingsConfig).map(({ key, descriptionKey, labelKey, icon, testId }) => (
-				<StandardTooltip key={key} content={t(descriptionKey || "")}>
+				<StandardTooltip key={key} content={tDynamic(descriptionKey || "")}>
 					<Button
 						variant={props[key] ? "primary" : "secondary"}
 						onClick={() => onToggle(key, !props[key])}
-						aria-label={t(labelKey)}
+						aria-label={tDynamic(labelKey)}
 						aria-pressed={!!props[key]}
 						data-testid={testId}
 						className={cn("gap-1.5 text-xs whitespace-nowrap", !props[key] && "opacity-50")}>
 						<span className={`codicon codicon-${icon} text-sm`} />
-						<span>{t(labelKey)}</span>
+						<span>{tDynamic(labelKey)}</span>
 					</Button>
 				</StandardTooltip>
 			))}

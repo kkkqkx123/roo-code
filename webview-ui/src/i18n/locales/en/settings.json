@@ -138,6 +138,17 @@
 			"error": "Error"
 		},
 		"close": "Close",
+		"configUpgradeTitle": "Configuration Upgrade",
+		"rollbackConfig": "Rollback",
+		"rollbackDialog": {
+			"title": "Rollback Configuration",
+			"description": "Are you sure you want to rollback to the previous configuration?",
+			"cancelButton": "Cancel",
+			"confirmButton": "Rollback"
+		},
+		"upgradingFromTo": "Upgrading from {{current}} to {{target}}",
+		"rollingBackFromTo": "Rolling back from {{current}} to {{target}}",
+		"upgradeFailed": "Upgrade failed",
 		"validation": {
 			"qdrantUrlRequired": "Qdrant URL is required",
 			"invalidQdrantUrl": "Invalid Qdrant URL",
@@ -152,7 +163,10 @@
 			"modelDimensionMinValue": "Model dimension must be greater than 0"
 		},
 		"optional": "optional",
+		"requireIndexingConfirmation": "Require Indexing Confirmation",
+		"requireIndexingConfirmationDescription": "When enabled, requires user confirmation before starting the indexing process to prevent accidental operations.",
 		"vectorStorage": {
+			"title": "Vector Storage Configuration",
 			"mode": "Configuration Mode",
 			"modeDescription": "Choose how vector storage parameters are configured",
 			"modes": {
@@ -163,11 +177,14 @@
 			"preset": "Preset Configuration",
 			"presetDescription": "Select a preset configuration optimized for different collection sizes",
 			"presets": {
+				"tiny": "Tiny (≤2K vectors)",
 				"small": "Small (≤10K vectors)",
 				"medium": "Medium (≤100K vectors)",
 				"large": "Large (>100K vectors)"
 			},
 			"thresholds": {
+				"tiny": "Tiny Collection Threshold",
+				"tinyDescription": "Maximum number of vectors for tiny collection configuration (default: 2,000)",
 				"small": "Small Collection Threshold",
 				"smallDescription": "Maximum number of vectors for small collection configuration (default: 10,000)",
 				"medium": "Medium Collection Threshold",
@@ -376,11 +393,11 @@
 		},
 		"rateLimitSeconds": {
 			"label": "Rate limit",
-			"description": "Minimum time between API requests."
+			"description": "Minimum time ({{value}} seconds) between API requests."
 		},
 		"consecutiveMistakeLimit": {
 			"label": "Error & Repetition Limit",
-			"description": "Number of consecutive errors or repeated actions before showing 'Roo is having trouble' dialog. Set to 0 to disable this safety mechanism (it will never trigger).",
+			"description": "Number of consecutive errors or repeated actions ({{value}}) before showing 'Roo is having trouble' dialog. Set to 0 to disable this safety mechanism (it will never trigger).",
 			"unlimitedDescription": "Unlimited retries enabled (auto-proceed). The dialog will never appear.",
 			"warning": "⚠️ Setting to 0 allows unlimited retries which may consume significant API usage"
 		},
@@ -406,7 +423,9 @@
 			"description": "Optional path to your Claude Code CLI. Defaults to 'claude' if not set.",
 			"placeholder": "Default: claude",
 			"maxTokensLabel": "Max Output Tokens",
-			"maxTokensDescription": "Maximum number of output tokens for Claude Code responses. Default is 8000."
+			"maxTokensDescription": "Maximum number of output tokens for Claude Code responses. Default is 8000.",
+			"signOutButton": "Sign Out",
+			"signInButton": "Sign in to Claude Code"
 		}
 	},
 	"browser": {
@@ -550,7 +569,7 @@
 			"label": "Condensing Trigger Threshold",
 			"selectProfile": "Configure threshold for profile",
 			"defaultProfile": "Global Default (all profiles)",
-			"defaultDescription": "When context reaches this percentage, it will be automatically condensed for all profiles unless they have custom settings",
+			"defaultDescription": "When context reaches {{threshold}}%, it will be automatically condensed for all profiles unless they have custom settings",
 			"profileDescription": "Custom threshold for this profile only (overrides global default)",
 			"inheritDescription": "This profile inherits the global default threshold ({{threshold}}%)",
 			"usesGlobal": "(uses global {{threshold}}%)"

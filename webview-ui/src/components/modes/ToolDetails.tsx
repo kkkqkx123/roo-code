@@ -17,10 +17,10 @@ export const ToolDetails: React.FC<ToolDetailsProps> = ({
 	showTooltip = true,
 	className = ""
 }) => {
-	const { t } = useAppTranslation()
+	const { tDynamic } = useAppTranslation()
 	
 	// 获取组名称
-	const groupName = t(`prompts:tools.toolNames.${group}`)
+	const groupName = tDynamic(`prompts:tools.toolNames.${group}`)
 	
 	// 如果没有指定具体工具，只显示组名称
 	if (!tool) {
@@ -28,7 +28,7 @@ export const ToolDetails: React.FC<ToolDetailsProps> = ({
 	}
 	
 	// 获取工具详情名称
-	const toolDetailName = t(`prompts:tools.toolDetails.${group}.${tool}`)
+	const toolDetailName = tDynamic(`prompts:tools.toolDetails.${group}.${tool}`)
 	
 	// 构建完整显示文本
 	const displayText = `${groupName} - ${toolDetailName}`
@@ -53,7 +53,7 @@ export const ToolGroupDetails: React.FC<ToolGroupDetailsProps> = ({
 	group, 
 	className = ""
 }) => {
-	const { t } = useAppTranslation()
+	const { tDynamic } = useAppTranslation()
 	const groupConfig = TOOL_GROUPS[group]
 	
 	if (!groupConfig) {
@@ -61,7 +61,7 @@ export const ToolGroupDetails: React.FC<ToolGroupDetailsProps> = ({
 	}
 	
 	const allTools = [...(groupConfig.tools || []), ...(groupConfig.customTools || [])]
-	const groupName = t(`prompts:tools.toolNames.${group}`)
+	const groupName = tDynamic(`prompts:tools.toolNames.${group}`)
 	
 	return (
 		<div className={className}>
@@ -69,7 +69,7 @@ export const ToolGroupDetails: React.FC<ToolGroupDetailsProps> = ({
 			<div className="ml-4 space-y-1">
 				{allTools.map((tool) => (
 					<div key={tool} className="text-sm text-vscode-descriptionForeground">
-						{t(`prompts:tools.toolDetails.${group}.${tool as ToolName}`)}
+						{tDynamic(`prompts:tools.toolDetails.${group}.${tool as ToolName}`)}
 					</div>
 				))}
 			</div>

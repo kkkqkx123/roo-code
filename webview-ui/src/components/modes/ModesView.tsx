@@ -66,7 +66,7 @@ function getGroupName(group: GroupEntry): ToolGroup {
 }
 
 const ModesView = () => {
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 
 	const {
 		customModePrompts,
@@ -1150,7 +1150,7 @@ const ModesView = () => {
 													checked={isGroupEnabled}
 													onChange={handleGroupChange(group, Boolean(isCustomMode), customMode)}
 													disabled={!isCustomMode}>
-													{t(`prompts:tools.toolNames.${group}`)}
+													{tDynamic(`prompts:tools.toolNames.${group}`)}
 												</VSCodeCheckbox>
 											</div>
 											{isGroupEnabled && (
@@ -1192,7 +1192,7 @@ const ModesView = () => {
 										return (
 											<div key={groupName} className="border border-vscode-panel-border rounded p-2">
 												<div className="font-medium text-sm mb-1">
-													{t(`prompts:tools.toolNames.${groupName}`)}
+													{tDynamic(`prompts:tools.toolNames.${groupName}`)}
 												</div>
 												<div className="ml-3 text-xs text-vscode-descriptionForeground">
 													<ToolGroupDetails group={groupName} />
@@ -1632,7 +1632,7 @@ const ModesView = () => {
 													)
 												}
 											}}>
-											{t(`prompts:tools.toolNames.${group}`)}
+											{tDynamic(`prompts:tools.toolNames.${group}`)}
 										</VSCodeCheckbox>
 									))}
 								</div>

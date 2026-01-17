@@ -65,7 +65,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		if (configUpgradeStatus && configUpgradeStatus.status === "in_progress") {
 			const progress = configUpgradeStatus.progress || 0
 			return t("chat:indexingStatus.upgrading", { 
-				percentage: progress,
+				percentage: String(progress),
 				currentPreset: configUpgradeStatus.currentPreset,
 				targetPreset: configUpgradeStatus.targetPreset 
 			})
@@ -74,7 +74,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		if (configUpgradeStatus && configUpgradeStatus.status === "rolling_back") {
 			const progress = configUpgradeStatus.progress || 0
 			return t("chat:indexingStatus.rollingBack", { 
-				percentage: progress,
+				percentage: String(progress),
 				currentPreset: configUpgradeStatus.currentPreset,
 				targetPreset: configUpgradeStatus.targetPreset 
 			})
@@ -84,7 +84,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 			case "Standby":
 				return t("chat:indexingStatus.ready")
 			case "Indexing":
-				return t("chat:indexingStatus.indexing", { percentage: progressPercentage })
+				return t("chat:indexingStatus.indexing", { percentage: String(progressPercentage) })
 			case "Indexed":
 				return t("chat:indexingStatus.indexed")
 			case "Error":

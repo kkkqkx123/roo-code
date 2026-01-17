@@ -63,7 +63,7 @@ interface ThinkingBudgetProps {
 }
 
 export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, modelInfo }: ThinkingBudgetProps) => {
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 	const { id: selectedModelId } = useSelectedModel(apiConfiguration)
 
 	// Check if this is a Gemini 2.5 Pro model
@@ -251,7 +251,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 							currentReasoningEffort
 								? currentReasoningEffort === "none" || currentReasoningEffort === "disable"
 									? t("settings:providers.reasoningEffort.none")
-									: t(`settings:providers.reasoningEffort.${currentReasoningEffort}`)
+									: tDynamic(`settings:providers.reasoningEffort.${currentReasoningEffort}`)
 								: t("settings:common.select")
 						}
 					/>
@@ -261,7 +261,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 						<SelectItem key={value} value={value}>
 							{value === "none" || value === "disable"
 								? t("settings:providers.reasoningEffort.none")
-								: t(`settings:providers.reasoningEffort.${value}`)}
+								: tDynamic(`settings:providers.reasoningEffort.${value}`)}
 						</SelectItem>
 					))}
 				</SelectContent>

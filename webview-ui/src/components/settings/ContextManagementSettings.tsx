@@ -453,7 +453,7 @@ export const ContextManagementSettings = ({
 													? ` ${t(
 															"settings:contextManagement.condensingThreshold.usesGlobal",
 															{
-																threshold: autoCondenseContextPercent,
+																threshold: String(autoCondenseContextPercent),
 															},
 														)}`
 													: ` (${profileThreshold}%)`
@@ -485,7 +485,7 @@ export const ContextManagementSettings = ({
 							<div className="text-vscode-descriptionForeground text-sm mt-1">
 								{selectedThresholdProfile === "default"
 									? t("settings:contextManagement.condensingThreshold.defaultDescription", {
-											threshold: autoCondenseContextPercent,
+											threshold: String(autoCondenseContextPercent),
 										})
 									: t("settings:contextManagement.condensingThreshold.profileDescription")}
 							</div>

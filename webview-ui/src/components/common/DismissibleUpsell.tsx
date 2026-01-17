@@ -43,7 +43,7 @@ const DismissibleUpsell = memo(
 		onClick,
 		dismissOnClick = false,
 	}: DismissibleUpsellProps) => {
-		const { t } = useAppTranslation()
+		const { tDynamic } = useAppTranslation()
 		const [isVisible, setIsVisible] = useState(false)
 		const isMountedRef = useRef(true)
 
@@ -149,8 +149,8 @@ const DismissibleUpsell = memo(
 						e.stopPropagation() // Prevent triggering the container's onClick
 						handleDismiss()
 					}}
-					aria-label={t("common:dismiss")}
-					title={t("common:dismissAndDontShowAgain")}>
+					aria-label={tDynamic("common:dismiss")}
+					title={tDynamic("common:dismissAndDontShowAgain")}>
 					<DismissIcon />
 				</button>
 			</div>

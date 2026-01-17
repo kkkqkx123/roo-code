@@ -121,6 +121,17 @@
 			"error": "错误"
 		},
 		"close": "关闭",
+		"configUpgradeTitle": "配置升级",
+		"rollbackConfig": "回滚",
+		"rollbackDialog": {
+			"title": "回滚配置",
+			"description": "您确定要回滚到之前的配置吗？",
+			"cancelButton": "取消",
+			"confirmButton": "回滚"
+		},
+		"upgradingFromTo": "从 {{current}} 升级到 {{target}}",
+		"rollingBackFromTo": "从 {{current}} 回滚到 {{target}}",
+		"upgradeFailed": "升级失败",
 		"validation": {
 			"invalidQdrantUrl": "无效的 Qdrant URL",
 			"invalidBaseUrl": "无效的基础 URL",
@@ -142,7 +153,10 @@
 		"searchMaxResultsLabel": "最大搜索结果数",
 		"searchMaxResultsDescription": "查询代码库索引时返回的最大搜索结果数。较高的值提供更多上下文，但可能包含相关性较低的结果。",
 		"resetToDefault": "恢复默认值",
+		"requireIndexingConfirmation": "需要索引确认",
+		"requireIndexingConfirmationDescription": "启用后，开始索引过程前需要用户确认，以防止意外操作。",
 		"vectorStorage": {
+			"title": "向量存储配置",
 			"mode": "配置模式",
 			"modeDescription": "选择向量存储参数的配置方式",
 			"modes": {
@@ -153,11 +167,14 @@
 			"preset": "预设配置",
 			"presetDescription": "选择针对不同集合大小优化的预设配置",
 			"presets": {
+				"tiny": "微型（≤2千向量）",
 				"small": "小型（≤1万向量）",
 				"medium": "中型（≤10万向量）",
 				"large": "大型（>10万向量）"
 			},
 			"thresholds": {
+				"tiny": "微型集合阈值",
+				"tinyDescription": "微型集合配置的最大向量数（默认：2,000）",
 				"small": "小型集合阈值",
 				"smallDescription": "小型集合配置的最大向量数（默认：10,000）",
 				"medium": "中型集合阈值",
@@ -375,11 +392,11 @@
 		},
 		"rateLimitSeconds": {
 			"label": "API 请求频率限制",
-			"description": "设置API请求的最小间隔时间"
+			"description": "设置API请求的最小间隔时间（{{value}} 秒）"
 		},
 		"consecutiveMistakeLimit": {
 			"label": "错误和重复限制",
-			"description": "在显示“Roo遇到问题”对话框前允许的连续错误或重复操作次数。设置为 0 可禁用此安全机制（它将永远不会触发）。",
+			"description": "在显示“Roo遇到问题”对话框前允许的连续错误或重复操作次数（{{value}}）。设置为 0 可禁用此安全机制（它将永远不会触发）。",
 			"unlimitedDescription": "已启用无限重试（自动继续）。对话框将永远不会出现。",
 			"warning": "⚠️ 设置为 0 允许无限重试，这可能会消耗大量 API 使用量"
 		},
@@ -405,7 +422,9 @@
 			"description": "您的 Claude Code CLI 的可选路径。如果未设置，则默认为 “claude”。",
 			"placeholder": "默认：claude",
 			"maxTokensLabel": "最大输出 Token",
-			"maxTokensDescription": "Claude Code 响应的最大输出 Token 数量。默认为 8000。"
+			"maxTokensDescription": "Claude Code 响应的最大输出 Token 数量。默认为 8000。",
+			"signOutButton": "退出登录",
+			"signInButton": "登录 Claude Code"
 		}
 	},
 	"browser": {
@@ -444,6 +463,23 @@
 		"enable": {
 			"label": "启用自动存档点",
 			"description": "开启后自动创建任务存档点，方便回溯修改。 <0>了解更多</0>"
+		},
+		"terminal": {
+			"label": "终端命令检查点",
+			"triggers": "检查点触发器",
+			"beforeHighRisk": "在高风险命令前创建检查点",
+			"beforeHighRiskDescription": "在执行潜在危险命令前自动创建检查点",
+			"afterHighRisk": "在高风险命令后创建检查点",
+			"afterHighRiskDescription": "在执行潜在危险命令后自动创建检查点",
+			"onError": "命令错误时创建检查点",
+			"onErrorDescription": "当终端命令失败或返回错误时创建检查点",
+			"requiredCommands": "需要检查点的命令",
+			"requiredCommandsDescription": "执行前总是触发检查点的命令",
+			"exemptedCommands": "免除检查点的命令",
+			"exemptedCommandsDescription": "从不触发检查点的命令",
+			"commandPlaceholder": "输入命令（例如：rm -rf, git reset --hard）",
+			"exemptedPlaceholder": "输入命令（例如：ls, pwd, echo）",
+			"addButton": "添加"
 		}
 	},
 	"notifications": {
@@ -523,7 +559,7 @@
 			"label": "压缩触发阈值",
 			"selectProfile": "配置配置文件阈值",
 			"defaultProfile": "全局默认（所有配置文件）",
-			"defaultDescription": "当上下文达到此百分比时，将自动为所有配置文件压缩，除非它们有自定义设置",
+			"defaultDescription": "当上下文达到 {{threshold}}% 时，将自动为所有配置文件压缩，除非它们有自定义设置",
 			"profileDescription": "仅此配置文件的自定义阈值（覆盖全局默认）",
 			"inheritDescription": "此配置文件继承全局默认阈值（{{threshold}}%）",
 			"usesGlobal": "（使用全局 {{threshold}}%）"

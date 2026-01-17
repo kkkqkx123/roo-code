@@ -106,5 +106,7 @@
 		"delegated_to": "Delegated to task {{childId}}",
 		"delegation_completed": "Subtask completed, resuming parent",
 		"awaiting_child": "Awaiting child task {{childId}}"
-	}
+	},
+	"dismiss": "Dismiss",
+	"dismissAndDontShowAgain": "Dismiss and don't show again"
 }

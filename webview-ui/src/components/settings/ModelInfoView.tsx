@@ -61,7 +61,7 @@ export const ModelInfoView = ({
 				{selectedModelId.includes("pro-preview")
 					? t("settings:modelInfo.gemini.billingEstimate")
 					: t("settings:modelInfo.gemini.freeRequests", {
-							count: selectedModelId && selectedModelId.includes("flash") ? 15 : 2,
+							count: String(selectedModelId && selectedModelId.includes("flash") ? 15 : 2),
 						})}{" "}
 				<VSCodeLink href="https://ai.google.dev/pricing" className="text-sm">
 					{t("settings:modelInfo.gemini.pricingDetails")}

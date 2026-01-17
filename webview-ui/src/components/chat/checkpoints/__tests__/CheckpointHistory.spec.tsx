@@ -4,8 +4,8 @@ import { CheckpointHistory } from "../CheckpointHistory"
 
 // Mock the CheckpointMenu component
 vi.mock("../CheckpointMenu", () => ({
-  CheckpointMenu: ({ ts, commitHash, onOpenChange }: any) => (
-    <button 
+  CheckpointMenu: ({ _ts, commitHash, onOpenChange }: any) => (
+    <button
       data-testid={`checkpoint-menu-${commitHash}`}
       onClick={() => onOpenChange?.(true)}
     >
@@ -16,7 +16,7 @@ vi.mock("../CheckpointMenu", () => ({
 
 // Mock date-fns format
 vi.mock("date-fns", () => ({
-  format: (date: Date, format: string) => `2024-01-01 12:00:00`
+  format: (_date: Date, _format: string) => `2024-01-01 12:00:00`
 }))
 
 // Mock translation context

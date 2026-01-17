@@ -137,7 +137,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 	configUpgradeStatus: externalConfigUpgradeStatus,
 }) => {
 	const SECRET_PLACEHOLDER = "••••••••••••••••"
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 	const { codebaseIndexConfig, codebaseIndexModels, cwd } = useExtensionState()
 	const [open, setOpen] = useState(false)
 	const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false)
@@ -379,7 +379,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 
 	// Validation function
 	const validateSettings = (): boolean => {
-		const schema = createValidationSchema(currentSettings.codebaseIndexEmbedderProvider, t)
+		const schema = createValidationSchema(currentSettings.codebaseIndexEmbedderProvider, tDynamic)
 
 		// Prepare data for validation
 		const dataToValidate: any = {}
@@ -573,7 +573,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										"bg-red-500": indexingStatus.systemStatus === "Error",
 									})}
 								/>
-								{t(`settings:codeIndex.indexingStatuses.${indexingStatus.systemStatus.toLowerCase()}`)}
+								{tDynamic(`settings:codeIndex.indexingStatuses.${indexingStatus.systemStatus.toLowerCase()}`)}
 								{indexingStatus.message ? ` - ${indexingStatus.message}` : ""}
 							</div>
 
@@ -820,7 +820,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 																{modelId}{" "}
 																{model
 																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
+																			dimension: String(model.dimension),
 																		})
 																	: ""}
 															</VSCodeOption>
@@ -993,7 +993,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 																{modelId}{" "}
 																{model
 																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: model.dimension,
+																			dimension: String(model.dimension),
 																		})
 																	: ""}
 															</VSCodeOption>

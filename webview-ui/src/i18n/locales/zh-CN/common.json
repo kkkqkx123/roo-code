@@ -106,5 +106,7 @@
 		"delegated_to": "已委托给任务 {{childId}}",
 		"delegation_completed": "子任务已完成，恢复父任务",
 		"awaiting_child": "等待子任务 {{childId}}"
-	}
+	},
+	"dismiss": "关闭",
+	"dismissAndDontShowAgain": "关闭且不再显示"
 }

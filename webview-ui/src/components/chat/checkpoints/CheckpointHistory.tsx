@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -30,7 +30,7 @@ export const CheckpointHistory = ({
   className
 }: CheckpointHistoryProps) => {
   const { t } = useTranslation()
-  const [selectedCheckpoint, setSelectedCheckpoint] = useState<string | null>(null)
+  const [_selectedCheckpoint, _setSelectedCheckpoint] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
 
   // 按时间戳排序（最新的在前）
@@ -45,10 +45,10 @@ export const CheckpointHistory = ({
 
   const getCheckpointMessage = (checkpoint: CheckpointHistoryItem) => {
     if (checkpoint.message) return checkpoint.message
-    
+
     // 尝试从检查点数据中提取消息
     try {
-      const parsed = checkpointSchema.parse(checkpoint.checkpoint || {})
+      checkpointSchema.parse(checkpoint.checkpoint || {})
       // 检查点schema中没有message字段，使用默认消息
       return t("chat:checkpoint.history.defaultMessage", "自动检查点")
     } catch {
@@ -65,22 +65,22 @@ export const CheckpointHistory = ({
       
       // 检查是否有checkpointMetadata字段
       if (!metadata.checkpointMetadata) return false
-      
+
       // 验证checkpointMetadata是否包含必要的上下文信息
-      const parsed = checkpointMetadataSchema.safeParse(metadata.checkpointMetadata)
-      if (!parsed.success) return false
-      
+      const parsedResult = checkpointMetadataSchema.safeParse(metadata.checkpointMetadata)
+      if (!parsedResult.success) return false
+
       // 检查是否包含系统提示词或工具协议
-      const { systemPrompt, toolProtocol } = parsed.data
+      const { systemPrompt, toolProtocol } = parsedResult.data
       return !!(systemPrompt || toolProtocol)
     } catch {
       return false
     }
   }
 
-  const handleRestore = (commitHash: string, restoreType: 'files' | 'context' | 'both') => {
-    onRestore?.(commitHash, restoreType)
-    setSelectedCheckpoint(null)
+  const handleRestore = (commitHash: string, restoreType: 'files_only' | 'context_only' | 'files_and_context') => {
+    onRestore?.(commitHash, restoreType as any) // 转换为外部接口期望的类型
+    _setSelectedCheckpoint(null)
   }
 
   const handleDiff = (commitHash: string, mode: 'checkpoint' | 'from-init' | 'to-current') => {
@@ -161,9 +161,11 @@ export const CheckpointHistory = ({
                 checkpoint={checkpointSchema.parse(checkpoint.checkpoint || {})}
                 hasApiContext={hasApiContext(checkpoint)}
                 showContextRestore={index > 0} // 只有非第一个检查点显示上下文恢复
-                onOpenChange={(open) => 
-                  setSelectedCheckpoint(open ? checkpoint.commitHash : null)
+                onOpenChange={(open) =>
+                  _setSelectedCheckpoint(open ? checkpoint.commitHash : null)
                 }
+                onRestore={handleRestore}
+                onDiff={handleDiff}
               />
             </div>
           </div>

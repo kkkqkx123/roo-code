@@ -2,13 +2,16 @@ import React, { createContext, useContext, ReactNode, useEffect, useCallback } f
 import { useTranslation } from "react-i18next"
 import i18next, { loadTranslations } from "./setup"
 import { useExtensionState } from "@/context/ExtensionStateContext"
+import type { TranslationKey, TranslationParams } from "./types.generated"
 
 // Create context for translations
 export const TranslationContext = createContext<{
-	t: (key: string, options?: Record<string, any>) => string
+	t: <K extends TranslationKey>(key: K, options?: TranslationParams[K]) => string
+	tDynamic: (key: string, options?: Record<string, any>) => string
 	i18n: typeof i18next
 }>({
 	t: (key: string) => key,
+	tDynamic: (key: string) => key,
 	i18n: i18next,
 })
 
@@ -34,7 +37,16 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
 	// Memoize the translation function to prevent unnecessary re-renders
 	const translate = useCallback(
-		(key: string, options?: Record<string, any>) => {
+		<K extends TranslationKey>(key: K, options?: TranslationParams[K]): string => {
+			const result = i18n.t(key, options as any)
+			return typeof result === "string" ? result : String(result)
+		},
+		[i18n],
+	)
+
+	// Memoize the dynamic translation function for dynamic keys
+	const translateDynamic = useCallback(
+		(key: string, options?: Record<string, any>): string => {
 			return i18n.t(key, options)
 		},
 		[i18n],
@@ -44,6 +56,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
 		<TranslationContext.Provider
 			value={{
 				t: translate,
+				tDynamic: translateDynamic,
 				i18n,
 			}}>
 			{children}

@@ -9,7 +9,7 @@ interface ExperimentalFeatureProps {
 }
 
 export const ExperimentalFeature = ({ enabled, onChange, experimentKey }: ExperimentalFeatureProps) => {
-	const { t } = useAppTranslation()
+	const { tDynamic } = useAppTranslation()
 
 	// Generate translation keys based on experiment key
 	const nameKey = experimentKey ? `settings:experimental.${experimentKey}.name` : ""
@@ -19,10 +19,10 @@ export const ExperimentalFeature = ({ enabled, onChange, experimentKey }: Experi
 		<div>
 			<div className="flex items-center gap-2">
 				<VSCodeCheckbox checked={enabled} onChange={(e: any) => onChange(e.target.checked)}>
-					<span className="font-medium">{t(nameKey)}</span>
+					<span className="font-medium">{tDynamic(nameKey)}</span>
 				</VSCodeCheckbox>
 			</div>
-			<p className="text-vscode-descriptionForeground text-sm mt-0">{t(descriptionKey)}</p>
+			<p className="text-vscode-descriptionForeground text-sm mt-0">{tDynamic(descriptionKey)}</p>
 		</div>
 	)
 }

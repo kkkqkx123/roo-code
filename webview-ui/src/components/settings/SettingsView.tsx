@@ -116,7 +116,7 @@ type SettingsViewProps = {
 }
 
 const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, targetSection }, ref) => {
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 
 	const extensionState = useExtensionState()
 	const { currentApiConfigName, listApiConfigMeta, uriScheme, settingsImportedAt } = extensionState
@@ -587,7 +587,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								data-compact={isCompactMode}>
 								<div className={cn("flex items-center gap-2", isCompactMode && "justify-center")}>
 									<Icon className="w-4 h-4" />
-									<span className="tab-label">{t(`settings:sections.${id}`)}</span>
+									<span className="tab-label">{tDynamic(`settings:sections.${id}`)}</span>
 								</div>
 							</TabTrigger>
 						)
@@ -602,7 +602,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 											{React.cloneElement(triggerComponent)}
 										</TooltipTrigger>
 										<TooltipContent side="right" className="text-base">
-											<p className="m-0">{t(`settings:sections.${id}`)}</p>
+											<p className="m-0">{tDynamic(`settings:sections.${id}`)}</p>
 										</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>

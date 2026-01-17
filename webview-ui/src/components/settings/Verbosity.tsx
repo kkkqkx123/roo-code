@@ -10,7 +10,7 @@ interface VerbosityProps {
 }
 
 export const Verbosity = ({ apiConfiguration, setApiConfigurationField, modelInfo }: VerbosityProps) => {
-	const { t } = useAppTranslation()
+	const { t, tDynamic } = useAppTranslation()
 
 	// For now, we'll show verbosity for all models, but this can be restricted later
 	// based on model capabilities (e.g., only for GPT-5 models)
@@ -32,7 +32,7 @@ export const Verbosity = ({ apiConfiguration, setApiConfigurationField, modelInf
 				<SelectContent>
 					{verbosityLevels.map((value) => (
 						<SelectItem key={value} value={value}>
-							{t(`settings:providers.verbosity.${value}`)}
+							{tDynamic(`settings:providers.verbosity.${value}`)}
 						</SelectItem>
 					))}
 				</SelectContent>

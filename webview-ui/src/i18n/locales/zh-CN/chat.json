@@ -440,7 +440,9 @@
 		"indexing": "索引中 {{percentage}}%",
 		"indexed": "已索引",
 		"error": "索引错误",
-		"status": "索引状态"
+		"status": "索引状态",
+		"upgrading": "升级配置中 {{percentage}}% ({{currentPreset}} → {{targetPreset}})",
+		"rollingBack": "回滚配置中 {{percentage}}% ({{currentPreset}} → {{targetPreset}})"
 	},
 	"versionIndicator": {
 		"ariaLabel": "版本 {{version}} - 点击查看发布说明"

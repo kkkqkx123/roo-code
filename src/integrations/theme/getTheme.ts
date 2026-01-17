@@ -42,8 +42,9 @@ export async function getTheme() {
 				break
 			}
 			const extension = vscode.extensions.all[i]
-			if (extension.packageJSON?.contributes?.themes?.length > 0) {
-				for (const theme of extension.packageJSON.contributes.themes) {
+			const themes = extension.packageJSON?.contributes?.themes
+			if (themes && Array.isArray(themes) && themes.length > 0) {
+				for (const theme of themes) {
 					if (theme.label === colorTheme) {
 						const themePath = path.join(extension.extensionPath, theme.path)
 						currentTheme = await fs.readFile(themePath, "utf-8")

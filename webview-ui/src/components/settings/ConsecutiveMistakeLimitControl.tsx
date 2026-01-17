@@ -29,7 +29,7 @@ export const ConsecutiveMistakeLimitControl = ({ value, onChange }: ConsecutiveM
 				{value === 0
 					? t("settings:providers.consecutiveMistakeLimit.unlimitedDescription")
 					: t("settings:providers.consecutiveMistakeLimit.description", {
-							value: value ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
+							value: String(value ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT),
 						})}
 			</div>
 			{value === 0 && (

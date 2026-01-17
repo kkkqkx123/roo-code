@@ -240,7 +240,7 @@ export const SlashCommandsSettings: React.FC = () => {
 					<AlertDialogHeader>
 						<AlertDialogTitle>{t("chat:slashCommands.deleteDialog.title")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							{t("chat:slashCommands.deleteDialog.description", { name: commandToDelete?.name })}
+							{t("chat:slashCommands.deleteDialog.description", { name: commandToDelete?.name ?? "" })}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
