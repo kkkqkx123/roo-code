@@ -9,11 +9,11 @@ import { LRUCache } from "lru-cache"
 import { useDebounceEffect } from "@src/utils/useDebounceEffect"
 import { appendImages } from "@src/utils/imageUtils"
 
-import type { ClineAsk, ClineMessage } from "@roo-code/types"
+import type { ClineAsk, ClineMessage } from "@shared/types"
 
 import { ClineSayTool, ExtensionMessage } from "@roo/ExtensionMessage"
 import { findLast } from "@roo/array"
-import { SuggestionItem } from "@roo-code/types"
+import { SuggestionItem } from "@shared/types"
 import { combineApiRequests } from "@roo/combineApiRequests"
 import { combineCommandSequences } from "@roo/combineCommandSequences"
 import { getApiMetrics } from "@roo/getApiMetrics"
@@ -1081,7 +1081,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	useEffect(() => {
 		return () => {
 			if (scrollToBottomSmooth && typeof (scrollToBottomSmooth as any).cancel === "function") {
-				;(scrollToBottomSmooth as any).cancel()
+				; (scrollToBottomSmooth as any).cancel()
 			}
 		}
 	}, [scrollToBottomSmooth])
@@ -1448,13 +1448,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					</div>
 					{areButtonsVisible && (
 						<div
-							className={`flex h-9 items-center mb-1 px-[15px] ${
-								showScrollToBottom
+							className={`flex h-9 items-center mb-1 px-[15px] ${showScrollToBottom
 									? "opacity-100"
 									: enableButtons || (isStreaming && !didClickCancel)
 										? "opacity-100"
 										: "opacity-50"
-							}`}>
+								}`}>
 							{showScrollToBottom ? (
 								<StandardTooltip content={t("chat:scrollToBottom")}>
 									<Button
@@ -1489,10 +1488,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 																	: primaryButtonText === t("chat:resumeTask.title")
 																		? t("chat:resumeTask.tooltip")
 																		: primaryButtonText ===
-																			  t("chat:proceedAnyways.title")
+																			t("chat:proceedAnyways.title")
 																			? t("chat:proceedAnyways.tooltip")
 																			: primaryButtonText ===
-																				  t("chat:proceedWhileRunning.title")
+																				t("chat:proceedWhileRunning.title")
 																				? t("chat:proceedWhileRunning.tooltip")
 																				: undefined
 											}>

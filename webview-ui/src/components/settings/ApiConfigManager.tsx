@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 
-import type { ProviderSettingsEntry } from "@roo-code/types"
+import type { ProviderSettingsEntry } from "@shared/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import {

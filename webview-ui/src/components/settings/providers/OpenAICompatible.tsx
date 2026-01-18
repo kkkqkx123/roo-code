@@ -10,7 +10,7 @@ import {
 	azureOpenAiDefaultApiVersion,
 	openAiModelInfoSaneDefaults,
 	openAiNativeDefaultModelId,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { ExtensionMessage } from "@roo/ExtensionMessage"
 

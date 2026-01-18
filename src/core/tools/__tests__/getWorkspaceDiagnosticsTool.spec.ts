@@ -54,7 +54,7 @@ vi.mock("../../utils/fs", () => ({
 vi.mock("../../utils/path")
 vi.mock("../../utils/pathUtils")
 vi.mock("../../utils/text-normalization")
-vi.mock("@roo-code/types")
+vi.mock("@shared/types")
 
 // Mock VSCode API
 vi.mock("vscode", async () => {
@@ -238,7 +238,7 @@ describe("GetWorkspaceDiagnosticsTool", () => {
 
     // Mock the internal methods to throw an error
     const originalResolveTargetUris = (tool as any).resolveTargetUris
-    ;(tool as any).resolveTargetUris = vi.fn().mockRejectedValue(new Error("Test error"))
+      ; (tool as any).resolveTargetUris = vi.fn().mockRejectedValue(new Error("Test error"))
 
     await tool.execute(params, mockTask, mockCallbacks)
 
@@ -256,7 +256,7 @@ describe("GetWorkspaceDiagnosticsTool", () => {
     }
 
     // Restore original method
-    ;(tool as any).resolveTargetUris = originalResolveTargetUris
+    ; (tool as any).resolveTargetUris = originalResolveTargetUris
   })
 
   it("should filter diagnostics by severity", async () => {

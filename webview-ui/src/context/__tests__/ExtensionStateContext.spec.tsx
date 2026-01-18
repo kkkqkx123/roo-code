@@ -1,6 +1,6 @@
 import { render, screen, act } from "@/utils/test-utils"
 
-import { ProviderSettings, ExperimentId, DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@roo-code/types"
+import { ProviderSettings, ExperimentId, DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@shared/types"
 
 import { ExtensionState } from "@roo/ExtensionMessage"
 
@@ -105,7 +105,7 @@ describe("ExtensionStateContext", () => {
 	it("throws error when used outside provider", () => {
 		// Suppress console.error for this test since we expect an error
 		const consoleSpy = vi.spyOn(console, "error")
-		consoleSpy.mockImplementation(() => {})
+		consoleSpy.mockImplementation(() => { })
 
 		expect(() => {
 			render(<TestComponent />)
@@ -210,7 +210,7 @@ describe("mergeExtensionState", () => {
 			featureRoomoteControlEnabled: false,
 			isBrowserSessionActive: false,
 			checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS, // Add the checkpoint timeout property
-			
+
 			// Terminal command checkpoint configurations
 			checkpointBeforeHighRiskCommands: false,
 			checkpointAfterHighRiskCommands: false,

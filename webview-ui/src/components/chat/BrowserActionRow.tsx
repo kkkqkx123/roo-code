@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect, useRef } from "react"
-import { ClineMessage } from "@roo-code/types"
+import { ClineMessage } from "@shared/types"
 import { ClineSayBrowserAction } from "@roo/ExtensionMessage"
 import { vscode } from "@src/utils/vscode"
 import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@roo/browserUtils"

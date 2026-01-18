@@ -3,7 +3,7 @@
 import { render, screen, fireEvent } from "@/utils/test-utils"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-import { type ModelInfo, type ProviderSettings, openAiModelInfoSaneDefaults } from "@roo-code/types"
+import { type ModelInfo, type ProviderSettings, openAiModelInfoSaneDefaults } from "@shared/types"
 
 import * as ExtensionStateContext from "@src/context/ExtensionStateContext"
 const { ExtensionStateContextProvider } = ExtensionStateContext
@@ -250,10 +250,10 @@ const renderApiOptions = (props: Partial<ApiOptionsProps> = {}) => {
 			<QueryClientProvider client={queryClient}>
 				<ApiOptions
 					errorMessage={undefined}
-					setErrorMessage={() => {}}
+					setErrorMessage={() => { }}
 					uriScheme={undefined}
 					apiConfiguration={{}}
-					setApiConfigurationField={() => {}}
+					setApiConfigurationField={() => { }}
 					{...props}
 				/>
 			</QueryClientProvider>
@@ -313,7 +313,7 @@ describe("ApiOptions", () => {
 	it("filters providers by search input and shows no match message when appropriate", () => {
 		renderApiOptions({
 			apiConfiguration: {},
-			setApiConfigurationField: () => {},
+			setApiConfigurationField: () => { },
 		})
 
 		// The SearchableSelect mock renders inside a div with the test id

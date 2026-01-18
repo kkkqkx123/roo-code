@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 import { getIconForFilePath, getIconUrlByName, getIconForDirectoryPath } from "vscode-material-icons"
 import { Settings } from "lucide-react"
 
-import type { ModeConfig } from "@roo-code/types"
+import type { ModeConfig } from "@shared/types"
 import type { Command } from "@roo/ExtensionMessage"
 
 import {
@@ -354,15 +354,15 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 								position: "relative",
 								...(option.type === ContextMenuOptionType.SectionHeader
 									? {
-											borderBottom: "1px solid var(--vscode-editorGroup-border)",
-											marginBottom: "2px",
-										}
+										borderBottom: "1px solid var(--vscode-editorGroup-border)",
+										marginBottom: "2px",
+									}
 									: {}),
 								...(index === selectedIndex && isOptionSelectable(option)
 									? {
-											backgroundColor: "var(--vscode-list-activeSelectionBackground)",
-											color: "var(--vscode-list-activeSelectionForeground)",
-										}
+										backgroundColor: "var(--vscode-list-activeSelectionBackground)",
+										color: "var(--vscode-list-activeSelectionForeground)",
+									}
 									: {}),
 							}}
 							onMouseEnter={() => isOptionSelectable(option) && setSelectedIndex(index)}>
@@ -379,17 +379,17 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 								{(option.type === ContextMenuOptionType.File ||
 									option.type === ContextMenuOptionType.Folder ||
 									option.type === ContextMenuOptionType.OpenedFile) && (
-									<img
-										src={getMaterialIconForOption(option)}
-										alt="Mode"
-										style={{
-											marginRight: "6px",
-											flexShrink: 0,
-											width: "16px",
-											height: "16px",
-										}}
-									/>
-								)}
+										<img
+											src={getMaterialIconForOption(option)}
+											alt="Mode"
+											style={{
+												marginRight: "6px",
+												flexShrink: 0,
+												width: "16px",
+												height: "16px",
+											}}
+										/>
+									)}
 								{option.type !== ContextMenuOptionType.Mode &&
 									option.type !== ContextMenuOptionType.Command &&
 									option.type !== ContextMenuOptionType.File &&

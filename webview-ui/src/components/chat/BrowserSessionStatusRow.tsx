@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { Globe } from "lucide-react"
-import { ClineMessage } from "@roo-code/types"
+import { ClineMessage } from "@shared/types"
 
 interface BrowserSessionStatusRowProps {
 	message: ClineMessage

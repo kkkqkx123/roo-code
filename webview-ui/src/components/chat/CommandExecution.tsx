@@ -3,7 +3,7 @@ import { useEvent } from "react-use"
 import { t } from "i18next"
 import { ChevronDown, OctagonX } from "lucide-react"
 
-import { CommandExecutionStatus, commandExecutionStatusSchema } from "@roo-code/types"
+import { CommandExecutionStatus, commandExecutionStatusSchema } from "@shared/types"
 
 import { ExtensionMessage } from "@roo/ExtensionMessage"
 import { safeJsonParse } from "@roo/safeJsonParse"

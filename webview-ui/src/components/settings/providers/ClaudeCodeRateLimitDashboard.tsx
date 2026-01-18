@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react"
-import type { ClaudeCodeRateLimitInfo } from "@roo-code/types"
+import type { ClaudeCodeRateLimitInfo } from "@shared/types"
 import { vscode } from "@src/utils/vscode"
 
 interface ClaudeCodeRateLimitDashboardProps {
@@ -53,13 +53,12 @@ const UsageProgressBar: React.FC<{ utilization: number; label: string }> = ({ ut
 			<div className="text-xs text-vscode-descriptionForeground mb-1">{label}</div>
 			<div className="w-full bg-vscode-input-background rounded-sm h-2 overflow-hidden">
 				<div
-					className={`h-full transition-all duration-300 ${
-						isCritical
+					className={`h-full transition-all duration-300 ${isCritical
 							? "bg-vscode-errorForeground"
 							: isWarning
 								? "bg-vscode-editorWarning-foreground"
 								: "bg-vscode-button-background"
-					}`}
+						}`}
 					style={{ width: `${percentage}%` }}
 				/>
 			</div>

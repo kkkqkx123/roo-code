@@ -1,4 +1,4 @@
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@roo-code/types"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@shared/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 
@@ -29,8 +29,8 @@ export const ConsecutiveMistakeLimitControl = ({ value, onChange }: ConsecutiveM
 				{value === 0
 					? t("settings:providers.consecutiveMistakeLimit.unlimitedDescription")
 					: t("settings:providers.consecutiveMistakeLimit.description", {
-							value: String(value ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT),
-						})}
+						value: String(value ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT),
+					})}
 			</div>
 			{value === 0 && (
 				<div className="text-sm text-vscode-errorForeground mt-1">

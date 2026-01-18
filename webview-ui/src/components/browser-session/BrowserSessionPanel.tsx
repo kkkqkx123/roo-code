@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { type ClineMessage } from "@roo-code/types"
+import { type ClineMessage } from "@shared/types"
 import BrowserSessionRow from "../chat/BrowserSessionRow"
 import { TooltipProvider } from "@src/components/ui/tooltip"
 import ErrorBoundary from "../ErrorBoundary"

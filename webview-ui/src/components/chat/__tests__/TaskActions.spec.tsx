@@ -1,4 +1,4 @@
-import type { HistoryItem } from "@roo-code/types"
+import type { HistoryItem } from "@shared/types"
 
 import { render, screen, fireEvent } from "@/utils/test-utils"
 import { vscode } from "@/utils/vscode"
@@ -188,30 +188,30 @@ describe("TaskActions", () => {
 
 	describe("Button States", () => {
 		it("export, copy, and delete buttons behave correctly with buttonsDisabled state", () => {
-		// Test with buttonsDisabled = false
-		const { rerender } = render(<TaskActions item={mockItem} buttonsDisabled={false} />)
+			// Test with buttonsDisabled = false
+			const { rerender } = render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-		let exportButton = screen.getByLabelText("Export task history")
-		let copyButton = screen.getByLabelText("Copy")
-		let deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
+			let exportButton = screen.getByLabelText("Export task history")
+			let copyButton = screen.getByLabelText("Copy")
+			let deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 
-		expect(exportButton).not.toBeDisabled()
-		expect(copyButton).not.toBeDisabled()
-		expect(deleteButton).not.toBeDisabled()
+			expect(exportButton).not.toBeDisabled()
+			expect(copyButton).not.toBeDisabled()
+			expect(deleteButton).not.toBeDisabled()
 
-		// Test with buttonsDisabled = true
-		rerender(<TaskActions item={mockItem} buttonsDisabled={true} />)
+			// Test with buttonsDisabled = true
+			rerender(<TaskActions item={mockItem} buttonsDisabled={true} />)
 
-		exportButton = screen.getByLabelText("Export task history")
-		copyButton = screen.getByLabelText("Copy")
-		deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
+			exportButton = screen.getByLabelText("Export task history")
+			copyButton = screen.getByLabelText("Copy")
+			deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 
-		// Export and copy remain enabled
-		expect(exportButton).not.toBeDisabled()
-		expect(copyButton).not.toBeDisabled()
-		// Delete button is disabled
-		expect(deleteButton).toBeDisabled()
-	})
+			// Export and copy remain enabled
+			expect(exportButton).not.toBeDisabled()
+			expect(copyButton).not.toBeDisabled()
+			// Delete button is disabled
+			expect(deleteButton).toBeDisabled()
+		})
 	})
 
 	describe("Debug Buttons", () => {

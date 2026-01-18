@@ -2,7 +2,7 @@ import React from "react"
 import { Fzf } from "fzf"
 import { Check, X } from "lucide-react"
 
-import { type ModeConfig, type CustomModePrompts } from "@roo-code/types"
+import { type ModeConfig, type CustomModePrompts } from "@shared/types"
 
 import { type Mode, getAllModes } from "@roo/modes"
 

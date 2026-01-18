@@ -2,7 +2,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from "react"
 import deepEqual from "fast-deep-equal"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
-import type { ClineMessage } from "@roo-code/types"
+import type { ClineMessage } from "@shared/types"
 
 import { BrowserAction, BrowserActionResult, ClineSayBrowserAction } from "@roo/ExtensionMessage"
 
@@ -465,9 +465,9 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 		const ro =
 			typeof window !== "undefined" && "ResizeObserver" in window
 				? new ResizeObserver((entries) => {
-						const entry = entries[0]
-						setH(entry?.contentRect?.height ?? el.getBoundingClientRect().height)
-					})
+					const entry = entries[0]
+					setH(entry?.contentRect?.height ?? el.getBoundingClientRect().height)
+				})
 				: null
 		// initial
 		setH(el.getBoundingClientRect().height)
@@ -499,13 +499,13 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 				{...(fullScreen
 					? {}
 					: {
-							onClick: () =>
-								setNextActionsExpanded((v) => {
-									const nv = !v
-									onExpandChange?.(nv)
-									return nv
-								}),
-						})}
+						onClick: () =>
+							setNextActionsExpanded((v) => {
+								const nv = !v
+								onExpandChange?.(nv)
+								return nv
+							}),
+					})}
 			/>
 
 			{/* Simple text: "Browser Session" with step counter */}
@@ -513,13 +513,13 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 				{...(fullScreen
 					? {}
 					: {
-							onClick: () =>
-								setNextActionsExpanded((v) => {
-									const nv = !v
-									onExpandChange?.(nv)
-									return nv
-								}),
-						})}
+						onClick: () =>
+							setNextActionsExpanded((v) => {
+								const nv = !v
+								onExpandChange?.(nv)
+								return nv
+							}),
+					})}
 				style={{
 					flex: 1,
 					fontSize: 13,

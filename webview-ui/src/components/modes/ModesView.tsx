@@ -10,7 +10,7 @@ import {
 import { Trans } from "react-i18next"
 import { ChevronDown, X, Upload, Download, MessageSquare } from "lucide-react"
 
-import { ModeConfig, GroupEntry, PromptComponent, ToolGroup, modeConfigSchema } from "@roo-code/types"
+import { ModeConfig, GroupEntry, PromptComponent, ToolGroup, modeConfigSchema } from "@shared/types"
 
 import {
 	Mode,
@@ -790,8 +790,8 @@ const ModesView = () => {
 														.filter((modeConfig) =>
 															searchValue
 																? modeConfig.name
-																		.toLowerCase()
-																		.includes(searchValue.toLowerCase())
+																	.toLowerCase()
+																	.includes(searchValue.toLowerCase())
 																: true,
 														)
 														.map((modeConfig) => (

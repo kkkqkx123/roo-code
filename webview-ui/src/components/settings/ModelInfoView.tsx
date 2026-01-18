@@ -1,6 +1,6 @@
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
-import type { ModelInfo } from "@roo-code/types"
+import type { ModelInfo } from "@shared/types"
 
 import { formatPrice } from "@src/utils/formatPrice"
 import { cn } from "@src/lib/utils"
@@ -61,8 +61,8 @@ export const ModelInfoView = ({
 				{selectedModelId.includes("pro-preview")
 					? t("settings:modelInfo.gemini.billingEstimate")
 					: t("settings:modelInfo.gemini.freeRequests", {
-							count: String(selectedModelId && selectedModelId.includes("flash") ? 15 : 2),
-						})}{" "}
+						count: String(selectedModelId && selectedModelId.includes("flash") ? 15 : 2),
+					})}{" "}
 				<VSCodeLink href="https://ai.google.dev/pricing" className="text-sm">
 					{t("settings:modelInfo.gemini.pricingDetails")}
 				</VSCodeLink>
@@ -150,19 +150,19 @@ export const ModelInfoView = ({
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "flex")?.inputPrice ??
-													modelInfo?.inputPrice,
+												modelInfo?.inputPrice,
 											)}
 										</td>
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "flex")?.outputPrice ??
-													modelInfo?.outputPrice,
+												modelInfo?.outputPrice,
 											)}
 										</td>
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "flex")?.cacheReadsPrice ??
-													modelInfo?.cacheReadsPrice,
+												modelInfo?.cacheReadsPrice,
 											)}
 										</td>
 									</tr>
@@ -173,19 +173,19 @@ export const ModelInfoView = ({
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "priority")?.inputPrice ??
-													modelInfo?.inputPrice,
+												modelInfo?.inputPrice,
 											)}
 										</td>
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "priority")?.outputPrice ??
-													modelInfo?.outputPrice,
+												modelInfo?.outputPrice,
 											)}
 										</td>
 										<td className="px-3 py-1.5 text-right">
 											{fmt(
 												modelInfo?.tiers?.find((t) => t.name === "priority")?.cacheReadsPrice ??
-													modelInfo?.cacheReadsPrice,
+												modelInfo?.cacheReadsPrice,
 											)}
 										</td>
 									</tr>

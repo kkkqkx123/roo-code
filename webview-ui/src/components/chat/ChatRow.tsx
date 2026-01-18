@@ -4,7 +4,7 @@ import { useTranslation, Trans } from "react-i18next"
 import deepEqual from "fast-deep-equal"
 import { VSCodeBadge } from "@vscode/webview-ui-toolkit/react"
 
-import type { ClineMessage, FollowUpData, SuggestionItem } from "@roo-code/types"
+import type { ClineMessage, FollowUpData, SuggestionItem } from "@shared/types"
 import { Mode } from "@roo/modes"
 
 import { ClineApiReqInfo, ClineAskUseMcpServer, ClineSayTool } from "@roo/ExtensionMessage"
@@ -115,7 +115,7 @@ interface ChatRowProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface ChatRowContentProps extends Omit<ChatRowProps, "onHeightChange"> {}
+interface ChatRowContentProps extends Omit<ChatRowProps, "onHeightChange"> { }
 
 const ChatRow = memo(
 	(props: ChatRowProps) => {
@@ -463,8 +463,8 @@ export const ChatRowContent = ({
 										: tool.lineNumber === 0
 											? t("chat:fileOperations.wantsToInsertAtEnd")
 											: t("chat:fileOperations.wantsToInsertWithLineNumber", {
-													lineNumber: tool.lineNumber,
-												})}
+												lineNumber: tool.lineNumber,
+											})}
 							</span>
 						</div>
 						<div className="pl-6">
@@ -611,8 +611,8 @@ export const ChatRowContent = ({
 										? t("chat:fileOperations.wantsToReadOutsideWorkspace")
 										: tool.additionalFileCount && tool.additionalFileCount > 0
 											? t("chat:fileOperations.wantsToReadAndXMore", {
-													count: tool.additionalFileCount,
-												})
+												count: tool.additionalFileCount,
+											})
 											: t("chat:fileOperations.wantsToRead")
 									: t("chat:fileOperations.didRead")}
 							</span>
@@ -1013,14 +1013,13 @@ export const ChatRowContent = ({
 					return (
 						<>
 							<div
-								className={`group text-sm transition-opacity ${
-									isApiRequestInProgress ? "opacity-100" : "opacity-40 hover:opacity-100"
-								}`}
+								className={`group text-sm transition-opacity ${isApiRequestInProgress ? "opacity-100" : "opacity-40 hover:opacity-100"
+									}`}
 								style={{
 									...headerStyle,
 									marginBottom:
 										((cost === null || cost === undefined) && apiRequestFailedMessage) ||
-										apiReqStreamingFailedMessage
+											apiReqStreamingFailedMessage
 											? 10
 											: 0,
 									justifyContent: "space-between",
@@ -1037,17 +1036,17 @@ export const ChatRowContent = ({
 							</div>
 							{(((cost === null || cost === undefined) && apiRequestFailedMessage) ||
 								apiReqStreamingFailedMessage) && (
-								<ErrorRow
-									type="api_failure"
-									message={apiRequestFailedMessage || apiReqStreamingFailedMessage || ""}
-									docsURL={
-										apiRequestFailedMessage?.toLowerCase().includes("powershell")
-											? "https://github.com/cline/cline/wiki/TroubleShooting-%E2%80%90-%22PowerShell-is-not-recognized-as-an-internal-or-external-command%22"
-											: undefined
-									}
-									errorDetails={apiReqStreamingFailedMessage}
-								/>
-							)}
+									<ErrorRow
+										type="api_failure"
+										message={apiRequestFailedMessage || apiReqStreamingFailedMessage || ""}
+										docsURL={
+											apiRequestFailedMessage?.toLowerCase().includes("powershell")
+												? "https://github.com/cline/cline/wiki/TroubleShooting-%E2%80%90-%22PowerShell-is-not-recognized-as-an-internal-or-external-command%22"
+												: undefined
+										}
+										errorDetails={apiReqStreamingFailedMessage}
+									/>
+								)}
 						</>
 					)
 				case "api_req_retry_delayed":
@@ -1315,7 +1314,7 @@ export const ChatRowContent = ({
 
 					return <CodebaseSearchResultsDisplay results={results} />
 				case "user_edit_todos":
-					return <UpdateTodoListToolBlock userEdited onChange={() => {}} />
+					return <UpdateTodoListToolBlock userEdited onChange={() => { }} />
 				case "tool" as any:
 					// Handle say tool messages
 					const sayTool = safeJsonParse<ClineSayTool>(message.text)

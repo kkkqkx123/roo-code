@@ -5,7 +5,7 @@ import { Button, StandardTooltip } from "@/components/ui"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
-import { SuggestionItem } from "@roo-code/types"
+import { SuggestionItem } from "@shared/types"
 import { cn } from "@/lib/utils"
 
 const DEFAULT_FOLLOWUP_TIMEOUT_MS = 60000
@@ -119,10 +119,10 @@ export const FollowUpSuggest = ({
 							className={cn(
 								"text-left whitespace-normal break-words w-full h-auto px-3 py-2 justify-start pr-8 rounded-xl",
 								isFirstSuggestion &&
-									countdown !== null &&
-									!suggestionSelected &&
-									!isAnswered &&
-									"border-vscode-foreground/60 rounded-b-none -mb-1",
+								countdown !== null &&
+								!suggestionSelected &&
+								!isAnswered &&
+								"border-vscode-foreground/60 rounded-b-none -mb-1",
 							)}
 							onClick={(event) => handleSuggestionClick(suggestion, event)}
 							aria-label={suggestion.answer}>

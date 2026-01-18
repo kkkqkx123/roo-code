@@ -2,7 +2,7 @@ import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Section } from "@src/components/settings/Section"
 import { Slider } from "@src/components/ui/slider"
-import type { CustomVectorStorageConfig } from "@roo-code/types"
+import type { CustomVectorStorageConfig } from "@shared/types"
 
 interface VectorStorageAdvancedSettingsProps {
 	config: CustomVectorStorageConfig

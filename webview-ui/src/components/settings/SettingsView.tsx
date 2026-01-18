@@ -34,7 +34,7 @@ import {
 	type ProviderSettings,
 	type ExperimentId,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { vscode } from "@src/utils/vscode"
 import { cn } from "@src/lib/utils"

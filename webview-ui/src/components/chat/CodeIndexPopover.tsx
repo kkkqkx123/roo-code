@@ -12,8 +12,8 @@ import {
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { AlertTriangle } from "lucide-react"
 
-import { CODEBASE_INDEX_DEFAULTS } from "@roo-code/types"
-import type { VectorStorageConfig } from "@roo-code/types"
+import { CODEBASE_INDEX_DEFAULTS } from "@shared/types"
+import type { VectorStorageConfig } from "@shared/types"
 
 import type { EmbedderProvider } from "@roo/embeddingModels"
 import type { IndexingStatus, ConfigUpgradeStatus } from "@roo/ExtensionMessage"
@@ -645,13 +645,13 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										<span>
 											{configUpgradeStatus.status === "rolling_back"
 												? t("settings:codeIndex.rollingBackFromTo", {
-														current: configUpgradeStatus.currentPreset,
-														target: configUpgradeStatus.targetPreset,
-												  })
+													current: configUpgradeStatus.currentPreset,
+													target: configUpgradeStatus.targetPreset,
+												})
 												: t("settings:codeIndex.upgradingFromTo", {
-														current: configUpgradeStatus.currentPreset,
-														target: configUpgradeStatus.targetPreset,
-												  })}
+													current: configUpgradeStatus.currentPreset,
+													target: configUpgradeStatus.targetPreset,
+												})}
 										</span>
 									)}
 									{configUpgradeStatus.message && ` - ${configUpgradeStatus.message}`}
@@ -813,15 +813,15 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													{getAvailableModels().map((modelId) => {
 														const model =
 															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
+															currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
 															]?.[modelId]
 														return (
 															<VSCodeOption key={modelId} value={modelId} className="p-2">
 																{modelId}{" "}
 																{model
 																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: String(model.dimension),
-																		})
+																		dimension: String(model.dimension),
+																	})
 																	: ""}
 															</VSCodeOption>
 														)
@@ -986,15 +986,15 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													{getAvailableModels().map((modelId) => {
 														const model =
 															codebaseIndexModels?.[
-																currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
+															currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels
 															]?.[modelId]
 														return (
 															<VSCodeOption key={modelId} value={modelId} className="p-2">
 																{modelId}{" "}
 																{model
 																	? t("settings:codeIndex.modelDimensions", {
-																			dimension: String(model.dimension),
-																		})
+																		dimension: String(model.dimension),
+																	})
 																	: ""}
 															</VSCodeOption>
 														)
@@ -1094,7 +1094,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												step={CODEBASE_INDEX_DEFAULTS.SEARCH_SCORE_STEP}
 												value={[
 													currentSettings.codebaseIndexSearchMinScore ??
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+													CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
 												]}
 												onValueChange={(values) =>
 													updateSetting("codebaseIndexSearchMinScore", values[0])
@@ -1140,7 +1140,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												step={CODEBASE_INDEX_DEFAULTS.SEARCH_RESULTS_STEP}
 												value={[
 													currentSettings.codebaseIndexSearchMaxResults ??
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
+													CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 												]}
 												onValueChange={(values) =>
 													updateSetting("codebaseIndexSearchMaxResults", values[0])
