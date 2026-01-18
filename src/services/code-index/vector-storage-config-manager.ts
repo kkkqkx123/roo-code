@@ -1,5 +1,5 @@
 import { ContextProxy } from "../../core/config/ContextProxy"
-import type { VectorStorageConfig, CustomVectorStorageConfig } from "@roo-code/types"
+import type { VectorStorageConfig, CustomVectorStorageConfig } from "@shared/types"
 import { CollectionSizeEstimator } from "./vector-store/collection-size-estimator"
 import type { SizeEstimationResult } from "./token-based-size-estimator"
 import type { QdrantClient } from "@qdrant/js-client-rest"

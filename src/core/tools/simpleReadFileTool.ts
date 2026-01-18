@@ -12,7 +12,7 @@ import { countFileLines } from "../../integrations/misc/line-counter"
 import { readLines } from "../../integrations/misc/read-lines"
 import { extractTextFromFile, addLineNumbers, getSupportedBinaryFormats } from "../../integrations/misc/extract-text"
 import { parseSourceCodeDefinitionsForFile } from "../../services/tree-sitter"
-import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
+import { ToolProtocol, isNativeProtocol } from "@shared/types"
 import { isBinaryFileOptimized } from "../../utils/binary-file-detector"
 import {
 	DEFAULT_MAX_IMAGE_FILE_SIZE_MB,

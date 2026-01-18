@@ -5,7 +5,7 @@ import {
 	type ProviderSettings,
 	type ProviderSettingsEntry,
 	type ModeConfig,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { ContextProxy } from "../config/ContextProxy"

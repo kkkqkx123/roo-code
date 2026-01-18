@@ -1,4 +1,4 @@
-import type { ModelInfo } from "@roo-code/types"
+import type { ModelInfo } from "@shared/types"
 
 export interface ApiCostResult {
 	totalInputTokens: number

@@ -1,9 +1,9 @@
 import { EventEmitter } from "events"
-import type { TaskMetadata, ToolProtocol, RooCodeEventName, TodoItem, ModelInfo } from "@roo-code/types"
+import type { TaskMetadata, ToolProtocol, RooCodeEventName, TodoItem, ModelInfo } from "@shared/types"
 import { resolveToolProtocol } from "../../../../utils/resolveToolProtocol"
 import { defaultModeSlug } from "../../../../shared/modes"
 import type { ClineProvider } from "../../../webview/ClineProvider"
-import type { ProviderSettings } from "@roo-code/types"
+import type { ProviderSettings } from "@shared/types"
 
 export interface TaskStateOptions {
 	taskId: string

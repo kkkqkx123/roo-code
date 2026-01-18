@@ -8,7 +8,7 @@ import type { ContextManager } from "../../context/ContextManager"
 import type { UsageTracker } from "../../monitoring/UsageTracker"
 import type { FileEditorManager } from "../../execution/FileEditorManager"
 import type { ApiHandler } from "../../../../../api"
-import type { ProviderSettings } from "@roo-code/types"
+import type { ProviderSettings } from "@shared/types"
 import type { TextContent } from "../../../../../shared/tools"
 
 vi.mock("../../../environment/getEnvironmentDetails", () => ({

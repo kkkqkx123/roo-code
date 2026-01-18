@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 
 import { TaskManager } from "../TaskManager"
 import { Task } from "../Task"
-import type { ProviderSettings, HistoryItem } from "@roo-code/types"
+import type { ProviderSettings, HistoryItem } from "@shared/types"
 
 vi.mock("vscode", () => {
 	const mockDisposable = { dispose: vi.fn() }

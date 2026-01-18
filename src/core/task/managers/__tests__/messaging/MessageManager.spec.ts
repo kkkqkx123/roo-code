@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { MessageManager } from "../../messaging/MessageManager"
 import type { TaskStateManager } from "../../core/TaskStateManager"
-import type { ClineMessage } from "@roo-code/types"
+import type { ClineMessage } from "@shared/types"
 import type { ApiMessage } from "../../../../task-persistence"
 
 vi.mock("../../tools/UpdateTodoListTool", () => ({

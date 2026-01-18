@@ -6,7 +6,7 @@ import {
 	type PromptComponent,
 	type ModeConfig,
 	type QueuedMessage,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { Mode } from "./modes"
 

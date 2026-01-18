@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import * as vscode from "vscode"
-import { TOOL_PROTOCOL, isNativeProtocol } from "@roo-code/types"
+import { TOOL_PROTOCOL, isNativeProtocol } from "@shared/types"
 import { formatToolInvocation, getCurrentToolProtocol } from "../toolResultFormatting"
 
 vi.mock("vscode", () => ({

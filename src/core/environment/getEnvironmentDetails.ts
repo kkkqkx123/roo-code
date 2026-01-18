@@ -5,8 +5,8 @@ import * as vscode from "vscode"
 import pWaitFor from "p-wait-for"
 import delay from "delay"
 
-import type { ExperimentId } from "@roo-code/types"
-import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@roo-code/types"
+import type { ExperimentId } from "@shared/types"
+import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@shared/types"
 
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 import { EXPERIMENT_IDS, experiments as Experiments } from "../../shared/experiments"

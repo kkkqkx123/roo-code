@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { SubtaskManager } from "../../core/SubtaskManager"
-import { RooCodeEventName, TodoStatus, TodoItem } from "@roo-code/types"
+import { RooCodeEventName, TodoStatus, TodoItem } from "@shared/types"
 import type { Task } from "../../../Task"
 import type { ClineProvider } from "../../../../webview/ClineProvider"
 

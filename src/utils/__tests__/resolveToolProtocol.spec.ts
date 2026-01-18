@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { resolveToolProtocol, detectToolProtocolFromHistory } from "../resolveToolProtocol"
-import { TOOL_PROTOCOL, openAiModelInfoSaneDefaults } from "@roo-code/types"
-import type { ProviderSettings, ModelInfo } from "@roo-code/types"
+import { TOOL_PROTOCOL, openAiModelInfoSaneDefaults } from "@shared/types"
+import type { ProviderSettings, ModelInfo } from "@shared/types"
 import type { Anthropic } from "@anthropic-ai/sdk"
 
 describe("resolveToolProtocol", () => {

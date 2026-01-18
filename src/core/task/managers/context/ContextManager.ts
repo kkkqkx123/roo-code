@@ -4,10 +4,10 @@ import { RooProtectedController } from "../../../protect/RooProtectedController"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import { manageContext, type ContextManagementOptions, type ContextManagementResult, DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../context-management"
 import { getModelMaxOutputTokens } from "../../../../shared/api"
-import { isNativeProtocol, TOOL_PROTOCOL } from "@roo-code/types"
+import { isNativeProtocol, TOOL_PROTOCOL } from "@shared/types"
 import { buildApiHandler, type ApiHandler } from "../../../../api"
-import type { ProviderSettings, ClineSay, ToolProgressStatus } from "@roo-code/types"
-import type { ContextCondense, ContextTruncation } from "@roo-code/types"
+import type { ProviderSettings, ClineSay, ToolProgressStatus } from "@shared/types"
+import type { ContextCondense, ContextTruncation } from "@shared/types"
 
 export interface ContextManagerOptions {
 	cwd: string

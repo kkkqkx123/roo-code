@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { CheckpointDecisionEngine, CommandRiskLevel, ShellType } from "../CheckpointDecisionEngine"
-import type { GlobalSettings } from "@roo-code/types"
+import type { GlobalSettings } from "@shared/types"
 
 describe("CheckpointDecisionEngine", () => {
   let settings: GlobalSettings

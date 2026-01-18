@@ -1,5 +1,5 @@
-import type { ToolName, ModeConfig, ExperimentId, GroupOptions, GroupEntry } from "@roo-code/types"
-import { toolNames as validToolNames } from "@roo-code/types"
+import type { ToolName, ModeConfig, ExperimentId, GroupOptions, GroupEntry } from "@shared/types"
+import { toolNames as validToolNames } from "@shared/types"
 
 import { type Mode, FileRestrictionError, getModeBySlug, getGroupName } from "../../shared/modes"
 import { EXPERIMENT_IDS } from "../../shared/experiments"

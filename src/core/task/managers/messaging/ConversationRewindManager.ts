@@ -1,5 +1,5 @@
 import { Task } from "../../Task"
-import { ClineMessage } from "@roo-code/types"
+import { ClineMessage } from "@shared/types"
 import { ApiMessage } from "../../../task-persistence"
 import { cleanupAfterTruncation } from "../../../condense"
 

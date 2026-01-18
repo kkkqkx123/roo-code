@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { RooCodeEventName } from "@roo-code/types"
+import { RooCodeEventName } from "@shared/types"
 import { TaskDelegationCoordinator } from "../TaskDelegationCoordinator"
 
 describe("TaskDelegationCoordinator", () => {

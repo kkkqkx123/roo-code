@@ -10,7 +10,7 @@ import {
 	type TokenUsage,
 	type ToolUsage,
 	RooCodeEventName,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { Task } from "./Task"
 import { readTaskMessages } from "../task-persistence/taskMessages"

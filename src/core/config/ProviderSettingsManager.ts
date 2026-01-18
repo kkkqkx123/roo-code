@@ -12,7 +12,7 @@ import {
 	getModelId,
 	type ProviderName,
 	isProviderName,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { Mode, modes } from "../../shared/modes"
 import { buildApiHandler } from "../../api"

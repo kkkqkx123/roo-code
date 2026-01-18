@@ -1,4 +1,4 @@
-import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@roo-code/types"
+import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@shared/types"
 
 export type ParsedApiReqStartedTextType = {
 	tokensIn: number

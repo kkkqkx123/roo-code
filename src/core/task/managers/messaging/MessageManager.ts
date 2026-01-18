@@ -1,11 +1,11 @@
-import type { ClineMessage } from "@roo-code/types"
+import type { ClineMessage } from "@shared/types"
 import type { ApiMessage } from "../../../task-persistence"
 import { readApiMessages, saveApiMessages, readTaskMessages, saveTaskMessages } from "../../../task-persistence"
 import { findLastIndex } from "../../../../shared/array"
 import { restoreTodoListForTask } from "../../../tools/UpdateTodoListTool"
 import type { TaskStateManager } from "../core/TaskStateManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
-import { RooCodeEventName } from "@roo-code/types"
+import { RooCodeEventName } from "@shared/types"
 import type { IndexManager } from "../core/IndexManager"
 
 export interface MessageManagerOptions {

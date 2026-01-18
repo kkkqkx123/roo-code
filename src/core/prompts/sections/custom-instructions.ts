@@ -3,10 +3,10 @@ import path from "path"
 import * as os from "os"
 import { Dirent } from "fs"
 
-import { isLanguage } from "@roo-code/types"
+import { isLanguage } from "@shared/types"
 
 import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "@roo-code/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
 
 import { LANGUAGES } from "../../../shared/language"
 import { getRooDirectoriesForCwd, getGlobalRooDirectory } from "../../../services/roo-config"

@@ -10,7 +10,7 @@ import {
 	normalizeClaudeCodeModelId,
 	qwenCodeModels,
 	getProviderDefaultModelId,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import type { ModelRecord } from "@roo/api"
 import { useMemo } from "react"

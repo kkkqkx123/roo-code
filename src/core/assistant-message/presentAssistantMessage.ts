@@ -2,7 +2,7 @@ import cloneDeep from "clone-deep"
 import { serializeError } from "serialize-error"
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
+import type { ToolName, ClineAsk, ToolProgressStatus } from "@shared/types"
 
 import { t } from "../../i18n"
 
@@ -17,7 +17,7 @@ import { fetchInstructionsTool } from "../tools/FetchInstructionsTool"
 import { listFilesTool } from "../tools/ListFilesTool"
 import { readFileTool } from "../tools/ReadFileTool"
 import { getSimpleReadFileToolDescription, simpleReadFileTool } from "../tools/simpleReadFileTool"
-import { shouldUseSingleFileRead, TOOL_PROTOCOL } from "@roo-code/types"
+import { shouldUseSingleFileRead, TOOL_PROTOCOL } from "@shared/types"
 import { writeToFileTool } from "../tools/WriteToFileTool"
 import { applyDiffTool } from "../tools/MultiApplyDiffTool"
 import { searchAndReplaceTool } from "../tools/SearchAndReplaceTool"

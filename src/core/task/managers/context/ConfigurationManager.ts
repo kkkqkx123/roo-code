@@ -1,6 +1,6 @@
 import type { ClineProvider } from "../../../webview/ClineProvider"
-import type { ProviderSettings } from "@roo-code/types"
-import { RooCodeEventName } from "@roo-code/types"
+import type { ProviderSettings } from "@shared/types"
+import { RooCodeEventName } from "@shared/types"
 
 export interface ConfigurationManagerOptions {
 	taskId: string

@@ -21,7 +21,7 @@ import {
 	type TodoItem,
 	RooCodeEventName,
 	getModelId,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { Package } from "../../shared/package"
 import type { ExtensionMessage, ExtensionState } from "../../shared/ExtensionMessage"

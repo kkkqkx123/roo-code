@@ -3,7 +3,7 @@ import { Task } from "../Task"
 import { ClineProvider } from "../../webview/ClineProvider"
 import { ContextProxy } from "../../config/ContextProxy"
 import * as vscode from "vscode"
-import type { ProviderSettings } from "@roo-code/types"
+import type { ProviderSettings } from "@shared/types"
 
 vi.mock("vscode", () => ({
 	RelativePattern: vi.fn((base, pattern) => ({ base, pattern })),

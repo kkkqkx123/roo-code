@@ -1,5 +1,5 @@
 import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "@roo-code/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
 
 function getVendorConfidentialitySection(): string {
 	return `

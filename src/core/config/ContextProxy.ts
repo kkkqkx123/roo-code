@@ -16,7 +16,7 @@ import {
 	globalSettingsSchema,
 	isSecretStateKey,
 	isProviderName,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { logger } from "../../utils/logging"
 

@@ -1,6 +1,6 @@
 // npx vitest src/core/assistant-message/__tests__/parseAssistantMessage.spec.ts
 
-import { type AssistantMessageContent } from "@roo-code/types"
+import { type AssistantMessageContent } from "@shared/types"
 import { TextContent, ToolUse } from "../../../shared/tools"
 
 import { parseAssistantMessage } from "../parseAssistantMessage"

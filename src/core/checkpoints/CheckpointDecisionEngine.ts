@@ -1,4 +1,4 @@
-import type { GlobalSettings } from "@roo-code/types"
+import type { GlobalSettings } from "@shared/types"
 import { getShell } from "../../utils/shell"
 
 /**

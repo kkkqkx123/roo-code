@@ -1,8 +1,8 @@
 import * as vscode from "vscode"
 
 import { SYSTEM_PROMPT } from "../../../prompts/system"
-import { getModelId, type ProviderSettings } from "@roo-code/types"
-import type { ModeConfig, CustomModePrompts, TodoItem } from "@roo-code/types"
+import { getModelId, type ProviderSettings } from "@shared/types"
+import type { ModeConfig, CustomModePrompts, TodoItem } from "@shared/types"
 import { DiffStrategy } from "../../../../shared/tools"
 import { McpHub } from "../../../../services/mcp/McpHub"
 import { RooIgnoreController } from "../../../ignore/RooIgnoreController"

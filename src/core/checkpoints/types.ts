@@ -1,4 +1,4 @@
-import type { ProviderSettings, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@roo-code/types"
+import type { ProviderSettings, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@shared/types"
 import type { Anthropic } from "@anthropic-ai/sdk"
 
 /**

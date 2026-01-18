@@ -1,4 +1,4 @@
-import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@roo-code/types"
+import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@shared/types"
 import { hasTokenUsageChanged, hasToolUsageChanged } from "../../../../shared/getApiMetrics"
 import { combineApiRequests } from "../../../../shared/combineApiRequests"
 import { combineCommandSequences } from "../../../../shared/combineCommandSequences"

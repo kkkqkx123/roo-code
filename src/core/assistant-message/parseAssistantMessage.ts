@@ -1,4 +1,4 @@
-import { type ToolName, toolNames, type AssistantMessageContent } from "@roo-code/types"
+import { type ToolName, toolNames, type AssistantMessageContent } from "@shared/types"
 
 import { TextContent, ToolUse, McpToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { TaskStateManager } from "../../core/TaskStateManager"
-import { RooCodeEventName } from "@roo-code/types"
+import { RooCodeEventName } from "@shared/types"
 import type { ClineProvider } from "../../../../webview/ClineProvider"
 
 describe("TaskStateManager", () => {

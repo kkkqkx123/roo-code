@@ -4,7 +4,7 @@ import React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { renderHook } from "@testing-library/react"
 
-import { ProviderSettings, ModelInfo, openAiModelInfoSaneDefaults } from "@roo-code/types"
+import { ProviderSettings, ModelInfo, openAiModelInfoSaneDefaults } from "@shared/types"
 
 import { useSelectedModel } from "../useSelectedModel"
 

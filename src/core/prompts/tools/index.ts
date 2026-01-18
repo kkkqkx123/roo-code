@@ -1,5 +1,5 @@
-import type { ToolName, ModeConfig } from "@roo-code/types"
-import { shouldUseSingleFileRead } from "@roo-code/types"
+import type { ToolName, ModeConfig } from "@shared/types"
+import { shouldUseSingleFileRead } from "@shared/types"
 
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, DiffStrategy } from "../../../shared/tools"
 import { Mode, getModeConfig, getGroupName } from "../../../shared/modes"

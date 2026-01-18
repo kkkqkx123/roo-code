@@ -8,7 +8,7 @@ import type {
 	ClineMessage,
 	TodoItem,
 	QueuedMessage,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { GitCommit } from "../utils/git"
 

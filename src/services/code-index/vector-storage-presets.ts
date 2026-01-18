@@ -1,4 +1,4 @@
-import type { CustomVectorStorageConfig } from "@roo-code/types"
+import type { CustomVectorStorageConfig } from "@shared/types"
 
 export type PresetType = "tiny" | "small" | "medium" | "large"
 

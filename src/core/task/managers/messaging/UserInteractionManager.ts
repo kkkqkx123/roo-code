@@ -1,6 +1,6 @@
-import type { ClineMessage, ClineAsk, ToolName, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@roo-code/types"
+import type { ClineMessage, ClineAsk, ToolName, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@shared/types"
 import type { ToolResponse } from "../../../../shared/tools"
-import { isBlockingAsk, isMutableAsk, isTerminalAsk } from "@roo-code/types"
+import { isBlockingAsk, isMutableAsk, isTerminalAsk } from "@shared/types"
 import { formatResponse } from "../../../prompts/responses"
 import { t } from "../../../../i18n"
 import type { TaskStateManager } from "../core/TaskStateManager"

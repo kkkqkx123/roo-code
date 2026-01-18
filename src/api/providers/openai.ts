@@ -7,7 +7,7 @@ import {
 	azureOpenAiDefaultApiVersion,
 	openAiModelInfoSaneDefaults,
 	OPENAI_AZURE_AI_INFERENCE_PATH,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 

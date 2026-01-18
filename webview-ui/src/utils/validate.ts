@@ -1,6 +1,6 @@
 import i18next from "i18next"
 
-import { type ProviderSettings } from "@roo-code/types"
+import { type ProviderSettings } from "@shared/types"
 
 export function validateApiConfiguration(apiConfiguration: ProviderSettings): string | undefined {
 	const keysAndIdsPresentErrorMessage = validateModelsAndKeysProvided(apiConfiguration)

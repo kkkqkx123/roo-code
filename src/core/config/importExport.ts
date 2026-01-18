@@ -6,7 +6,7 @@ import fs from "fs/promises"
 import * as vscode from "vscode"
 import { z, ZodError } from "zod"
 
-import { globalSettingsSchema } from "@roo-code/types"
+import { globalSettingsSchema } from "@shared/types"
 
 import { ProviderSettingsManager, providerProfilesSchema } from "./ProviderSettingsManager"
 import { ContextProxy } from "./ContextProxy"

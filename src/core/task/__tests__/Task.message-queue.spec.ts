@@ -5,7 +5,7 @@ import * as path from "path"
 
 import * as vscode from "vscode"
 
-import type { GlobalState, ProviderSettings } from "@roo-code/types"
+import type { GlobalState, ProviderSettings } from "@shared/types"
 
 import { Task } from "../Task"
 import { ClineProvider } from "../../webview/ClineProvider"

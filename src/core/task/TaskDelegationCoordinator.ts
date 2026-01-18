@@ -1,6 +1,6 @@
 import EventEmitter from "events"
-import type { TodoItem, HistoryItem, TaskProviderEvents } from "@roo-code/types"
-import { RooCodeEventName } from "@roo-code/types"
+import type { TodoItem, HistoryItem, TaskProviderEvents } from "@shared/types"
+import { RooCodeEventName } from "@shared/types"
 import { readApiMessages, saveApiMessages, readTaskMessages, saveTaskMessages } from "../task-persistence"
 
 export interface DelegationDependencies {

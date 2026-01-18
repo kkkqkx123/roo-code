@@ -18,7 +18,7 @@ import {
 	isSecretStateKey,
 	IpcOrigin,
 	IpcMessageType,
-} from "@roo-code/types"
+} from "@shared/types"
 import { IpcServer } from "@roo-code/ipc"
 
 import { Package } from "../shared/package"

@@ -2,7 +2,7 @@ import {
 	type ModelInfo,
 	type ProviderSettings,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
-} from "@roo-code/types"
+} from "@shared/types"
 
 // ModelRecord - A record of model IDs to their model info
 export type ModelRecord = Record<string, ModelInfo>

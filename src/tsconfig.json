@@ -18,7 +18,11 @@
 		"strict": true,
 		"target": "ES2022",
 		"useDefineForClassFields": true,
-		"useUnknownInCatchVariables": false
+		"useUnknownInCatchVariables": false,
+		"paths": {
+			"@shared/types": ["./shared/types"],
+			"@shared/types/*": ["./shared/types/*"]
+		}
 	},
 	"include": ["."],
 	"exclude": ["node_modules"],

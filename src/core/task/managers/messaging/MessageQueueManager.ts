@@ -1,6 +1,6 @@
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import { MessageQueueService } from "./MessageQueueService"
-import type { QueuedMessage } from "@roo-code/types"
+import type { QueuedMessage } from "@shared/types"
 
 export interface MessageQueueManagerOptions {
 	taskId: string

@@ -8,7 +8,7 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_WRITE_DELAY_MS,
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { ContextProxy } from "../config/ContextProxy"
 import { GlobalFileNames } from "../../shared/globalFileNames"

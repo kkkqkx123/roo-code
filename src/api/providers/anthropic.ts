@@ -10,7 +10,7 @@ import {
 	anthropicModels,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 	TOOL_PROTOCOL,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 

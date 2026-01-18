@@ -19,7 +19,7 @@ import * as vscode from "vscode"
 import { z } from "zod"
 import { t } from "../../i18n"
 
-import type { TaskProviderLike } from "@roo-code/types"
+import type { TaskProviderLike } from "@shared/types"
 import { GlobalFileNames } from "../../shared/globalFileNames"
 
 /**

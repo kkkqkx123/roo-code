@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import * as os from "os"
 
-import type { ModeConfig, PromptComponent, CustomModePrompts, TodoItem } from "@roo-code/types"
+import type { ModeConfig, PromptComponent, CustomModePrompts, TodoItem } from "@shared/types"
 
 import type { SystemPromptSettings } from "./types"
 
@@ -16,7 +16,7 @@ import { CodeIndexManager } from "../../services/code-index/manager"
 import { PromptVariables, loadSystemPromptFile } from "./sections/custom-system-prompt"
 
 import { getToolDescriptionsForMode } from "./tools"
-import { getEffectiveProtocol, isNativeProtocol } from "@roo-code/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
 import {
 	getRulesSection,
 	getSystemInfoSection,

@@ -1,4 +1,4 @@
-import { type ToolName, toolNames, type FileEntry } from "@roo-code/types"
+import { type ToolName, toolNames, type FileEntry } from "@shared/types"
 import {
 	type ToolUse,
 	type McpToolUse,

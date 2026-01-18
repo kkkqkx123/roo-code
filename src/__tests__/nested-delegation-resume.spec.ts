@@ -1,7 +1,7 @@
 // npx vitest run __tests__/nested-delegation-resume.spec.ts
 
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { RooCodeEventName } from "@roo-code/types"
+import { RooCodeEventName } from "@shared/types"
 
 // Mock safe-stable-stringify to avoid runtime error
 vi.mock("safe-stable-stringify", () => ({

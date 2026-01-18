@@ -12,7 +12,7 @@ import {
 	RooCodeSettings,
 	Experiments,
 	ExperimentId,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { type ApiMessage } from "../task-persistence"
 import { saveTaskMessages } from "../task-persistence"

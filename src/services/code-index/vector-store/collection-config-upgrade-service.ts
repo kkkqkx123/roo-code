@@ -2,7 +2,7 @@ import type { QdrantClient } from "@qdrant/js-client-rest"
 import type {
 	CustomVectorStorageConfig,
 	VectorStorageConfig,
-} from "@roo-code/types"
+} from "@shared/types"
 import type {
 	PresetType,
 	UpgradeProgress,

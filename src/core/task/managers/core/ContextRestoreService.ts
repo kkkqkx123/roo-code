@@ -1,7 +1,7 @@
 import type { ApiMessage } from "../../../task-persistence"
 import type { MessageManager } from "../messaging/MessageManager"
 import type { TaskStateManager } from "./TaskStateManager"
-import type { ToolProtocol } from "@roo-code/types"
+import type { ToolProtocol } from "@shared/types"
 
 export interface ContextRestoreOptions {
 	targetIndex: number

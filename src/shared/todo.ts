@@ -1,4 +1,4 @@
-import { ClineMessage } from "@roo-code/types"
+import { ClineMessage } from "@shared/types"
 export function getLatestTodo(clineMessages: ClineMessage[]) {
 	if (!clineMessages || !Array.isArray(clineMessages)) {
 		return []

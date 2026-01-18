@@ -21,7 +21,7 @@ vi.mock("../../../utils/storage", () => ({
 	getTaskDirectoryPath: vi.fn((_, taskId) => `/storage/${taskId}`),
 }))
 vi.mock("../../../utils/safeWriteJson", () => ({
-	safeWriteJson: vi.fn(),
+	safeWriteJson: vi.fn() as any,
 }))
 
 describe("readApiMessages", () => {
@@ -278,7 +278,7 @@ describe("saveApiMessages", () => {
 		await saveApiMessages({ messages: mockMessages, taskId, globalStoragePath })
 
 		expect(safeWriteJson).toHaveBeenCalled()
-		const savedMessages = safeWriteJson.mock.calls[0][1]
+		const savedMessages = (safeWriteJson as any).mock.calls[0][1]
 		expect(savedMessages).toHaveLength(1)
 		expect(savedMessages[0].role).toBe("user")
 	})
@@ -348,7 +348,7 @@ describe("saveApiMessages", () => {
 		await saveApiMessages({ messages: [complexMessage], taskId, globalStoragePath })
 
 		expect(safeWriteJson).toHaveBeenCalled()
-		const savedMessages = safeWriteJson.mock.calls[0][1]
+		const savedMessages = (safeWriteJson as any).mock.calls[0][1]
 		expect(savedMessages).toHaveLength(1)
 		expect(savedMessages[0].id).toBe("msg-123")
 		expect(savedMessages[0].checkpointMetadata).toBeDefined()

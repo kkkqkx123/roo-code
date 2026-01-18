@@ -1,4 +1,4 @@
-import type { ToolName, ToolUsage } from "@roo-code/types"
+import type { ToolName, ToolUsage } from "@shared/types"
 import { ToolRepetitionDetector } from "../../../tools/ToolRepetitionDetector"
 
 export interface ToolExecutorOptions {

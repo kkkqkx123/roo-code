@@ -1,6 +1,6 @@
 import path from "path"
-import type { FileEntry, LineRange } from "@roo-code/types"
-import { isNativeProtocol, ANTHROPIC_DEFAULT_MAX_TOKENS } from "@roo-code/types"
+import type { FileEntry, LineRange } from "@shared/types"
+import { isNativeProtocol, ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
 
 import { Task } from "../task/Task"
 import { ClineSayTool } from "../../shared/ExtensionMessage"

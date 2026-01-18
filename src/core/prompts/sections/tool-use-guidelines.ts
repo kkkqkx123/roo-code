@@ -1,5 +1,5 @@
-import { ToolProtocol, TOOL_PROTOCOL } from "@roo-code/types"
-import { isNativeProtocol } from "@roo-code/types"
+import { ToolProtocol, TOOL_PROTOCOL } from "@shared/types"
+import { isNativeProtocol } from "@shared/types"
 
 export function getToolUseGuidelinesSection(protocol: ToolProtocol = TOOL_PROTOCOL.XML): string {
 	// Build guidelines array with automatic numbering

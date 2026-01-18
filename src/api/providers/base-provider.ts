@@ -1,6 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import type { ModelInfo } from "@roo-code/types"
+import type { ModelInfo } from "@shared/types"
 
 import type { ApiHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"

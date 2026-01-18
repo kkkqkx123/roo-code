@@ -31,7 +31,7 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
-} from "@roo-code/types"
+} from "@shared/types"
 
 // api
 import { ApiHandler, buildApiHandler } from "../../api"
