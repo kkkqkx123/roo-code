@@ -3,7 +3,7 @@ import crypto from "crypto"
 
 import { t } from "../../i18n"
 import { ApiHandler } from "../../api"
-import { ApiMessage } from "../task-persistence/apiMessages"
+import { ApiMessage } from "../task-persistence"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 
 /**

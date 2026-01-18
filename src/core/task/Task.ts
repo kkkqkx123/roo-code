@@ -97,6 +97,7 @@ import {
 	BrowserSessionManager,
 	ConversationHistoryManager,
 } from "./managers"
+import { IndexManager } from "./managers/core/IndexManager"
 
 // New architecture components
 import { TaskContainer, TOKENS } from "./TaskContainer"
@@ -589,24 +590,18 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	/**
 	 * 创建包含完整API上下文的检查点
-	 * 在创建检查点前保存系统提示词和工具协议等上下文信息
+	 * 在创建检查点前保存工具协议等上下文信息
+	 * 注意：系统提示词由PromptManager动态生成，不需要保存到检查点元数据中
 	 */
 	public async checkpointSaveWithFullContext(requestIndex: number, suppressMessage: boolean = false): Promise<{ commit?: string } | undefined> {
 		try {
-			// 1. 获取当前系统提示词
-			const systemPrompt = await this.promptManager.getSystemPrompt(
-				this.apiConfiguration,
-				this.todoList,
-				this.diffEnabled
-			)
-
-			// 2. 获取当前工具协议
+			// 1. 获取当前工具协议
 			const toolProtocol = this.stateManager.taskToolProtocol
 
-			// 3. 获取当前上下文token数
+			// 2. 获取当前上下文token数
 			const { contextTokens } = this.getTokenUsage()
 
-			// 4. 创建包含完整上下文的检查点消息
+			// 3. 创建包含完整上下文的检查点消息
 			const checkpointMessage = {
 				role: "system" as const,
 				content: `Checkpoint at request ${requestIndex}`,
@@ -615,21 +610,20 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				checkpointMetadata: {
 					isCheckpoint: true,
 					requestIndex,
-					systemPrompt,
 					toolProtocol,
 					contextTokens,
 				},
 			} as any
 
-			// 5. 添加到API对话历史
+			// 4. 添加到API对话历史
 			await this.taskMessageManager.addToApiConversationHistory(checkpointMessage)
 
-			// 6. 创建文件系统检查点
+			// 5. 创建文件系统检查点
 			const result = await this.checkpointManager.checkpointSave(false, suppressMessage)
 
-			// 7. 关联检查点hash与请求索引（会自动持久化）
+			// 6. 关联检查点hash与请求索引（会自动持久化）
 			if (result && result.commit) {
-				await this.checkpointManager.setCheckpointRequestIndex(result.commit, requestIndex)
+				await this.indexManager.associateCheckpointWithRequest(result.commit, requestIndex)
 				console.log(
 					`[Task] Created checkpoint with full context: hash=${result.commit}, requestIndex=${requestIndex}, ` +
 					`contextTokens=${contextTokens}, toolProtocol=${toolProtocol}`
@@ -822,6 +816,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		})
 		this.container.register(TOKENS.TaskStateManager, stateManager)
 
+		// Create index manager (needed by message manager and checkpoint manager)
+		const indexManager = new IndexManager({
+			taskId: this.taskId,
+			globalStoragePath: this.globalStoragePath,
+		})
+		this.container.register(TOKENS.IndexManager, indexManager)
+
 		// Create message manager
 		const messageManager = new TaskMessageManager({
 			stateManager,
@@ -829,6 +830,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			globalStoragePath: this.globalStoragePath,
 			task: taskRef, // Pass weak reference instead of direct reference
 			eventBus: this.eventBus, // Pass event bus reference
+			indexManager, // Pass index manager reference
 		})
 		this.container.register(TOKENS.TaskMessageManager, messageManager)
 
@@ -870,6 +872,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			enableCheckpoints: this.enableCheckpoints,
 			checkpointTimeout: this.checkpointTimeout,
 			globalStoragePath: this.globalStoragePath,
+			indexManager,
 		})
 		this.container.register(TOKENS.CheckpointManager, checkpointManager)
 
@@ -1172,6 +1175,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	private get apiRequestManager(): ApiRequestManager {
 		return this.container.get(TOKENS.ApiRequestManager)
+	}
+
+	private get indexManager(): IndexManager {
+		return this.container.get(TOKENS.IndexManager)
 	}
 
 	private get browserSessionManager(): BrowserSessionManager {

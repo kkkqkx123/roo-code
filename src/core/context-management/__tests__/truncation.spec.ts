@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { truncateConversation } from "../index"
 import { getEffectiveApiHistory, cleanupAfterTruncation } from "../../condense"
-import { ApiMessage } from "../../task-persistence/apiMessages"
+import { ApiMessage } from "../../task-persistence"
 
 describe("Non-Destructive Sliding Window Truncation", () => {
 	let messages: ApiMessage[]

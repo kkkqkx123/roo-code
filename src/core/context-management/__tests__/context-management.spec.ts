@@ -5,7 +5,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import type { ModelInfo } from "@roo-code/types"
 
 import { BaseProvider } from "../../../api/providers/base-provider"
-import { ApiMessage } from "../../task-persistence/apiMessages"
+import { ApiMessage } from "../../task-persistence"
 import * as condenseModule from "../../condense"
 
 import {

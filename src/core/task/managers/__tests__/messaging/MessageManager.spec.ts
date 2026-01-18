@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { MessageManager } from "../../messaging/MessageManager"
 import type { TaskStateManager } from "../../core/TaskStateManager"
 import type { ClineMessage } from "@roo-code/types"
-import type { ApiMessage } from "../../../../task-persistence/apiMessages"
+import type { ApiMessage } from "../../../../task-persistence"
 
 vi.mock("../../tools/UpdateTodoListTool", () => ({
 	restoreTodoListForTask: vi.fn(),
@@ -26,10 +26,22 @@ describe("MessageManager", () => {
 			getProvider: vi.fn(),
 		} as any
 
+		const mockIndexManager = {
+			initialize: vi.fn().mockResolvedValue(undefined),
+			startNewApiRequest: vi.fn(),
+			getCurrentRequestIndex: vi.fn(),
+			setCurrentRequestIndex: vi.fn(),
+			endCurrentApiRequest: vi.fn(),
+			getConversationIndexCounter: vi.fn().mockReturnValue(0),
+			setConversationIndexCounter: vi.fn(),
+			dispose: vi.fn(),
+		}
+
 		messageManager = new MessageManager({
 			stateManager: mockStateManager as TaskStateManager,
 			taskId: "task-1",
 			globalStoragePath: "/tmp/storage",
+			indexManager: mockIndexManager as any,
 		})
 		
 		// 初始化 MessageManager

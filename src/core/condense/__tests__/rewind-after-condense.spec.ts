@@ -10,7 +10,7 @@
  */
 
 import { getEffectiveApiHistory, cleanupAfterTruncation } from "../index"
-import { ApiMessage } from "../../task-persistence/apiMessages"
+import { ApiMessage } from "../../task-persistence"
 
 describe("Rewind After Condense - Issue #8295", () => {
 

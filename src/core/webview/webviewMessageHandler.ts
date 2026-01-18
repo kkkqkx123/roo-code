@@ -14,7 +14,7 @@ import {
 	ExperimentId,
 } from "@roo-code/types"
 
-import { type ApiMessage } from "../task-persistence/apiMessages"
+import { type ApiMessage } from "../task-persistence"
 import { saveTaskMessages } from "../task-persistence"
 
 import { ClineProvider } from "./ClineProvider"

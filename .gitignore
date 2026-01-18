@@ -54,6 +54,3 @@ logs
 
 # Qdrant
 qdrant_storage/
-
-# Architect plans
-plans/

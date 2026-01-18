@@ -6,6 +6,7 @@ import { restoreTodoListForTask } from "../../../tools/UpdateTodoListTool"
 import type { TaskStateManager } from "../core/TaskStateManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import { RooCodeEventName } from "@roo-code/types"
+import type { IndexManager } from "../core/IndexManager"
 
 export interface MessageManagerOptions {
 	stateManager: TaskStateManager
@@ -13,6 +14,7 @@ export interface MessageManagerOptions {
 	globalStoragePath: string
 	task?: any // Add optional task reference for token usage updates
 	eventBus?: any // Add optional event bus reference
+	indexManager: IndexManager // Add index manager reference
 }
 
 export class MessageManager {
@@ -21,12 +23,14 @@ export class MessageManager {
 	private globalStoragePath: string
 	private task?: any // Store task reference for token usage updates
 	private eventBus?: any // Store event bus reference
+	private indexManager: IndexManager // Index manager reference
 	private initialized: boolean = false // 初始化状态标志
+	
+	// 添加缺失的属性
+	private currentRequestIndex: number | undefined
 
 	apiConversationHistory: ApiMessage[] = []
 	clineMessages: ClineMessage[] = []
-	private conversationIndexCounter: number = 0 // 对话索引计数器
-	private currentRequestIndex: number | undefined // 当前请求索引
 
 	constructor(options: MessageManagerOptions) {
 		this.stateManager = options.stateManager
@@ -34,6 +38,7 @@ export class MessageManager {
 		this.globalStoragePath = options.globalStoragePath
 		this.task = options.task
 		this.eventBus = options.eventBus
+		this.indexManager = options.indexManager
 	}
 
 	/**
@@ -44,7 +49,8 @@ export class MessageManager {
 			return
 		}
 		
-		await this.initializeConversationIndex()
+		// 初始化 IndexManager
+		await this.indexManager.initialize()
 		this.initialized = true
 	}
 
@@ -61,50 +67,28 @@ export class MessageManager {
 	 * 开始新的API请求，分配请求索引
 	 */
 	startNewApiRequest(): number {
-		const requestIndex = this.conversationIndexCounter++
-		this.currentRequestIndex = requestIndex
-		return requestIndex
+		return this.indexManager.startNewApiRequest()
 	}
 
 	/**
 	 * 获取当前请求索引
 	 */
 	getCurrentRequestIndex(): number | undefined {
-		return this.currentRequestIndex
+		return this.indexManager.getCurrentRequestIndex()
 	}
 
 	/**
 	 * 设置当前请求索引
 	 */
 	setCurrentRequestIndex(index: number): void {
-		this.currentRequestIndex = index
+		this.indexManager.setCurrentRequestIndex(index)
 	}
 
 	/**
 	 * 结束当前API请求
 	 */
 	endCurrentApiRequest(): void {
-		this.currentRequestIndex = undefined
-	}
-
-	/**
-	 * 初始化对话索引（从保存的历史中恢复）
-	 */
-	private async initializeConversationIndex(): Promise<void> {
-		try {
-			const savedHistory = await this.getSavedApiConversationHistory()
-			if (savedHistory && savedHistory.length > 0) {
-				// 找到最大的对话索引
-				const maxIndex = Math.max(...savedHistory
-					.filter(msg => msg.conversationIndex !== undefined)
-					.map(msg => msg.conversationIndex!)
-				)
-				this.conversationIndexCounter = maxIndex + 1
-			}
-		} catch (error) {
-			console.warn("[MessageManager] Failed to initialize conversation index:", error)
-			this.conversationIndexCounter = 0
-		}
+		this.indexManager.endCurrentApiRequest()
 	}
 
 	async getSavedApiConversationHistory(): Promise<ApiMessage[]> {
@@ -123,16 +107,18 @@ export class MessageManager {
 		
 		if (message.role === "assistant") {
 			// 响应消息继承当前请求索引
-			conversationIndex = this.currentRequestIndex
+			conversationIndex = this.getCurrentRequestIndex()
 			
 			// 如果没有当前请求（异常情况），分配新索引
 			if (conversationIndex === undefined) {
-				conversationIndex = this.conversationIndexCounter++
+				conversationIndex = this.indexManager.getConversationIndexCounter()
+				this.indexManager.setConversationIndexCounter(conversationIndex + 1)
 				console.warn(`[MessageManager] Assistant message without active request, assigned new index: ${conversationIndex}`)
 			}
 		} else if (message.role === "user") {
 			// 用户消息也分配索引
-			conversationIndex = this.conversationIndexCounter++
+			conversationIndex = this.indexManager.getConversationIndexCounter()
+			this.indexManager.setConversationIndexCounter(conversationIndex + 1)
 		}
 
 		const messageWithTs = {
@@ -225,9 +211,11 @@ export class MessageManager {
 		// 确保所有消息都有 conversationIndex
 		const messagesWithIndex = this.apiConversationHistory.map(msg => {
 			if (msg.conversationIndex === undefined && msg.role) {
+				const currentIndex = this.indexManager.getConversationIndexCounter()
+				this.indexManager.setConversationIndexCounter(currentIndex + 1)
 				return {
 					...msg,
-					conversationIndex: this.conversationIndexCounter++
+					conversationIndex: currentIndex
 				}
 			}
 			return msg
@@ -307,6 +295,7 @@ export class MessageManager {
 		this.apiConversationHistory = []
 		this.clineMessages = []
 		this.task = undefined
+		this.indexManager.dispose()
 		this.initialized = false
 	}
 }

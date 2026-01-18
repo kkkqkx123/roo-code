@@ -129,4 +129,5 @@ export const TOKENS = {
 	BrowserSessionManager: { symbol: Symbol('BrowserSessionManager'), name: 'BrowserSessionManager' },
 	ConfigurationManager: { symbol: Symbol('ConfigurationManager'), name: 'ConfigurationManager' },
 	ConversationHistoryManager: { symbol: Symbol('ConversationHistoryManager'), name: 'ConversationHistoryManager' },
+	IndexManager: { symbol: Symbol('IndexManager'), name: 'IndexManager' },
 }
