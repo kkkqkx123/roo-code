@@ -1,6 +1,6 @@
 import type { ApiHandler } from "../../../api"
 import type { ApiMessage } from "../../task-persistence/apiMessages"
-import type { ProviderSettings, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@roo-code/types"
+import type { ProviderSettings, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation, ToolName } from "@roo-code/types"
 import { ApiStream, GroundingSource } from "../../../api/transform/stream"
 import { checkContextWindowExceededError } from "../../context-management/context-error-handling"
 import { NativeToolCallParser } from "../../assistant-message/NativeToolCallParser"
@@ -17,6 +17,7 @@ import type { CheckpointManager } from "./CheckpointManager"
 import { BaseProvider, TokenValidationOptions } from "../../../api/providers/base-provider"
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
+import type { ToolUse } from "../../../shared/tools"
 
 const MAX_CONTEXT_WINDOW_RETRIES = 3
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 120
@@ -479,6 +480,92 @@ private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: b
 	}
 
 	private async processToolCallEvent(event: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		
+		if (event.type === "tool_call_start") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_start: ${event.name}`)
+			
+			NativeToolCallParser.startStreamingToolCall(event.id, event.name as ToolName)
+
+			const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+			
+			const lastBlock = assistantMessageContent[assistantMessageContent.length - 1]
+			if (lastBlock?.type === "text" && lastBlock.partial) {
+				lastBlock.partial = false
+			}
+
+			const toolUseIndex = assistantMessageContent.length
+			this.streamingManager.setStreamingToolCallIndex(event.id, toolUseIndex)
+
+			const partialToolUse: ToolUse = {
+				type: "tool_use",
+				name: event.name as ToolName,
+				params: {},
+				partial: true,
+			}
+
+			;(partialToolUse as any).id = event.id
+
+			this.streamingManager.appendAssistantContent(partialToolUse)
+			this.streamingManager.setUserMessageContentReady(false)
+			this.streamingManager.notifyContentUpdate()
+			
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Added partial tool use to content`)
+		} else if (event.type === "tool_call_delta") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_delta for ${event.id}`)
+			
+			const partialToolUse = NativeToolCallParser.processStreamingChunk(event.id, event.delta)
+
+			if (partialToolUse) {
+				const toolUseIndex = this.streamingManager.getStreamingToolCallIndex(event.id)
+				if (toolUseIndex !== undefined) {
+					;(partialToolUse as any).id = event.id
+
+					const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+					assistantMessageContent[toolUseIndex] = partialToolUse
+					
+					this.streamingManager.setAssistantContent(assistantMessageContent)
+					this.streamingManager.notifyContentUpdate()
+					
+					provider?.log(`[ApiRequestManager#processToolCallEvent] Updated partial tool use`)
+				}
+			}
+		} else if (event.type === "tool_call_end") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_end for ${event.id}`)
+			
+			const finalToolUse = NativeToolCallParser.finalizeStreamingToolCall(event.id)
+			const toolUseIndex = this.streamingManager.getStreamingToolCallIndex(event.id)
+
+			if (finalToolUse) {
+				;(finalToolUse as any).id = event.id
+
+				const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+				if (toolUseIndex !== undefined) {
+					assistantMessageContent[toolUseIndex] = finalToolUse
+				}
+
+				this.streamingManager.setStreamingToolCallIndex(event.id, -1)
+				this.streamingManager.setUserMessageContentReady(false)
+				this.streamingManager.setAssistantContent(assistantMessageContent)
+				this.streamingManager.notifyContentUpdate()
+				
+				provider?.log(`[ApiRequestManager#processToolCallEvent] Finalized tool use`)
+			} else if (toolUseIndex !== undefined) {
+				const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+				const existingToolUse = assistantMessageContent[toolUseIndex]
+				if (existingToolUse && existingToolUse.type === "tool_use") {
+					existingToolUse.partial = false
+					;(existingToolUse as any).id = event.id
+				}
+
+				this.streamingManager.setStreamingToolCallIndex(event.id, -1)
+				this.streamingManager.setUserMessageContentReady(false)
+				this.streamingManager.setAssistantContent(assistantMessageContent)
+				this.streamingManager.notifyContentUpdate()
+				
+				provider?.log(`[ApiRequestManager#processToolCallEvent] Finalized tool use (malformed JSON)`)
+			}
+		}
 	}
 
 	private async handleTextChunk(chunk: any): Promise<void> {

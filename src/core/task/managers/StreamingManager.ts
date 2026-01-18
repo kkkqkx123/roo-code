@@ -17,27 +17,27 @@ export interface StreamingManagerOptions {
 }
 
 export class StreamingManager {
-	readonly taskId: string
+	private readonly taskId: string
 
 	private onStreamingStateChange?: (state: StreamingState) => void
 	private onStreamingContentUpdate?: (content: AssistantMessageContent[]) => void
 
-	isStreaming = false
-	isWaitingForFirstChunk = false
-	currentStreamingContentIndex = 0
-	currentStreamingDidCheckpoint = false
-	assistantMessageContent: AssistantMessageContent[] = []
-	presentAssistantMessageLocked = false
-	presentAssistantMessageHasPendingUpdates = false
-	userMessageContent: any[] = []
-	userMessageContentReady = false
-	didRejectTool = false
-	didAlreadyUseTool = false
-	didToolFailInCurrentTurn = false
-	didCompleteReadingStream = false
-	assistantMessageParser?: any
-	private streamingToolCallIndices: Map<string, number> = new Map()
-	cachedStreamingModel?: { id: string; info: ModelInfo }
+	private _isStreaming = false
+	private _isWaitingForFirstChunk = false
+	private _currentStreamingContentIndex = 0
+	private _currentStreamingDidCheckpoint = false
+	private _assistantMessageContent: AssistantMessageContent[] = []
+	private _presentAssistantMessageLocked = false
+	private _presentAssistantMessageHasPendingUpdates = false
+	private _userMessageContent: unknown[] = []
+	private _userMessageContentReady = false
+	private _didRejectTool = false
+	private _didAlreadyUseTool = false
+	private _didToolFailInCurrentTurn = false
+	private _didCompleteReadingStream = false
+	private _assistantMessageParser?: unknown
+	private readonly _streamingToolCallIndices: Map<string, number> = new Map()
+	private _cachedStreamingModel?: { id: string; info: ModelInfo }
 
 	constructor(options: StreamingManagerOptions) {
 		this.taskId = options.taskId
@@ -46,20 +46,21 @@ export class StreamingManager {
 	}
 
 	public resetStreamingState(): void {
-		this.isStreaming = false
-		this.isWaitingForFirstChunk = false
-		this.currentStreamingContentIndex = 0
-		this.currentStreamingDidCheckpoint = false
-		this.assistantMessageContent = []
-		this.didCompleteReadingStream = false
-		this.userMessageContent = []
-		this.userMessageContentReady = false
-		this.didRejectTool = false
-		this.didAlreadyUseTool = false
-		this.didToolFailInCurrentTurn = false
-		this.presentAssistantMessageLocked = false
-		this.presentAssistantMessageHasPendingUpdates = false
-		this.streamingToolCallIndices.clear()
+		this._isStreaming = false
+		this._isWaitingForFirstChunk = false
+		this._currentStreamingContentIndex = 0
+		this._currentStreamingDidCheckpoint = false
+		this._assistantMessageContent = []
+		this._didCompleteReadingStream = false
+		this._userMessageContent = []
+		this._userMessageContentReady = false
+		this._didRejectTool = false
+		this._didAlreadyUseTool = false
+		this._didToolFailInCurrentTurn = false
+		this._presentAssistantMessageLocked = false
+		this._presentAssistantMessageHasPendingUpdates = false
+		this._streamingToolCallIndices.clear()
+		this._assistantMessageParser = undefined
 		NativeToolCallParser.clearAllStreamingToolCalls()
 		NativeToolCallParser.clearRawChunkState()
 
@@ -67,228 +68,219 @@ export class StreamingManager {
 	}
 
 	public startStreaming(): void {
-		this.isStreaming = true
-		this.isWaitingForFirstChunk = true
+		this._isStreaming = true
+		this._isWaitingForFirstChunk = true
 		this.notifyStateChange()
 	}
 
 	public stopStreaming(): void {
-		this.isStreaming = false
-		this.isWaitingForFirstChunk = false
+		this._isStreaming = false
+		this._isWaitingForFirstChunk = false
 		this.notifyStateChange()
 	}
 
 	public setStreamingState(streaming: boolean): void {
-		this.isStreaming = streaming
+		this._isStreaming = streaming
 		this.notifyStateChange()
 	}
 
 	public setWaitingForFirstChunk(waiting: boolean): void {
-		this.isWaitingForFirstChunk = waiting
+		this._isWaitingForFirstChunk = waiting
 		this.notifyStateChange()
 	}
 
 	public setCurrentStreamingContentIndex(index: number): void {
-		this.currentStreamingContentIndex = index
+		this._currentStreamingContentIndex = index
+		this.notifyStateChange()
+	}
+
+	public getCurrentStreamingContentIndex(): number {
+		return this._currentStreamingContentIndex
 	}
 
 	public setCurrentStreamingDidCheckpoint(checkpoint: boolean): void {
-		this.currentStreamingDidCheckpoint = checkpoint
+		this._currentStreamingDidCheckpoint = checkpoint
+		this.notifyStateChange()
 	}
 
 	public getStreamingState(): StreamingState {
 		return {
-			isStreaming: this.isStreaming,
-			isWaitingForFirstChunk: this.isWaitingForFirstChunk,
-			currentStreamingContentIndex: this.currentStreamingContentIndex,
-			currentStreamingDidCheckpoint: this.currentStreamingDidCheckpoint,
-			didCompleteReadingStream: this.didCompleteReadingStream,
+			isStreaming: this._isStreaming,
+			isWaitingForFirstChunk: this._isWaitingForFirstChunk,
+			currentStreamingContentIndex: this._currentStreamingContentIndex,
+			currentStreamingDidCheckpoint: this._currentStreamingDidCheckpoint,
+			didCompleteReadingStream: this._didCompleteReadingStream,
 		}
 	}
 
 	public appendAssistantContent(content: AssistantMessageContent): void {
-		this.assistantMessageContent.push(content)
-		this.currentStreamingContentIndex = this.assistantMessageContent.length
+		this._assistantMessageContent.push(content)
+		this._currentStreamingContentIndex = this._assistantMessageContent.length
 		this.notifyContentUpdate()
 	}
 
 	public setAssistantContent(content: AssistantMessageContent[]): void {
-		this.assistantMessageContent = content
-		this.currentStreamingContentIndex = content.length
-		this.notifyContentUpdate()
-	}
-
-	public setAssistantMessageContent(content: AssistantMessageContent[]): void {
-		this.assistantMessageContent = content
-		this.currentStreamingContentIndex = content.length
+		this._assistantMessageContent = content
+		this._currentStreamingContentIndex = content.length
 		this.notifyContentUpdate()
 	}
 
 	public getAssistantMessageContent(): AssistantMessageContent[] {
-		return this.assistantMessageContent
+		return this._assistantMessageContent
 	}
 
 	public clearAssistantContent(): void {
-		this.assistantMessageContent = []
-		this.currentStreamingContentIndex = 0
+		this._assistantMessageContent = []
+		this._currentStreamingContentIndex = 0
 		this.notifyContentUpdate()
 	}
 
-	public clearAssistantMessageContent(): void {
-		this.assistantMessageContent = []
-		this.currentStreamingContentIndex = 0
-		this.notifyContentUpdate()
+	public setUserMessageContent(content: unknown[]): void {
+		this._userMessageContent = content
 	}
 
-	public setUserMessageContent(content: any[]): void {
-		this.userMessageContent = content
-	}
-
-	public getUserMessageContent(): any[] {
-		return this.userMessageContent
+	public getUserMessageContent(): unknown[] {
+		return this._userMessageContent
 	}
 
 	public clearUserMessageContent(): void {
-		this.userMessageContent = []
+		this._userMessageContent = []
 	}
 
 	public setUserMessageContentReady(ready: boolean): void {
-		this.userMessageContentReady = ready
+		this._userMessageContentReady = ready
 	}
 
 	public isUserMessageContentReady(): boolean {
-		return this.userMessageContentReady
+		return this._userMessageContentReady
 	}
 
 	public startToolCall(toolId: string): void {
-		this.streamingToolCallIndices.set(toolId, 0)
+		this._streamingToolCallIndices.set(toolId, 0)
 	}
 
 	public updateToolCallIndex(toolId: string, index: number): void {
-		this.streamingToolCallIndices.set(toolId, index)
+		this._streamingToolCallIndices.set(toolId, index)
 	}
 
 	public getToolCallIndex(toolId: string): number {
-		return this.streamingToolCallIndices.get(toolId) ?? 0
-	}
-
-	public getStreamingToolCallIndex(toolId: string): number {
-		return this.streamingToolCallIndices.get(toolId) ?? 0
+		return this._streamingToolCallIndices.get(toolId) ?? 0
 	}
 
 	public setStreamingToolCallIndex(toolId: string, index: number): void {
-		this.streamingToolCallIndices.set(toolId, index)
+		this._streamingToolCallIndices.set(toolId, index)
+	}
+
+	public getStreamingToolCallIndex(toolId: string): number | undefined {
+		return this._streamingToolCallIndices.get(toolId)
 	}
 
 	public incrementStreamingToolCallIndex(toolId: string): void {
-		const currentIndex = this.streamingToolCallIndices.get(toolId) ?? 0
-		this.streamingToolCallIndices.set(toolId, currentIndex + 1)
+		const currentIndex = this._streamingToolCallIndices.get(toolId) ?? 0
+		this._streamingToolCallIndices.set(toolId, currentIndex + 1)
 	}
 
 	public clearToolCallIndices(): void {
-		this.streamingToolCallIndices.clear()
+		this._streamingToolCallIndices.clear()
 	}
 
 	public setStreamingDidCheckpoint(value: boolean): void {
-		this.currentStreamingDidCheckpoint = value
+		this._currentStreamingDidCheckpoint = value
+		this.notifyStateChange()
 	}
 
 	public getStreamingDidCheckpoint(): boolean {
-		return this.currentStreamingDidCheckpoint
+		return this._currentStreamingDidCheckpoint
 	}
 
 	public setCachedStreamingModel(model: { id: string; info: ModelInfo }): void {
-		this.cachedStreamingModel = model
+		this._cachedStreamingModel = model
 	}
 
 	public getCachedStreamingModel(): { id: string; info: ModelInfo } | undefined {
-		return this.cachedStreamingModel
+		return this._cachedStreamingModel
 	}
 
 	public clearCachedStreamingModel(): void {
-		this.cachedStreamingModel = undefined
+		this._cachedStreamingModel = undefined
 	}
 
 	public setPresentAssistantMessageLocked(locked: boolean): void {
-		this.presentAssistantMessageLocked = locked
+		this._presentAssistantMessageLocked = locked
 	}
 
 	public isPresentAssistantMessageLocked(): boolean {
-		return this.presentAssistantMessageLocked
+		return this._presentAssistantMessageLocked
 	}
 
 	public setPresentAssistantMessageHasPendingUpdates(hasUpdates: boolean): void {
-		this.presentAssistantMessageHasPendingUpdates = hasUpdates
+		this._presentAssistantMessageHasPendingUpdates = hasUpdates
 	}
 
 	public hasPresentAssistantMessagePendingUpdates(): boolean {
-		return this.presentAssistantMessageHasPendingUpdates
-	}
-
-	public hasPresentAssistantMessageHasPendingUpdates(): boolean {
-		return this.presentAssistantMessageHasPendingUpdates
+		return this._presentAssistantMessageHasPendingUpdates
 	}
 
 	public setDidRejectTool(rejected: boolean): void {
-		this.didRejectTool = rejected
+		this._didRejectTool = rejected
 	}
 
-	public didToolRejected(): boolean {
-		return this.didRejectTool
+	public isToolRejected(): boolean {
+		return this._didRejectTool
 	}
 
 	public setDidAlreadyUseTool(used: boolean): void {
-		this.didAlreadyUseTool = used
+		this._didAlreadyUseTool = used
 	}
 
 	public hasAlreadyUsedTool(): boolean {
-		return this.didAlreadyUseTool
+		return this._didAlreadyUseTool
 	}
 
 	public setDidToolFailInCurrentTurn(failed: boolean): void {
-		this.didToolFailInCurrentTurn = failed
+		this._didToolFailInCurrentTurn = failed
 	}
 
 	public didToolFail(): boolean {
-		return this.didToolFailInCurrentTurn
+		return this._didToolFailInCurrentTurn
 	}
 
 	public setDidCompleteReadingStream(completed: boolean): void {
-		this.didCompleteReadingStream = completed
+		this._didCompleteReadingStream = completed
 		this.notifyStateChange()
 	}
 
 	public hasCompletedReadingStream(): boolean {
-		return this.didCompleteReadingStream
+		return this._didCompleteReadingStream
 	}
 
-	public setAssistantMessageParser(parser: any): void {
-		this.assistantMessageParser = parser
+	public setAssistantMessageParser(parser: unknown): void {
+		this._assistantMessageParser = parser
 	}
 
-	public getAssistantMessageParser(): any {
-		return this.assistantMessageParser
+	public getAssistantMessageParser(): unknown {
+		return this._assistantMessageParser
 	}
 
 	public clearAssistantMessageParser(): void {
-		this.assistantMessageParser = undefined
+		this._assistantMessageParser = undefined
 	}
 
-	private notifyStateChange(): void {
+	public notifyStateChange(): void {
 		if (this.onStreamingStateChange) {
 			this.onStreamingStateChange(this.getStreamingState())
 		}
 	}
 
-	private notifyContentUpdate(): void {
+	public notifyContentUpdate(): void {
 		if (this.onStreamingContentUpdate) {
-			this.onStreamingContentUpdate(this.assistantMessageContent)
+			this.onStreamingContentUpdate(this._assistantMessageContent)
 		}
 	}
 
 	public dispose(): void {
-		this.resetStreamingState()
 		this.onStreamingStateChange = undefined
 		this.onStreamingContentUpdate = undefined
+		this.resetStreamingState()
 	}
 }

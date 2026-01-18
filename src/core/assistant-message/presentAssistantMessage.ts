@@ -264,13 +264,13 @@ export async function presentAssistantMessage(cline: Task) {
 				params: {
 					server_name: resolvedServerName,
 					tool_name: mcpBlock.toolName,
-					arguments: JSON.stringify(mcpBlock.arguments),
+					arguments: JSON.stringify(mcpBlock.params),
 				},
 				partial: mcpBlock.partial,
 				nativeArgs: {
 					server_name: resolvedServerName,
 					tool_name: mcpBlock.toolName,
-					arguments: mcpBlock.arguments,
+					arguments: mcpBlock.params,
 				},
 			}
 

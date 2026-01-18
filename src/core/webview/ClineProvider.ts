@@ -653,7 +653,10 @@ export class ClineProvider
 		providerSettings: ProviderSettings,
 		activate: boolean = true,
 	): Promise<string | undefined> {
-		return await this.providerCoordinator.upsertProviderProfile(name, providerSettings, activate)
+		const result = await this.providerCoordinator.upsertProviderProfile(name, providerSettings, activate)
+		// 确保UI状态同步刷新
+		await this.postStateToWebview()
+		return result
 	}
 
 	/**

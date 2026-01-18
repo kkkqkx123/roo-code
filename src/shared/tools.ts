@@ -149,7 +149,7 @@ export interface McpToolUse {
 	/** Extracted tool name from the tool name */
 	toolName: string
 	/** Arguments passed to the MCP tool */
-	arguments: Record<string, unknown>
+	params: Record<string, unknown>
 	partial: boolean
 }
 

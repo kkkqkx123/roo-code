@@ -627,9 +627,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// 6. 创建文件系统检查点
 			const result = await this.checkpointManager.checkpointSave(false, suppressMessage)
 
-			// 7. 关联检查点hash与请求索引
+			// 7. 关联检查点hash与请求索引（会自动持久化）
 			if (result && result.commit) {
-				this.checkpointManager.setCheckpointRequestIndex(result.commit, requestIndex)
+				await this.checkpointManager.setCheckpointRequestIndex(result.commit, requestIndex)
 				console.log(
 					`[Task] Created checkpoint with full context: hash=${result.commit}, requestIndex=${requestIndex}, ` +
 					`contextTokens=${contextTokens}, toolProtocol=${toolProtocol}`
@@ -869,6 +869,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			taskId: this.taskId,
 			enableCheckpoints: this.enableCheckpoints,
 			checkpointTimeout: this.checkpointTimeout,
+			globalStoragePath: this.globalStoragePath,
 		})
 		this.container.register(TOKENS.CheckpointManager, checkpointManager)
 
@@ -1213,7 +1214,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public getCurrentStreamingContentIndex(): number {
-		return this.streamingManager.currentStreamingContentIndex
+		return this.streamingManager.getCurrentStreamingContentIndex()
 	}
 
 	public setCurrentStreamingContentIndex(index: number): void {
@@ -1257,7 +1258,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	public getDidRejectTool(): boolean {
-		return this.streamingManager.didToolRejected()
+		return this.streamingManager.isToolRejected()
 	}
 
 	public setDidRejectTool(rejected: boolean): void {

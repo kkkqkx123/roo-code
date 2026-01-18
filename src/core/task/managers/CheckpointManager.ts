@@ -10,6 +10,12 @@ import type { MessageManager } from "./MessageManager"
 import type { CheckpointRestoreOptionsExtended } from "../../checkpoints/types"
 import type { ApiMessage } from "../../task-persistence/apiMessages"
 import type { ToolProtocol } from "@roo-code/types"
+import { GlobalFileNames } from "../../../shared/globalFileNames"
+import { getTaskDirectoryPath } from "../../../utils/storage"
+import { safeWriteJson } from "../../../utils/safeWriteJson"
+import { fileExistsAtPath } from "../../../utils/fs"
+import * as fs from "fs/promises"
+import * as path from "path"
 
 export interface CheckpointManagerOptions {
 	stateManager: TaskStateManager
@@ -17,12 +23,14 @@ export interface CheckpointManagerOptions {
 	taskId: string
 	enableCheckpoints: boolean
 	checkpointTimeout: number
+	globalStoragePath: string
 }
 
 export class CheckpointManager {
 	private stateManager: TaskStateManager
 	private messageManager: MessageManager
 	private taskId: string
+	private globalStoragePath: string
 	enableCheckpoints: boolean
 	checkpointTimeout: number
 	checkpointService?: any
@@ -33,16 +41,62 @@ export class CheckpointManager {
 		this.stateManager = options.stateManager
 		this.messageManager = options.messageManager
 		this.taskId = options.taskId
+		this.globalStoragePath = options.globalStoragePath
 		this.enableCheckpoints = options.enableCheckpoints
 		this.checkpointTimeout = options.checkpointTimeout
+		
+		// 从持久化存储加载检查点请求索引
+		this.loadCheckpointRequestIndexes()
+	}
+
+	/**
+	 * 从持久化存储加载检查点请求索引
+	 */
+	private async loadCheckpointRequestIndexes(): Promise<void> {
+		try {
+			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+			const filePath = path.join(taskDir, GlobalFileNames.checkpointRequestIndexes)
+			const fileExists = await fileExistsAtPath(filePath)
+
+			if (fileExists) {
+				const fileContent = await fs.readFile(filePath, "utf8")
+				if (fileContent.trim()) {
+					const data = JSON.parse(fileContent)
+					this.checkpointRequestIndexes = new Map(Object.entries(data))
+					console.log(`[CheckpointManager] Loaded ${this.checkpointRequestIndexes.size} checkpoint request indexes`)
+				}
+			}
+		} catch (error) {
+			console.error("[CheckpointManager] Failed to load checkpoint request indexes:", error)
+			// 不影响主流程，继续执行
+		}
+	}
+
+	/**
+	 * 保存检查点请求索引到持久化存储
+	 */
+	private async saveCheckpointRequestIndexes(): Promise<void> {
+		try {
+			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+			const filePath = path.join(taskDir, GlobalFileNames.checkpointRequestIndexes)
+			const data = Object.fromEntries(this.checkpointRequestIndexes)
+			await safeWriteJson(filePath, data)
+		} catch (error) {
+			console.error("[CheckpointManager] Failed to save checkpoint request indexes:", error)
+			// 不影响主流程，继续执行
+		}
 	}
 
 	/**
 	 * 设置检查点关联的请求索引
 	 */
-	setCheckpointRequestIndex(commitHash: string, requestIndex: number): void {
+	async setCheckpointRequestIndex(commitHash: string, requestIndex: number): Promise<void> {
 		this.checkpointRequestIndexes.set(commitHash, requestIndex)
 		console.log(`[CheckpointManager] Associated checkpoint ${commitHash} with request index ${requestIndex}`)
+		// 异步保存到持久化存储
+		this.saveCheckpointRequestIndexes().catch((error) => {
+			console.error("[CheckpointManager] Failed to save checkpoint request indexes:", error)
+		})
 	}
 
 	/**
@@ -134,10 +188,8 @@ export class CheckpointManager {
 			const result = await this.checkpointSave(false, true)
 			
 			if (result && result.commit && this.checkpointService) {
-				// 存储检查点与请求索引的关联
-				const commitHash = result.commit
-				this.checkpointRequestIndexes.set(commitHash, requestIndex)
-				console.log(`[CheckpointManager] Associated checkpoint ${commitHash} with request index ${requestIndex}`)
+				// 存储检查点与请求索引的关联（会自动持久化）
+				await this.setCheckpointRequestIndex(result.commit, requestIndex)
 			}
 		} catch (error) {
 			console.error("[CheckpointManager] Failed to create checkpoint:", error)
@@ -171,8 +223,8 @@ export class CheckpointManager {
 			let restoreIndex = -1
 			for (let i = fullHistory.length - 1; i >= 0; i--) {
 				const message = fullHistory[i]
-				if (message.role === "assistant" && 
-					message.conversationIndex !== undefined && 
+				if (message.role === "assistant" &&
+					message.conversationIndex !== undefined &&
 					message.conversationIndex <= targetRequestIndex) {
 					restoreIndex = i
 					break
@@ -193,10 +245,12 @@ export class CheckpointManager {
 			// 5. 从对话历史中推断并恢复任务状态
 			await this.restoreTaskStateFromHistory(restoredHistory)
 			
-			// 6. 设置当前请求索引，确保后续操作一致性
-			this.messageManager.setCurrentRequestIndex(targetRequestIndex)
+			// 6. 设置当前请求索引为实际恢复到的索引（而非目标索引）
+			const lastMessage = restoredHistory[restoredHistory.length - 1]
+			const actualRequestIndex = lastMessage?.conversationIndex ?? targetRequestIndex
+			this.messageManager.setCurrentRequestIndex(actualRequestIndex)
 			
-			console.log(`[CheckpointManager] Successfully restored context to request index ${targetRequestIndex}`)
+			console.log(`[CheckpointManager] Successfully restored context to request index ${actualRequestIndex} (target: ${targetRequestIndex})`)
 			return true
 			
 		} catch (error) {
@@ -243,7 +297,12 @@ export class CheckpointManager {
 			// 5. 从对话历史中推断并恢复任务状态
 			await this.restoreTaskStateFromHistory(restoredHistory)
 			
-			console.log(`[CheckpointManager] Successfully restored context from persisted data to conversation index ${targetConversationIndex}`)
+			// 6. 设置当前请求索引（与 restoreContextFromPersistedDataByRequestIndex 保持一致）
+			const lastMessage = restoredHistory[restoredHistory.length - 1]
+			const actualRequestIndex = lastMessage?.conversationIndex ?? targetConversationIndex
+			this.messageManager.setCurrentRequestIndex(actualRequestIndex)
+			
+			console.log(`[CheckpointManager] Successfully restored context from persisted data to conversation index ${actualRequestIndex} (target: ${targetConversationIndex})`)
 			return true
 		} catch (error) {
 			console.error(`[CheckpointManager] Failed to restore context from persisted data:`, error)

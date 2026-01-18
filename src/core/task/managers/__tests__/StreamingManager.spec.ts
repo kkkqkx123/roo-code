@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { StreamingManager } from "../StreamingManager"
-import { RooCodeEventName } from "@roo-code/types"
 
 describe("StreamingManager", () => {
 	let streamingManager: StreamingManager
@@ -20,7 +19,8 @@ describe("StreamingManager", () => {
 
 	describe("constructor", () => {
 		it("should initialize with provided options", () => {
-			expect(streamingManager.taskId).toBe("task-1")
+			// taskId is now private, so we verify the manager was created successfully
+			expect(streamingManager).toBeDefined()
 		})
 
 		it("should initialize streaming state to default values", () => {
@@ -39,9 +39,9 @@ describe("StreamingManager", () => {
 
 		it("should initialize flags to default values", () => {
 			expect(streamingManager.isPresentAssistantMessageLocked()).toBe(false)
-			expect(streamingManager.hasPresentAssistantMessageHasPendingUpdates()).toBe(false)
+			expect(streamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 			expect(streamingManager.isUserMessageContentReady()).toBe(false)
-			expect(streamingManager.didToolRejected()).toBe(false)
+			expect(streamingManager.isToolRejected()).toBe(false)
 			expect(streamingManager.hasAlreadyUsedTool()).toBe(false)
 			expect(streamingManager.didToolFail()).toBe(false)
 		})
@@ -51,7 +51,8 @@ describe("StreamingManager", () => {
 				taskId: "task-2",
 			})
 
-			expect(managerWithoutCallbacks.taskId).toBe("task-2")
+			// taskId is now private, so we verify the manager was created successfully
+			expect(managerWithoutCallbacks).toBeDefined()
 		})
 	})
 
@@ -74,7 +75,7 @@ describe("StreamingManager", () => {
 		})
 
 		it("should reset message content to empty arrays", () => {
-			streamingManager.setAssistantMessageContent([
+			streamingManager.setAssistantContent([
 				{ type: "text", content: "test" },
 			] as any)
 			streamingManager.setUserMessageContent([{ text: "test" }])
@@ -96,15 +97,47 @@ describe("StreamingManager", () => {
 			streamingManager.resetStreamingState()
 
 			expect(streamingManager.isPresentAssistantMessageLocked()).toBe(false)
-			expect(streamingManager.hasPresentAssistantMessageHasPendingUpdates()).toBe(false)
+			expect(streamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 			expect(streamingManager.isUserMessageContentReady()).toBe(false)
-			expect(streamingManager.didToolRejected()).toBe(false)
+			expect(streamingManager.isToolRejected()).toBe(false)
 			expect(streamingManager.hasAlreadyUsedTool()).toBe(false)
 			expect(streamingManager.didToolFail()).toBe(false)
 		})
 
+		it("should reset assistant message parser", () => {
+			const mockParser = { parse: vi.fn() }
+			streamingManager.setAssistantMessageParser(mockParser)
+			expect(streamingManager.getAssistantMessageParser()).toBe(mockParser)
+
+			streamingManager.resetStreamingState()
+			expect(streamingManager.getAssistantMessageParser()).toBeUndefined()
+		})
+
 		it("should call state change callback after reset", () => {
 			streamingManager.resetStreamingState()
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+		})
+	})
+
+	describe("startStreaming and stopStreaming", () => {
+		it("should start streaming and set waiting for first chunk", () => {
+			streamingManager.startStreaming()
+
+			const state = streamingManager.getStreamingState()
+			expect(state.isStreaming).toBe(true)
+			expect(state.isWaitingForFirstChunk).toBe(true)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+		})
+
+		it("should stop streaming and clear waiting for first chunk", () => {
+			streamingManager.startStreaming()
+			mockOnStreamingStateChange.mockClear()
+
+			streamingManager.stopStreaming()
+
+			const state = streamingManager.getStreamingState()
+			expect(state.isStreaming).toBe(false)
+			expect(state.isWaitingForFirstChunk).toBe(false)
 			expect(mockOnStreamingStateChange).toHaveBeenCalled()
 		})
 	})
@@ -130,21 +163,23 @@ describe("StreamingManager", () => {
 			expect(streamingManager.getStreamingState().isWaitingForFirstChunk).toBe(false)
 		})
 
-		it("should get and set currentStreamingContentIndex", () => {
+		it("should get and set currentStreamingContentIndex and trigger notification", () => {
 			expect(streamingManager.getStreamingState().currentStreamingContentIndex).toBe(0)
 
 			streamingManager.setCurrentStreamingContentIndex(5)
 			expect(streamingManager.getStreamingState().currentStreamingContentIndex).toBe(5)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
 
 			streamingManager.setCurrentStreamingContentIndex(0)
 			expect(streamingManager.getStreamingState().currentStreamingContentIndex).toBe(0)
 		})
 
-		it("should get and set currentStreamingDidCheckpoint", () => {
+		it("should get and set currentStreamingDidCheckpoint and trigger notification", () => {
 			expect(streamingManager.getStreamingState().currentStreamingDidCheckpoint).toBe(false)
 
 			streamingManager.setCurrentStreamingDidCheckpoint(true)
 			expect(streamingManager.getStreamingState().currentStreamingDidCheckpoint).toBe(true)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
 
 			streamingManager.setCurrentStreamingDidCheckpoint(false)
 			expect(streamingManager.getStreamingState().currentStreamingDidCheckpoint).toBe(false)
@@ -159,6 +194,17 @@ describe("StreamingManager", () => {
 			streamingManager.setDidCompleteReadingStream(false)
 			expect(streamingManager.getStreamingState().didCompleteReadingStream).toBe(false)
 		})
+
+		it("should get and set streamingDidCheckpoint and trigger notification", () => {
+			expect(streamingManager.getStreamingDidCheckpoint()).toBe(false)
+
+			streamingManager.setStreamingDidCheckpoint(true)
+			expect(streamingManager.getStreamingDidCheckpoint()).toBe(true)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+
+			streamingManager.setStreamingDidCheckpoint(false)
+			expect(streamingManager.getStreamingDidCheckpoint()).toBe(false)
+		})
 	})
 
 	describe("assistant message content management", () => {
@@ -168,22 +214,47 @@ describe("StreamingManager", () => {
 				{ type: "tool_use", id: "tool-1", name: "test" },
 			] as any
 
-			streamingManager.setAssistantMessageContent(content)
+			streamingManager.setAssistantContent(content)
 			expect(streamingManager.getAssistantMessageContent()).toEqual(content)
 		})
 
+		it("should append assistant message content", () => {
+			const content1 = { type: "text", content: "Hello" } as any
+			const content2 = { type: "text", content: "World" } as any
+
+			streamingManager.appendAssistantContent(content1)
+			expect(streamingManager.getAssistantMessageContent()).toEqual([content1])
+
+			streamingManager.appendAssistantContent(content2)
+			expect(streamingManager.getAssistantMessageContent()).toEqual([content1, content2])
+		})
+
 		it("should clear assistant message content", () => {
-			streamingManager.setAssistantMessageContent([{ type: "text", content: "test" }] as any)
+			streamingManager.setAssistantContent([{ type: "text", content: "test" }] as any)
 			expect(streamingManager.getAssistantMessageContent()).toHaveLength(1)
 
-			streamingManager.clearAssistantMessageContent()
+			streamingManager.clearAssistantContent()
 			expect(streamingManager.getAssistantMessageContent()).toEqual([])
 		})
 
 		it("should call content update callback when content is set", () => {
 			const content = [{ type: "text", content: "test" }] as any
-			streamingManager.setAssistantMessageContent(content)
+			streamingManager.setAssistantContent(content)
 			expect(mockOnStreamingContentUpdate).toHaveBeenCalledWith(content)
+		})
+
+		it("should call content update callback when content is appended", () => {
+			const content = [{ type: "text", content: "test" }] as any
+			streamingManager.appendAssistantContent(content)
+			expect(mockOnStreamingContentUpdate).toHaveBeenCalledWith([content])
+		})
+
+		it("should call content update callback when content is cleared", () => {
+			streamingManager.setAssistantContent([{ type: "text", content: "test" }] as any)
+			mockOnStreamingContentUpdate.mockClear()
+
+			streamingManager.clearAssistantContent()
+			expect(mockOnStreamingContentUpdate).toHaveBeenCalledWith([])
 		})
 	})
 
@@ -226,25 +297,25 @@ describe("StreamingManager", () => {
 		})
 
 		it("should get and set presentAssistantMessageHasPendingUpdates", () => {
-			expect(streamingManager.hasPresentAssistantMessageHasPendingUpdates()).toBe(false)
+			expect(streamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 
 			streamingManager.setPresentAssistantMessageHasPendingUpdates(true)
-			expect(streamingManager.hasPresentAssistantMessageHasPendingUpdates()).toBe(true)
+			expect(streamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(true)
 
 			streamingManager.setPresentAssistantMessageHasPendingUpdates(false)
-			expect(streamingManager.hasPresentAssistantMessageHasPendingUpdates()).toBe(false)
+			expect(streamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 		})
 	})
 
 	describe("tool call state management", () => {
 		it("should get and set didRejectTool", () => {
-			expect(streamingManager.didToolRejected()).toBe(false)
+			expect(streamingManager.isToolRejected()).toBe(false)
 
 			streamingManager.setDidRejectTool(true)
-			expect(streamingManager.didToolRejected()).toBe(true)
+			expect(streamingManager.isToolRejected()).toBe(true)
 
 			streamingManager.setDidRejectTool(false)
-			expect(streamingManager.didToolRejected()).toBe(false)
+			expect(streamingManager.isToolRejected()).toBe(false)
 		})
 
 		it("should get and set didAlreadyUseTool", () => {
@@ -292,21 +363,51 @@ describe("StreamingManager", () => {
 	})
 
 	describe("streaming tool call indices", () => {
-		it("should get streaming tool call index for tool use id", () => {
-			expect(streamingManager.getStreamingToolCallIndex("tool-1")).toBe(0)
+		it("should get tool call index for tool use id", () => {
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(0)
 
 			streamingManager.setStreamingToolCallIndex("tool-1", 5)
-			expect(streamingManager.getStreamingToolCallIndex("tool-1")).toBe(5)
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(5)
+		})
+
+		it("should start tool call with index 0", () => {
+			streamingManager.startToolCall("tool-1")
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(0)
+		})
+
+		it("should update tool call index", () => {
+			streamingManager.updateToolCallIndex("tool-1", 10)
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(10)
 		})
 
 		it("should increment streaming tool call index for tool use id", () => {
-			expect(streamingManager.getStreamingToolCallIndex("tool-1")).toBe(0)
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(0)
 
 			streamingManager.incrementStreamingToolCallIndex("tool-1")
-			expect(streamingManager.getStreamingToolCallIndex("tool-1")).toBe(1)
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(1)
 
 			streamingManager.incrementStreamingToolCallIndex("tool-1")
-			expect(streamingManager.getStreamingToolCallIndex("tool-1")).toBe(2)
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(2)
+		})
+
+		it("should clear all tool call indices", () => {
+			streamingManager.setStreamingToolCallIndex("tool-1", 5)
+			streamingManager.setStreamingToolCallIndex("tool-2", 10)
+
+			streamingManager.clearToolCallIndices()
+
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(0)
+			expect(streamingManager.getToolCallIndex("tool-2")).toBe(0)
+		})
+
+		it("should handle multiple tool call indices independently", () => {
+			streamingManager.setStreamingToolCallIndex("tool-1", 5)
+			streamingManager.setStreamingToolCallIndex("tool-2", 10)
+			streamingManager.setStreamingToolCallIndex("tool-3", 15)
+
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(5)
+			expect(streamingManager.getToolCallIndex("tool-2")).toBe(10)
+			expect(streamingManager.getToolCallIndex("tool-3")).toBe(15)
 		})
 	})
 
@@ -333,6 +434,21 @@ describe("StreamingManager", () => {
 			expect(mockOnStreamingStateChange).toHaveBeenCalledTimes(2)
 		})
 
+		it("should call state change callback when setCurrentStreamingContentIndex is called", () => {
+			streamingManager.setCurrentStreamingContentIndex(5)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+		})
+
+		it("should call state change callback when setCurrentStreamingDidCheckpoint is called", () => {
+			streamingManager.setCurrentStreamingDidCheckpoint(true)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+		})
+
+		it("should call state change callback when setStreamingDidCheckpoint is called", () => {
+			streamingManager.setStreamingDidCheckpoint(true)
+			expect(mockOnStreamingStateChange).toHaveBeenCalled()
+		})
+
 		it("should not call state change callback if not provided", () => {
 			const managerWithoutCallback = new StreamingManager({
 				taskId: "task-3",
@@ -341,6 +457,17 @@ describe("StreamingManager", () => {
 			expect(() => {
 				managerWithoutCallback.setStreamingState(true)
 				managerWithoutCallback.setWaitingForFirstChunk(true)
+			}).not.toThrow()
+		})
+
+		it("should not call content update callback if not provided", () => {
+			const managerWithoutCallback = new StreamingManager({
+				taskId: "task-4",
+			})
+
+			expect(() => {
+				managerWithoutCallback.setAssistantContent([{ type: "text", content: "test" }] as any)
+				managerWithoutCallback.appendAssistantContent({ type: "text", content: "test" } as any)
 			}).not.toThrow()
 		})
 	})
@@ -362,6 +489,93 @@ describe("StreamingManager", () => {
 				currentStreamingDidCheckpoint: true,
 				didCompleteReadingStream: true,
 			})
+		})
+	})
+
+	describe("dispose", () => {
+		it("should clear callbacks and reset state", () => {
+			streamingManager.setStreamingState(true)
+			streamingManager.setAssistantContent([{ type: "text", content: "test" }] as any)
+
+			streamingManager.dispose()
+
+			// Verify state is reset after dispose
+			const state = streamingManager.getStreamingState()
+			expect(state.isStreaming).toBe(false)
+			expect(streamingManager.getAssistantMessageContent()).toEqual([])
+
+			// Verify callbacks are cleared by checking they are not called after dispose
+			mockOnStreamingStateChange.mockClear()
+			mockOnStreamingContentUpdate.mockClear()
+
+			streamingManager.setStreamingState(true)
+			streamingManager.setAssistantContent([{ type: "text", content: "test2" }] as any)
+
+			// Callbacks should not be called after dispose
+			expect(mockOnStreamingStateChange).not.toHaveBeenCalled()
+			expect(mockOnStreamingContentUpdate).not.toHaveBeenCalled()
+		})
+
+		it("should not throw when calling methods after dispose", () => {
+			streamingManager.dispose()
+
+			expect(() => {
+				streamingManager.setStreamingState(true)
+				streamingManager.setAssistantContent([{ type: "text", content: "test" }] as any)
+				streamingManager.getStreamingState()
+			}).not.toThrow()
+		})
+	})
+
+	describe("edge cases and error scenarios", () => {
+		it("should handle negative content index", () => {
+			streamingManager.setCurrentStreamingContentIndex(-1)
+			expect(streamingManager.getStreamingState().currentStreamingContentIndex).toBe(-1)
+		})
+
+		it("should handle very large content index", () => {
+			streamingManager.setCurrentStreamingContentIndex(Number.MAX_SAFE_INTEGER)
+			expect(streamingManager.getStreamingState().currentStreamingContentIndex).toBe(Number.MAX_SAFE_INTEGER)
+		})
+
+		it("should handle empty tool call ID", () => {
+			streamingManager.setStreamingToolCallIndex("", 5)
+			expect(streamingManager.getToolCallIndex("")).toBe(5)
+		})
+
+		it("should handle special characters in tool call ID", () => {
+			const specialId = "tool-1_!@#$%^&*()"
+			streamingManager.setStreamingToolCallIndex(specialId, 5)
+			expect(streamingManager.getToolCallIndex(specialId)).toBe(5)
+		})
+
+		it("should handle rapid state changes", () => {
+			for (let i = 0; i < 100; i++) {
+				streamingManager.setStreamingState(i % 2 === 0)
+				streamingManager.setCurrentStreamingContentIndex(i)
+			}
+
+			const state = streamingManager.getStreamingState()
+			expect(state.isStreaming).toBe(false)
+			expect(state.currentStreamingContentIndex).toBe(99)
+		})
+
+		it("should handle multiple rapid content updates", () => {
+			for (let i = 0; i < 100; i++) {
+				streamingManager.appendAssistantContent({ type: "text", content: `chunk-${i}` } as any)
+			}
+
+			expect(streamingManager.getAssistantMessageContent()).toHaveLength(100)
+			expect(mockOnStreamingContentUpdate).toHaveBeenCalledTimes(100)
+		})
+
+		it("should handle concurrent tool call index operations", () => {
+			streamingManager.setStreamingToolCallIndex("tool-1", 5)
+			streamingManager.incrementStreamingToolCallIndex("tool-1")
+			streamingManager.updateToolCallIndex("tool-1", 10)
+			streamingManager.incrementStreamingToolCallIndex("tool-1")
+
+			expect(streamingManager.getToolCallIndex("tool-1")).toBe(11)
 		})
 	})
 })

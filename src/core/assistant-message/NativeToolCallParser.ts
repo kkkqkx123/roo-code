@@ -854,7 +854,7 @@ export class NativeToolCallParser {
 				name: toolCall.name,
 				serverName,
 				toolName,
-				arguments: args,
+				params: args,
 				partial: false,
 			}
 

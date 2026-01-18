@@ -102,7 +102,7 @@ describe("ApiRequestManager", () => {
 			expect(mockStreamingManager.hasPresentAssistantMessagePendingUpdates()).toBe(false)
 			expect(mockStreamingManager.getUserMessageContent()).toEqual([])
 			expect(mockStreamingManager.isUserMessageContentReady()).toBe(false)
-			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			expect(mockStreamingManager.isToolRejected()).toBe(false)
 			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
 			expect(mockStreamingManager.didToolFail()).toBe(false)
 			expect(streamingState.didCompleteReadingStream).toBe(false)
@@ -226,7 +226,7 @@ describe("ApiRequestManager", () => {
 			expect(streamingState.didCompleteReadingStream).toBe(false)
 			expect(mockStreamingManager.getUserMessageContent()).toEqual([])
 			expect(mockStreamingManager.isUserMessageContentReady()).toBe(false)
-			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			expect(mockStreamingManager.isToolRejected()).toBe(false)
 			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
 			expect(mockStreamingManager.didToolFail()).toBe(false)
 			expect(mockStreamingManager.isPresentAssistantMessageLocked()).toBe(false)
@@ -418,9 +418,9 @@ describe("ApiRequestManager", () => {
 		})
 
 		it("should track tool usage state", () => {
-			expect(mockStreamingManager.didToolRejected()).toBe(false)
+			expect(mockStreamingManager.isToolRejected()).toBe(false)
 			mockStreamingManager.setDidRejectTool(true)
-			expect(mockStreamingManager.didToolRejected()).toBe(true)
+			expect(mockStreamingManager.isToolRejected()).toBe(true)
 
 			expect(mockStreamingManager.hasAlreadyUsedTool()).toBe(false)
 			mockStreamingManager.setDidAlreadyUseTool(true)

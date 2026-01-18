@@ -334,6 +334,7 @@ export const toolUseSchema = z.object({
 	id: z.string().optional(),
 	name: toolNamesSchema,
 	params: z.record(z.string()),
+	partial: z.boolean(),
 })
 
 export type ToolUse = z.infer<typeof toolUseSchema>
@@ -348,6 +349,7 @@ export const mcpToolUseSchema = z.object({
 	name: z.string(),
 	serverName: z.string(),
 	params: z.record(z.unknown()),
+	partial: z.boolean(),
 })
 
 export type McpToolUse = z.infer<typeof mcpToolUseSchema>

@@ -236,8 +236,7 @@ export class TaskManager extends EventEmitter<TaskProviderEvents> {
 		await currentTask.abortTask()
 		
 		// Update UI state to reflect task cancellation
-		const provider = this.providerRef.deref()
-		await provider?.postStateToWebview()
+		await this.provider?.postStateToWebview()
 		
 		// Remove from stack
 		await this.removeClineFromStack()
