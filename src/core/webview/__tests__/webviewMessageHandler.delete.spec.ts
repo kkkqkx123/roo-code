@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import * as vscode from "vscode"
 import { ClineProvider } from "../ClineProvider"
-import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
+import { ConversationRewindManager } from "../../task/managers"
 
 // Mock the saveTaskMessages function
 vi.mock("../../task-persistence", () => ({

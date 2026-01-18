@@ -1,0 +1,639 @@
+import type { ApiHandler } from "../../../../api"
+import type { ApiMessage } from "../../../task-persistence"
+import type { ProviderSettings, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation, ToolName } from "@roo-code/types"
+import { ApiStream, GroundingSource } from "../../../../api/transform/stream"
+import { checkContextWindowExceededError } from "../../../context-management/context-error-handling"
+import { NativeToolCallParser } from "../../../assistant-message/NativeToolCallParser"
+import { getModelId, getApiProtocol } from "@roo-code/types"
+import { getEnvironmentDetails } from "../../../environment/getEnvironmentDetails"
+import type { TaskStateManager } from "../core/TaskStateManager"
+import type { MessageManager } from "../messaging/MessageManager"
+import type { UserInteractionManager } from "../messaging/UserInteractionManager"
+import type { ContextManager } from "../context/ContextManager"
+import type { UsageTracker } from "../monitoring/UsageTracker"
+import type { FileEditorManager } from "../execution/FileEditorManager"
+import type { StreamingManager } from "./StreamingManager"
+import type { CheckpointManager } from "../checkpoint/CheckpointManager"
+import { BaseProvider, TokenValidationOptions } from "../../../../api/providers/base-provider"
+import { Anthropic } from "@anthropic-ai/sdk"
+import delay from "delay"
+import type { ToolUse } from "../../../../shared/tools"
+
+const MAX_CONTEXT_WINDOW_RETRIES = 3
+const MAX_EXPONENTIAL_BACKOFF_SECONDS = 120
+
+export interface ApiRequestManagerOptions {
+	stateManager: TaskStateManager
+	messageManager: MessageManager
+	userInteractionManager: UserInteractionManager
+	contextManager: ContextManager
+	usageTracker: UsageTracker
+	fileEditorManager: FileEditorManager
+	api: ApiHandler
+	apiConfiguration: ProviderSettings
+	cwd: string
+	streamingManager: StreamingManager
+	checkpointManager?: CheckpointManager
+	getSystemPrompt: () => Promise<string>
+	getLastGlobalApiRequestTime: () => number | undefined
+	setLastGlobalApiRequestTime: (time: number) => void
+}
+
+export class ApiRequestManager {
+	private stateManager: TaskStateManager
+	private messageManager: MessageManager
+	private userInteractionManager: UserInteractionManager
+	private contextManager: ContextManager
+	private usageTracker: UsageTracker
+	private fileEditorManager: FileEditorManager
+	private streamingManager: StreamingManager
+	private checkpointManager?: CheckpointManager
+	private getSystemPromptFn: () => Promise<string>
+	private getLastGlobalApiRequestTime: () => number | undefined
+	private setLastGlobalApiRequestTime: (time: number) => void
+
+	api: ApiHandler
+	apiConfiguration: ProviderSettings
+	cwd: string
+
+	private currentSystemPrompt?: string
+	private currentMessages?: Anthropic.Messages.MessageParam[]
+	private currentResponseContent: Anthropic.Messages.ContentBlockParam[] = []
+	private tokenValidationOptions: TokenValidationOptions = {
+		enableFallback: true,
+		logFallback: true,
+	}
+	private currentRequestIndex: number | undefined // 当前请求索引
+
+	constructor(options: ApiRequestManagerOptions) {
+		this.stateManager = options.stateManager
+		this.messageManager = options.messageManager
+		this.userInteractionManager = options.userInteractionManager
+		this.contextManager = options.contextManager
+		this.usageTracker = options.usageTracker
+		this.fileEditorManager = options.fileEditorManager
+		this.streamingManager = options.streamingManager
+		this.checkpointManager = options.checkpointManager
+		this.getSystemPromptFn = options.getSystemPrompt
+		this.getLastGlobalApiRequestTime = options.getLastGlobalApiRequestTime
+		this.setLastGlobalApiRequestTime = options.setLastGlobalApiRequestTime
+
+		this.api = options.api
+		this.apiConfiguration = options.apiConfiguration
+		this.cwd = options.cwd
+	}
+
+	/**
+	 * 获取当前请求索引
+	 */
+	getCurrentRequestIndex(): number | undefined {
+		return this.currentRequestIndex
+	}
+
+	/**
+	 * Handle context window exceeded errors
+	 */
+	private async handleContextWindowExceededError(error: any, retryCount: number): Promise<void> {
+		console.warn(`[ApiRequestManager] Context window exceeded (attempt ${retryCount + 1}), attempting context management...`)
+
+		// Get current token usage
+		const tokenUsage = this.usageTracker.getTokenUsage()
+
+		// Prepare options for context manager
+		const options = {
+			api: this.api,
+			apiConfiguration: this.apiConfiguration,
+			apiConversationHistory: this.messageManager.getApiConversationHistory(),
+			tokenUsage,
+			toolProtocol: this.stateManager.taskToolProtocol,
+			getSystemPrompt: () => this.getSystemPrompt(),
+			overwriteApiConversationHistory: (messages: any[]) => this.messageManager.overwriteApiConversationHistory(messages),
+			say: (type: ClineSay, text?: string, images?: string[], partial?: boolean, checkpoint?: any, progressStatus?: ToolProgressStatus, options?: any, contextCondense?: ContextCondense, contextTruncation?: ContextTruncation) =>
+				this.userInteractionManager.say(type, text, images, partial, checkpoint, progressStatus, options, contextCondense, contextTruncation)
+		}
+
+		// Call context manager to handle the error
+		await this.contextManager.handleContextWindowExceededError(options)
+	}
+
+	public async *attemptApiRequest(): ApiStream {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Starting API request`)
+
+		this.currentResponseContent = []
+
+		if (this.apiConfiguration.rateLimitSeconds && this.apiConfiguration.rateLimitSeconds > 0) {
+			provider?.log(`[ApiRequestManager#attemptApiRequest] Checking rate limit`)
+			const lastRequestTime = this.getLastGlobalApiRequestTime()
+			const now = performance.now()
+
+			if (lastRequestTime) {
+				const timeSinceLastRequest = now - lastRequestTime
+				const requiredDelay = this.apiConfiguration.rateLimitSeconds * 1000
+
+				provider?.log(`[ApiRequestManager#attemptApiRequest] Time since last request: ${timeSinceLastRequest}ms, required delay: ${requiredDelay}ms`)
+
+				if (timeSinceLastRequest < requiredDelay) {
+					const delayCalls = Math.ceil((requiredDelay - timeSinceLastRequest) / 1000)
+					provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit active, delaying ${delayCalls} seconds`)
+					for (let i = 0; i < delayCalls; i++) {
+						await delay(1000)
+					}
+				} else {
+					provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit satisfied`)
+				}
+			}
+
+			this.setLastGlobalApiRequestTime(performance.now())
+			provider?.log(`[ApiRequestManager#attemptApiRequest] Rate limit check completed`)
+		}
+
+		const systemPrompt = await this.getSystemPrompt()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got system prompt`)
+
+		const messages = this.messageManager.getApiConversationHistory()
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got conversation history, message count: ${messages.length}`)
+
+		this.currentSystemPrompt = systemPrompt
+		this.currentMessages = messages
+
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Creating API message stream`)
+		const stream = await this.api.createMessage(systemPrompt, messages, {
+			taskId: this.stateManager.taskId,
+			mode: this.stateManager.taskMode,
+			suppressPreviousResponseId: this.stateManager.skipPrevResponseIdOnce,
+			toolProtocol: this.stateManager.taskToolProtocol,
+		})
+
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Got stream, starting to yield`)
+		yield* stream
+		provider?.log(`[ApiRequestManager#attemptApiRequest] Stream yield completed`)
+	}
+
+	async getSystemPrompt(): Promise<string> {
+		return this.getSystemPromptFn()
+	}
+
+	/**
+ * 在API调用前保存检查点（基于请求索引）
+ * 不再返回索引，索引管理由外部控制
+ */
+	private async saveApiContextBeforeCall(userContent: any[], includeFileDetails: boolean, retryAttempt?: number, userMessageWasRemoved?: boolean): Promise<void> {
+		if (!this.checkpointManager) {
+			return
+		}
+
+		try {
+			// 纯粹的检查点创建，不处理索引逻辑
+			await this.checkpointManager.checkpointSave(false, true)
+			console.log(`[ApiRequestManager] Saved checkpoint before API request`)
+		} catch (error) {
+			console.error("[ApiRequestManager] Failed to save checkpoint before API call:", error)
+			throw error  // 抛出错误让上层处理
+		}
+	}
+
+	async recursivelyMakeClineRequests(
+		userContent: any[],
+		includeFileDetails: boolean = false,
+	): Promise<boolean> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Starting request loop`)
+
+		interface StackItem {
+			userContent: any[]
+			includeFileDetails: boolean
+			retryAttempt?: number
+			userMessageWasRemoved?: boolean
+		}
+
+		const stack: StackItem[] = [{ userContent, includeFileDetails, retryAttempt: 0 }]
+
+		while (stack.length > 0) {
+			const currentItem = stack.pop()!
+			const currentUserContent = currentItem.userContent
+			const currentIncludeFileDetails = currentItem.includeFileDetails
+
+			if (this.stateManager.abort) {
+				throw new Error(`Task ${this.stateManager.taskId} aborted`)
+			}
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Sending api_req_started message`)
+			await this.userInteractionManager.say(
+				"api_req_started",
+				JSON.stringify({
+					apiProtocol: getApiProtocol(
+						this.apiConfiguration.apiProvider,
+						getModelId(this.apiConfiguration),
+					),
+				}),
+			)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] api_req_started message sent`)
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Posting state to webview after api_req_started`)
+			await provider?.postStateToWebview()
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] State posted to webview`)
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process user content`)
+			const parsedUserContent = await this.processUserContent(currentUserContent, currentIncludeFileDetails)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User content processed`)
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to get environment details`)
+
+			// 获取当前任务实例
+			const currentTaskProvider = this.stateManager.getProvider()
+			const currentTask = currentTaskProvider?.getCurrentTask()
+
+			if (!currentTask) {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] No current task found, skipping environment details`)
+				throw new Error("No current task available for environment details")
+			}
+
+			const environmentDetails = await getEnvironmentDetails(currentTask, currentIncludeFileDetails)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Environment details retrieved`)
+
+			const finalUserContent = [...parsedUserContent, { type: "text", text: environmentDetails }]
+
+			const shouldAddUserMessage =
+				((currentItem.retryAttempt ?? 0) === 0 && currentUserContent.length > 0) ||
+				currentItem.userMessageWasRemoved
+
+			if (shouldAddUserMessage) {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Adding user message to history`)
+				await this.messageManager.addToApiConversationHistory({
+					role: "user",
+					content: finalUserContent,
+				})
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User message added to history`)
+			}
+
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process stream`)
+			await this.processStream(currentItem, stack)
+			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Stream processed`)
+		}
+
+		provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Request loop completed`)
+		return false
+	}
+
+	private async processUserContent(userContent: any[], includeFileDetails: boolean): Promise<any[]> {
+		return userContent
+	}
+
+	private async processStream(currentItem: any, stack: any[]): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#processStream] Starting stream processing`)
+
+		this.resetStreamingState()
+
+		let retryCount = 0
+		const maxRetries = MAX_CONTEXT_WINDOW_RETRIES
+		let currentRequestIndex: number | undefined
+
+		try {
+			provider?.log(`[ApiRequestManager#processStream] About to start new API request`)
+			// 开始新的API请求，分配请求索引
+			currentRequestIndex = this.messageManager.startNewApiRequest()
+			this.currentRequestIndex = currentRequestIndex
+			provider?.log(`[ApiRequestManager#processStream] Started new API request with index: ${currentRequestIndex}`)
+
+			while (retryCount <= maxRetries) {
+				try {
+					provider?.log(`[ApiRequestManager#processStream] Retry attempt: ${retryCount}`)
+					// 在请求前创建检查点，关联请求索引
+					if (this.checkpointManager && currentRequestIndex !== undefined) {
+						provider?.log(`[ApiRequestManager#processStream] Creating checkpoint for request index: ${currentRequestIndex}`)
+						await this.checkpointManager.createCheckpoint(currentRequestIndex)
+						provider?.log(`[ApiRequestManager#processStream] Checkpoint created`)
+					}
+
+					provider?.log(`[ApiRequestManager#processStream] About to call attemptApiRequest`)
+					const stream = await this.attemptApiRequest()
+					provider?.log(`[ApiRequestManager#processStream] Got stream, starting to iterate`)
+					const iterator = stream[Symbol.asyncIterator]()
+
+					let item = await iterator.next()
+					while (!item.done) {
+						const chunk = item.value
+						await this.handleStreamChunk(chunk)
+						item = await iterator.next()
+					}
+
+					provider?.log(`[ApiRequestManager#processStream] Stream iteration completed successfully`)
+					// Success, exit the retry loop
+					return
+
+				} catch (error) {
+					provider?.log(`[ApiRequestManager#processStream] API error on attempt ${retryCount + 1}: ${error}`)
+					// 处理API错误，使用相同的请求索引重试
+					await this.handleApiError(error, retryCount, maxRetries)
+					retryCount++
+				}
+			}
+
+		} finally {
+			// 确保请求结束，清理状态
+			this.messageManager.endCurrentApiRequest()
+			this.currentRequestIndex = undefined
+			provider?.log(`[ApiRequestManager#processStream] Ended API request with index: ${currentRequestIndex}`)
+		}
+	}
+
+	private resetStreamingState(): void {
+		this.streamingManager.resetStreamingState()
+	}
+
+	/**
+	 * 处理API错误（使用相同的请求索引重试）
+	 */
+	private async handleApiError(error: any, retryCount: number, maxRetries: number): Promise<void> {
+		if (checkContextWindowExceededError(error)) {
+			console.warn(`[ApiRequestManager] Context window exceeded on attempt ${retryCount + 1}/${maxRetries + 1}`)
+
+			if (retryCount < maxRetries) {
+				// 处理上下文窗口错误，使用相同的请求索引重试
+				await this.handleContextWindowExceededError(error, retryCount)
+
+				// 指数退避延迟
+				await this.backoffAndAnnounce(retryCount, error)
+			} else {
+				// 达到最大重试次数
+				console.error(`[ApiRequestManager] Max retries (${maxRetries}) reached for context window errors`)
+				throw new Error(`Context window exceeded after ${maxRetries} retry attempts: ${error instanceof Error ? error.message : String(error)}`)
+			}
+		} else {
+			// 非上下文窗口错误，直接抛出
+			throw error
+		}
+	}
+
+	private async handleStreamChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleStreamChunk] Processing chunk type: ${chunk.type}`)
+
+		switch (chunk.type) {
+			case "reasoning":
+				await this.handleReasoningChunk(chunk)
+				break
+			case "usage":
+				this.handleUsageChunk(chunk)
+				break
+			case "grounding":
+				this.handleGroundingChunk(chunk)
+				break
+			case "tool_call_partial":
+				await this.handleToolCallPartialChunk(chunk)
+				break
+			case "text":
+				await this.handleTextChunk(chunk)
+				break
+		}
+
+		provider?.log(`[ApiRequestManager#handleStreamChunk] Chunk processed: ${chunk.type}`)
+	}
+
+	private async handleReasoningChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleReasoningChunk] Processing reasoning chunk: "${chunk.text?.substring(0, 50)}..."`)
+		await this.userInteractionManager.say("reasoning", chunk.text, undefined, true)
+		provider?.log(`[ApiRequestManager#handleReasoningChunk] Reasoning chunk sent to UI`)
+	}
+
+	private handleUsageChunk(chunk: any): void {
+		this.handleUsageChunkWithValidation(chunk)
+	}
+
+	private async handleUsageChunkWithValidation(chunk: any): Promise<void> {
+		const inputTokens = chunk.inputTokens
+		const outputTokens = chunk.outputTokens
+
+		const isInputValid = inputTokens !== undefined && inputTokens !== null && inputTokens > 0
+		const isOutputValid = outputTokens !== undefined && outputTokens !== null && outputTokens > 0
+
+		if (isInputValid && isOutputValid) {
+			this.usageTracker.recordUsage(chunk)
+			return
+		}
+
+		if (!this.api || !this.currentSystemPrompt || !this.currentMessages) {
+			this.usageTracker.recordUsage(chunk)
+			return
+		}
+
+		try {
+			const inputContent: Anthropic.Messages.ContentBlockParam[] = [
+				{ type: "text", text: this.currentSystemPrompt },
+			]
+
+			for (const msg of this.currentMessages) {
+				if (msg.content) {
+					if (typeof msg.content === "string") {
+						inputContent.push({ type: "text", text: msg.content })
+					} else if (Array.isArray(msg.content)) {
+						inputContent.push(...msg.content)
+					}
+				}
+			}
+
+			const outputContent: Anthropic.Messages.ContentBlockParam[] =
+				this.currentResponseContent.length > 0 ? this.currentResponseContent : [{ type: "text", text: "" }]
+
+			if (this.api instanceof BaseProvider) {
+				const validated = await this.api.validateAndCorrectTokenCounts(
+					inputTokens,
+					outputTokens,
+					inputContent,
+					outputContent,
+					this.tokenValidationOptions,
+				)
+
+				const validatedChunk = {
+					...chunk,
+					inputTokens: validated.inputTokens,
+					outputTokens: validated.outputTokens,
+				}
+
+				this.usageTracker.recordUsage(validatedChunk)
+			} else {
+				this.usageTracker.recordUsage(chunk)
+			}
+		} catch (error) {
+			console.error("[ApiRequestManager] Failed to validate token counts:", error)
+			this.usageTracker.recordUsage(chunk)
+		}
+	}
+
+	private handleGroundingChunk(chunk: any): void {
+	}
+
+	private async handleToolCallPartialChunk(chunk: any): Promise<void> {
+		const events = NativeToolCallParser.processRawChunk({
+			index: chunk.index,
+			id: chunk.id,
+			name: chunk.name,
+			arguments: chunk.arguments,
+		})
+
+		for (const event of events) {
+			await this.processToolCallEvent(event)
+		}
+	}
+
+	private async processToolCallEvent(event: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+
+		if (event.type === "tool_call_start") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_start: ${event.name}`)
+
+			NativeToolCallParser.startStreamingToolCall(event.id, event.name as ToolName)
+
+			const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+
+			const lastBlock = assistantMessageContent[assistantMessageContent.length - 1]
+			if (lastBlock?.type === "text" && lastBlock.partial) {
+				lastBlock.partial = false
+			}
+
+			const toolUseIndex = assistantMessageContent.length
+			this.streamingManager.setStreamingToolCallIndex(event.id, toolUseIndex)
+
+			const partialToolUse: ToolUse = {
+				type: "tool_use",
+				name: event.name as ToolName,
+				params: {},
+				partial: true,
+			}
+
+				; (partialToolUse as any).id = event.id
+
+			this.streamingManager.appendAssistantContent(partialToolUse)
+			this.streamingManager.setUserMessageContentReady(false)
+			this.streamingManager.notifyContentUpdate()
+
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Added partial tool use to content`)
+		} else if (event.type === "tool_call_delta") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_delta for ${event.id}`)
+
+			const partialToolUse = NativeToolCallParser.processStreamingChunk(event.id, event.delta)
+
+			if (partialToolUse) {
+				const toolUseIndex = this.streamingManager.getStreamingToolCallIndex(event.id)
+				if (toolUseIndex !== undefined) {
+					; (partialToolUse as any).id = event.id
+
+					const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+					assistantMessageContent[toolUseIndex] = partialToolUse
+
+					this.streamingManager.setAssistantContent(assistantMessageContent)
+					this.streamingManager.notifyContentUpdate()
+
+					provider?.log(`[ApiRequestManager#processToolCallEvent] Updated partial tool use`)
+				}
+			}
+		} else if (event.type === "tool_call_end") {
+			provider?.log(`[ApiRequestManager#processToolCallEvent] Processing tool_call_end for ${event.id}`)
+
+			const finalToolUse = NativeToolCallParser.finalizeStreamingToolCall(event.id)
+			const toolUseIndex = this.streamingManager.getStreamingToolCallIndex(event.id)
+
+			if (finalToolUse) {
+				; (finalToolUse as any).id = event.id
+
+				const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+				if (toolUseIndex !== undefined) {
+					assistantMessageContent[toolUseIndex] = finalToolUse
+				}
+
+				this.streamingManager.setStreamingToolCallIndex(event.id, -1)
+				this.streamingManager.setUserMessageContentReady(false)
+				this.streamingManager.setAssistantContent(assistantMessageContent)
+				this.streamingManager.notifyContentUpdate()
+
+				provider?.log(`[ApiRequestManager#processToolCallEvent] Finalized tool use`)
+			} else if (toolUseIndex !== undefined) {
+				const assistantMessageContent = this.streamingManager.getAssistantMessageContent()
+				const existingToolUse = assistantMessageContent[toolUseIndex]
+				if (existingToolUse && existingToolUse.type === "tool_use") {
+					existingToolUse.partial = false
+						; (existingToolUse as any).id = event.id
+				}
+
+				this.streamingManager.setStreamingToolCallIndex(event.id, -1)
+				this.streamingManager.setUserMessageContentReady(false)
+				this.streamingManager.setAssistantContent(assistantMessageContent)
+				this.streamingManager.notifyContentUpdate()
+
+				provider?.log(`[ApiRequestManager#processToolCallEvent] Finalized tool use (malformed JSON)`)
+			}
+		}
+	}
+
+	private async handleTextChunk(chunk: any): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleTextChunk] Processing text chunk: "${chunk.text?.substring(0, 50)}..."`)
+
+		if (chunk.text) {
+			this.currentResponseContent.push({ type: "text", text: chunk.text })
+			provider?.log(`[ApiRequestManager#handleTextChunk] Added text to response content`)
+
+			// 发送文本到UI界面进行流式显示
+			await this.userInteractionManager.say("text", chunk.text, undefined, true)
+			provider?.log(`[ApiRequestManager#handleTextChunk] Text chunk sent to UI`)
+		}
+	}
+
+	async backoffAndAnnounce(retryAttempt: number, error: any): Promise<void> {
+		try {
+			const provider = this.stateManager.providerRef.deref()
+			if (!provider) {
+				return
+			}
+
+			const state = await provider.getState()
+			const baseDelay = state?.requestDelaySeconds || 5
+
+			let exponentialDelay = Math.min(
+				Math.ceil(baseDelay * Math.pow(2, retryAttempt)),
+				MAX_EXPONENTIAL_BACKOFF_SECONDS,
+			)
+
+			const finalDelay = exponentialDelay
+			if (finalDelay <= 0) {
+				return
+			}
+
+			let headerText
+			if (error.status) {
+				const errorMessage = error?.message || "Unknown error"
+				headerText = `${error.status}\n${errorMessage}`
+			} else if (error?.message) {
+				headerText = error.message
+			} else {
+				headerText = "Unknown error"
+			}
+
+			headerText = headerText ? `${headerText}\n` : ""
+
+			for (let i = finalDelay; i > 0; i--) {
+				if (this.stateManager.abort) {
+					throw new Error(`[Task#${this.stateManager.taskId}] Aborted during retry countdown`)
+				}
+
+				await this.userInteractionManager.say(
+					"api_req_retry_delayed",
+					`${headerText}<retry_timer>${i}</retry_timer>`,
+					undefined,
+					true,
+				)
+				await delay(1000)
+			}
+
+			await this.userInteractionManager.say("api_req_retry_delayed", headerText, undefined, false)
+		} catch (err) {
+			if (err instanceof Error && err.message.includes("Aborted during retry countdown")) {
+				throw err
+			}
+			console.error("Exponential backoff failed:", err)
+		}
+	}
+}

@@ -1,39 +1,69 @@
-export { TaskStateManager } from "./TaskStateManager"
-export { ApiRequestManager } from "./ApiRequestManager"
-export { MessageManager } from "./MessageManager"
-export { ConversationRewindManager } from "./ConversationRewindManager"
-export { MessageQueueService } from "./MessageQueueService"
-export { ToolExecutor } from "./ToolExecutor"
-export { UserInteractionManager } from "./UserInteractionManager"
-export { FileEditorManager } from "./FileEditorManager"
-export { CheckpointManager } from "./CheckpointManager"
-export { ContextManager } from "./ContextManager"
-export { UsageTracker } from "./UsageTracker"
-export { ConfigurationManager } from "./ConfigurationManager"
-export { SubtaskManager } from "./SubtaskManager"
-export { TaskLifecycleManager } from "./TaskLifecycleManager"
-export { StreamingManager } from "./StreamingManager"
-export { PromptManager } from "./PromptManager"
-export { MessageQueueManager } from "./MessageQueueManager"
-export { BrowserSessionManager } from "./BrowserSessionManager"
-export { ConversationHistoryManager } from "./ConversationHistoryManager"
+// Core Task Management
+export { TaskStateManager } from "./core/TaskStateManager"
+export { TaskLifecycleManager } from "./core/TaskLifecycleManager"
+export { SubtaskManager } from "./core/SubtaskManager"
 
-export type { TaskStateOptions } from "./TaskStateManager"
-export type { ApiRequestManagerOptions } from "./ApiRequestManager"
-export type { MessageManagerOptions } from "./MessageManager"
-export type { ToolExecutorOptions } from "./ToolExecutor"
-export type { UserInteractionManagerOptions } from "./UserInteractionManager"
-export type { FileEditorManagerOptions } from "./FileEditorManager"
-export type { CheckpointManagerOptions } from "./CheckpointManager"
-export type { ContextManagerOptions } from "./ContextManager"
-export type { UsageTrackerOptions } from "./UsageTracker"
-export type { ConfigurationManagerOptions } from "./ConfigurationManager"
-export type { SubtaskManagerOptions } from "./SubtaskManager"
-export type { TaskLifecycleManagerOptions } from "./TaskLifecycleManager"
-export type { StreamingManagerOptions } from "./StreamingManager"
-export type { PromptManagerOptions } from "./PromptManager"
-export type { MessageQueueManagerOptions } from "./MessageQueueManager"
-export type { BrowserSessionManagerOptions } from "./BrowserSessionManager"
-export type { ConversationHistoryManagerOptions } from "./ConversationHistoryManager"
-export type { RewindOptions } from "./ConversationRewindManager"
-export type { MessageQueueState, QueueEvents } from "./MessageQueueService"
+// Message & Conversation Management
+export { MessageManager } from "./messaging/MessageManager"
+export { MessageQueueManager } from "./messaging/MessageQueueManager"
+export { MessageQueueService } from "./messaging/MessageQueueService"
+export { ConversationHistoryManager } from "./messaging/ConversationHistoryManager"
+export { ConversationRewindManager } from "./messaging/ConversationRewindManager"
+export { UserInteractionManager } from "./messaging/UserInteractionManager"
+
+// API & Streaming
+export { ApiRequestManager } from "./api/ApiRequestManager"
+export { StreamingManager } from "./api/StreamingManager"
+
+// Context & Configuration
+export { ContextManager } from "./context/ContextManager"
+export { ConfigurationManager } from "./context/ConfigurationManager"
+export { PromptManager } from "./context/PromptManager"
+
+// Checkpoint & Persistence
+export { CheckpointManager } from "./checkpoint/CheckpointManager"
+
+// Tools & Execution
+export { ToolExecutor } from "./execution/ToolExecutor"
+export { FileEditorManager } from "./execution/FileEditorManager"
+
+// Monitoring & Tracking
+export { UsageTracker } from "./monitoring/UsageTracker"
+
+// Browser Session
+export { BrowserSessionManager } from "./browser/BrowserSessionManager"
+
+// Type Exports - Core
+export type { TaskStateOptions } from "./core/TaskStateManager"
+export type { TaskLifecycleManagerOptions } from "./core/TaskLifecycleManager"
+export type { SubtaskManagerOptions } from "./core/SubtaskManager"
+
+// Type Exports - Messaging
+export type { MessageManagerOptions } from "./messaging/MessageManager"
+export type { MessageQueueManagerOptions } from "./messaging/MessageQueueManager"
+export type { MessageQueueState, QueueEvents } from "./messaging/MessageQueueService"
+export type { ConversationHistoryManagerOptions } from "./messaging/ConversationHistoryManager"
+export type { RewindOptions } from "./messaging/ConversationRewindManager"
+export type { UserInteractionManagerOptions } from "./messaging/UserInteractionManager"
+
+// Type Exports - API
+export type { ApiRequestManagerOptions } from "./api/ApiRequestManager"
+export type { StreamingManagerOptions, StreamingState } from "./api/StreamingManager"
+
+// Type Exports - Context
+export type { ContextManagerOptions, HandleContextWindowExceededOptions } from "./context/ContextManager"
+export type { ConfigurationManagerOptions } from "./context/ConfigurationManager"
+export type { PromptManagerOptions } from "./context/PromptManager"
+
+// Type Exports - Persistence
+export type { CheckpointManagerOptions } from "./checkpoint/CheckpointManager"
+
+// Type Exports - Execution
+export type { ToolExecutorOptions } from "./execution/ToolExecutor"
+export type { FileEditorManagerOptions } from "./execution/FileEditorManager"
+
+// Type Exports - Monitoring
+export type { UsageTrackerOptions } from "./monitoring/UsageTracker"
+
+// Type Exports - Browser
+export type { BrowserSessionManagerOptions } from "./browser/BrowserSessionManager"

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest"
 import { Task } from "../../task/Task"
 import { ClineProvider } from "../../webview/ClineProvider"
 import { checkpointSave, checkpointRestore, checkpointDiff, getCheckpointService } from "../index"
-import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
+import { ConversationRewindManager } from "../../task/managers"
 import * as vscode from "vscode"
 
 // Mock vscode

@@ -41,7 +41,7 @@ import { webviewMessageHandler } from "../webviewMessageHandler"
 import type { ClineProvider } from "../ClineProvider"
 import type { ClineMessage } from "@roo-code/types"
 import type { ApiMessage } from "../../task-persistence/apiMessages"
-import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
+import { ConversationRewindManager } from "../../task/managers"
 
 describe("webviewMessageHandler - Edit Message with Timestamp Fallback", () => {
 	let mockClineProvider: ClineProvider

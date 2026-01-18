@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import { saveTaskMessages } from "../../task-persistence"
 import { handleCheckpointRestoreOperation } from "../checkpointRestoreHandler"
-import { ConversationRewindManager } from "../../task/managers/ConversationRewindManager"
+import { ConversationRewindManager } from "../../task/managers"
 
 // Mock dependencies
 vi.mock("../../task-persistence")

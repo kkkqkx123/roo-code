@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from "vitest"
 import { RooCodeEventName } from "@roo-code/types"
 import { Task } from "../core/task/Task"
-import { SubtaskManager } from "../core/task/managers/SubtaskManager"
+import { SubtaskManager } from "../core/task/managers"
 
 describe("Task.startSubtask() metadata-driven delegation", () => {
 	it("Routes to provider.delegateParentAndOpenChild without pausing parent", async () => {
