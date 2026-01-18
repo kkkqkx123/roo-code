@@ -1,6 +1,6 @@
 import type { ClineMessage, ClineAsk, ToolName, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@roo-code/types"
 import type { ToolResponse } from "../../../../shared/tools"
-import { isIdleAsk, isInteractiveAsk, isResumableAsk } from "@roo-code/types"
+import { isBlockingAsk, isMutableAsk, isTerminalAsk } from "@roo-code/types"
 import { formatResponse } from "../../../prompts/responses"
 import { t } from "../../../../i18n"
 import type { TaskStateManager } from "../core/TaskStateManager"
@@ -10,26 +10,34 @@ import type { ClineAskResponse } from "../../../../shared/WebviewMessage"
 export interface UserInteractionManagerOptions {
 	stateManager: TaskStateManager
 	messageManager: MessageManager
+	responseTimeout?: number // 响应超时时间（毫秒）
+}
+
+interface AskState {
+	askResponse?: ClineAskResponse
+	askResponseText?: string
+	askResponseImages?: string[]
+	timestamp: number
 }
 
 export class UserInteractionManager {
 	private stateManager: TaskStateManager
 	private messageManager: MessageManager
+	private responseTimeout: number
 
-	idleAsk?: ClineMessage
+	terminalAsk?: ClineMessage
 	resumableAsk?: ClineMessage
 	interactiveAsk?: ClineMessage
 
-	private askResponse?: ClineAskResponse
-	private askResponseText?: string
-	private askResponseImages?: string[]
+	private askState: AskState | null = null
 	public lastMessageTs?: number
 	private autoApprovalTimeoutRef?: NodeJS.Timeout
-	private waitForResponseTimeoutRef?: NodeJS.Timeout
+	private responseResolvers: Map<number, (value: void) => void> = new Map()
 
 	constructor(options: UserInteractionManagerOptions) {
 		this.stateManager = options.stateManager
 		this.messageManager = options.messageManager
+		this.responseTimeout = options.responseTimeout ?? 30000 // 默认 30 秒
 	}
 
 	async ask(
@@ -80,9 +88,17 @@ export class UserInteractionManager {
 		const approval = await this.waitForApproval(type, message, images)
 
 		if (approval.decision === "approve") {
-			return { response: "yesButtonClicked", text: this.askResponseText, images: this.askResponseImages }
+			return {
+				response: "yesButtonClicked",
+				text: this.askState?.askResponseText,
+				images: this.askState?.askResponseImages
+			}
 		} else {
-			return { response: "messageResponse", text: this.askResponseText, images: this.askResponseImages }
+			return {
+				response: "messageResponse",
+				text: this.askState?.askResponseText,
+				images: this.askState?.askResponseImages
+			}
 		}
 	}
 
@@ -92,8 +108,8 @@ export class UserInteractionManager {
 		images?: string[],
 	): Promise<{ decision: "approve" | "deny" }> {
 		const askTs = Date.now()
-		const isBlocking = !isIdleAsk(type)
-		const isStatusMutable = isResumableAsk(type)
+		const isBlocking = isBlockingAsk(type)
+		const isStatusMutable = isMutableAsk(type)
 
 		const askMessage: ClineMessage = {
 			type: "ask",
@@ -111,9 +127,11 @@ export class UserInteractionManager {
 					this.resumableAsk = askMessage
 				} else if (type === "command") {
 					this.interactiveAsk = askMessage
-				} else if (isInteractiveAsk(type)) {
-					this.idleAsk = askMessage
 				}
+			} else if (isTerminalAsk(type)) {
+				this.terminalAsk = askMessage
+			} else {
+				this.interactiveAsk = askMessage
 			}
 
 			await this.waitForResponse(askTs)
@@ -123,16 +141,23 @@ export class UserInteractionManager {
 	}
 
 	private async waitForResponse(askTs: number): Promise<void> {
-		return new Promise((resolve) => {
-			const checkResponse = () => {
-				if (this.lastMessageTs !== askTs) {
-					this.waitForResponseTimeoutRef = undefined
-					resolve()
-				} else {
-					this.waitForResponseTimeoutRef = setTimeout(checkResponse, 100)
-				}
+		return new Promise((resolve, reject) => {
+			// 设置超时
+			const timeoutRef = setTimeout(() => {
+				this.responseResolvers.delete(askTs)
+				reject(new Error(`[UserInteractionManager] Response timeout after ${this.responseTimeout}ms`))
+			}, this.responseTimeout)
+
+			// 存储 resolver
+			this.responseResolvers.set(askTs, () => {
+				clearTimeout(timeoutRef)
+				resolve()
+			})
+
+			// 检查是否已经有响应
+			if (this.lastMessageTs !== askTs) {
+				this.responseResolvers.get(askTs)?.()
 			}
-			checkResponse()
 		})
 	}
 
@@ -240,18 +265,30 @@ export class UserInteractionManager {
 	}
 
 	handleWebviewAskResponse(askResponse: ClineAskResponse, text?: string, images?: string[]): void {
-		this.askResponse = askResponse
-		this.askResponseText = text
-		this.askResponseImages = images
+		// 更新状态
+		if (this.askState) {
+			this.askState.askResponse = askResponse
+			this.askState.askResponseText = text
+			this.askState.askResponseImages = images
+		}
 
 		if (askResponse === "messageResponse" || askResponse === "yesButtonClicked") {
 			this.lastMessageTs = Date.now()
 		}
 
-		if (this.idleAsk || this.resumableAsk || this.interactiveAsk) {
-			this.idleAsk = undefined
+		if (this.terminalAsk || this.resumableAsk || this.interactiveAsk) {
+			this.terminalAsk = undefined
 			this.resumableAsk = undefined
 			this.interactiveAsk = undefined
+		}
+
+		// 触发等待的 Promise
+		if (this.lastMessageTs) {
+			const resolver = this.responseResolvers.get(this.lastMessageTs)
+			if (resolver) {
+				resolver()
+				this.responseResolvers.delete(this.lastMessageTs)
+			}
 		}
 	}
 
@@ -263,27 +300,31 @@ export class UserInteractionManager {
 	}
 
 	async approveAsk({ text, images }: { text?: string; images?: string[] } = {}): Promise<void> {
-		this.askResponse = "yesButtonClicked"
-		this.askResponseText = text
-		this.askResponseImages = images
+		if (this.askState) {
+			this.askState.askResponse = "yesButtonClicked"
+			this.askState.askResponseText = text
+			this.askState.askResponseImages = images
+		}
 		this.lastMessageTs = Date.now()
 	}
 
 	async denyAsk({ text, images }: { text?: string; images?: string[] } = {}): Promise<void> {
-		this.askResponse = "messageResponse"
-		this.askResponseText = text
-		this.askResponseImages = images
+		if (this.askState) {
+			this.askState.askResponse = "messageResponse"
+			this.askState.askResponseText = text
+			this.askState.askResponseImages = images
+		}
 		this.lastMessageTs = Date.now()
 	}
 
 	clearAsks(): void {
-		this.idleAsk = undefined
+		this.terminalAsk = undefined
 		this.resumableAsk = undefined
 		this.interactiveAsk = undefined
 	}
 
-	getIdleAsk(): ClineMessage | undefined {
-		return this.idleAsk
+	getTerminalAsk(): ClineMessage | undefined {
+		return this.terminalAsk
 	}
 
 	getResumableAsk(): ClineMessage | undefined {
@@ -296,16 +337,18 @@ export class UserInteractionManager {
 
 	dispose(): void {
 		this.cancelAutoApprovalTimeout()
-		if (this.waitForResponseTimeoutRef) {
-			clearTimeout(this.waitForResponseTimeoutRef)
-			this.waitForResponseTimeoutRef = undefined
-		}
-		this.idleAsk = undefined
+		
+		// 清理所有等待的 Promise
+		this.responseResolvers.forEach((resolver) => {
+			resolver()
+		})
+		this.responseResolvers.clear()
+
+		// 清理状态
+		this.terminalAsk = undefined
 		this.resumableAsk = undefined
 		this.interactiveAsk = undefined
-		this.askResponse = undefined
-		this.askResponseText = undefined
-		this.askResponseImages = undefined
+		this.askState = null
 		this.lastMessageTs = undefined
 	}
 }

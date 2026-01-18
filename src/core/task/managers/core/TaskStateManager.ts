@@ -79,7 +79,11 @@ export class TaskStateManager extends EventEmitter {
 			this._taskToolProtocol = options.historyItem.toolProtocol
 		} else {
 			this._taskMode = undefined
-			this.taskModeReady = this.initializeTaskMode(options.provider)
+			// 异步初始化任务模式，但不阻塞构造函数
+			this.taskModeReady = this.initializeTaskMode(options.provider).catch((error) => {
+				console.error("[TaskStateManager] Failed to initialize task mode:", error)
+				this._taskMode = defaultModeSlug
+			})
 			const modelInfo = options.modelInfo
 			this._taskToolProtocol = resolveToolProtocol(options.apiConfiguration, modelInfo)
 		}
@@ -105,7 +109,9 @@ export class TaskStateManager extends EventEmitter {
 	}
 
 	get taskMode(): string {
-		return this._taskMode || defaultModeSlug
+		// 如果尚未初始化，返回默认值
+		// 注意：如果需要确保获取初始化后的值，应使用 getTaskMode() 方法
+		return this._taskMode ?? defaultModeSlug
 	}
 
 	setTaskMode(mode: string): void {
@@ -120,6 +126,7 @@ export class TaskStateManager extends EventEmitter {
 		this._taskToolProtocol = protocol
 	}
 
+	// setTaskToolProtocol 是 taskToolProtocol setter 的别名，保持向后兼容
 	setTaskToolProtocol(protocol: ToolProtocol | undefined): void {
 		this._taskToolProtocol = protocol
 	}
@@ -173,11 +180,31 @@ export class TaskStateManager extends EventEmitter {
 		messageQueueStateChangedHandler?: (() => void) | undefined,
 		providerProfileChangeListener?: (config: { name: string; provider?: string }) => void,
 	): void {
+		// 移除所有事件监听器
 		this.removeAllListeners()
+		
+		// 取消当前请求
+		this.cancelCurrentRequest()
+		
+		// 清理引用
+		this.providerRef = new WeakRef({} as ClineProvider)
+		
+		// 清理待办列表
+		this.todoList = undefined
+		
+		// 清理状态标志
+		this.abort = false
+		this.isPaused = false
+		this.didFinishAbortingStream = false
+		this.abandoned = false
+		this.abortReason = undefined
+		this.isInitialized = false
 	}
 
 	updateApiConfiguration(newApiConfiguration: ProviderSettings): void {
-		// Configuration update is handled by the Task class
-		// This method is kept for interface compatibility
+		// 配置更新由 Task 类处理
+		// 此方法保留用于接口兼容性
+		// 如果需要在此处处理配置更新，可以添加相应的逻辑
+		console.log("[TaskStateManager] API configuration update received (handled by Task class)")
 	}
 }

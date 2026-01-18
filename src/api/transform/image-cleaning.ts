@@ -1,5 +1,3 @@
-import type { ModelInfo } from "@roo-code/types"
-
 import { ApiHandler } from "../index"
 import { ApiMessage } from "../../core/task-persistence/apiMessages"
 

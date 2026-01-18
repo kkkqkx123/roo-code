@@ -69,6 +69,8 @@ describe("TaskLifecycleManager", () => {
 				mode: "code",
 				apiConfiguration: { apiProvider: "anthropic" },
 			}),
+			log: vi.fn(),
+			postStateToWebview: vi.fn().mockResolvedValue(undefined),
 		} as any
 
 		providerRef = new WeakRef(mockProvider as ClineProvider)
@@ -143,24 +145,19 @@ describe("TaskLifecycleManager", () => {
 		it("should abort current request and dispose resources", async () => {
 			mockTask.currentRequestAbortController = new AbortController()
 
-			// Create instances with dispose spies
-			const mockMessageQueueManager = new MessageQueueService()
-			const { RooIgnoreController } = await import("../../../../ignore/RooIgnoreController")
-			const { RooProtectedController } = await import("../../../../protect/RooProtectedController")
-			const mockRooIgnoreController = new RooIgnoreController("/workspace")
-			const mockRooProtectedController = new RooProtectedController("/workspace")
-
-			// Spy on dispose methods
-			const disposeSpy = vi.spyOn(mockMessageQueueManager, 'dispose')
-			const ignoreDisposeSpy = vi.spyOn(mockRooIgnoreController, 'dispose')
-			const protectedDisposeSpy = vi.spyOn(mockRooProtectedController, 'dispose')
+			// Create mock controllers with dispose spies
+			const mockRooIgnoreController = {
+				dispose: vi.fn(),
+			}
+			const mockRooProtectedController = {
+				dispose: vi.fn(),
+			}
 
 			// Create a new task with the mocked services
 			const taskWithServices = {
 				...mockTask,
-				messageQueueManager: mockMessageQueueManager,
-				rooIgnoreController: mockRooIgnoreController,
-				rooProtectedController: mockRooProtectedController,
+				rooIgnoreController: mockRooIgnoreController as any,
+				rooProtectedController: mockRooProtectedController as any,
 				getStreamingState: () => mockStreamingManager.getStreamingState(),
 			} as any
 
@@ -179,9 +176,8 @@ describe("TaskLifecycleManager", () => {
 
 			expect(taskWithServices.abort).toBe(true)
 			expect(taskWithServices.currentRequestAbortController?.signal.aborted).toBe(true)
-			expect(disposeSpy).toHaveBeenCalled()
-			expect(ignoreDisposeSpy).toHaveBeenCalled()
-			expect(protectedDisposeSpy).toHaveBeenCalled()
+			expect(mockRooIgnoreController.dispose).toHaveBeenCalled()
+			expect(mockRooProtectedController.dispose).toHaveBeenCalled()
 		})
 
 		it("should revert diff changes if streaming and editing", async () => {
@@ -208,31 +204,82 @@ describe("TaskLifecycleManager", () => {
 	})
 
 	describe("prepareResumeHistory", () => {
-		it("should remove reasoning messages from cline messages", async () => {
+		it("should truncate history at last ask message to avoid context pollution", async () => {
 			mockTask.clineMessages = [
 				{ type: "say", say: "text", text: "Message 1", ts: 1 },
-				{ type: "say", say: "reasoning", text: "Reasoning", ts: 2 },
-				{ type: "say", say: "text", text: "Message 2", ts: 3 },
+				{ type: "say", say: "reasoning", text: "Reasoning 1", ts: 2 },
+				{ type: "ask", say: "completion_result", text: "Ask 1", ts: 3 },
+				{ type: "say", say: "text", text: "Message 2", ts: 4 },
+				{ type: "say", say: "reasoning", text: "Reasoning 2", ts: 5 },
 			]
 
 			const result = await (lifecycleManager as any).prepareResumeHistory()
 
+			// 应该截断到 ask 消息（包含），清除后续可能错误的推理路径
 			expect(result).toEqual([
 				{ type: "say", say: "text", text: "Message 1", ts: 1 },
-				{ type: "say", say: "text", text: "Message 2", ts: 3 },
+				{ type: "say", say: "reasoning", text: "Reasoning 1", ts: 2 },
+				{ type: "ask", say: "completion_result", text: "Ask 1", ts: 3 },
 			])
 		})
 
-		it("should remove api_req_started messages without cost or cancelReason", async () => {
+		it("should truncate history at last api_req_started message", async () => {
 			mockTask.clineMessages = [
-				{ type: "say", say: "api_req_started", text: '{"ask":"completion_result"}', ts: 1 },
-				{ type: "say", say: "text", text: "Message", ts: 2 },
+				{ type: "say", say: "text", text: "Message 1", ts: 1 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.01}', ts: 2 },
+				{ type: "say", say: "text", text: "Message 2", ts: 3 },
+				{ type: "say", say: "reasoning", text: "Reasoning", ts: 4 },
 			]
 
 			const result = await (lifecycleManager as any).prepareResumeHistory()
 
+			// 应该截断到 api_req_started 消息（包含）
 			expect(result).toEqual([
-				{ type: "say", say: "text", text: "Message", ts: 2 },
+				{ type: "say", say: "text", text: "Message 1", ts: 1 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.01}', ts: 2 },
+			])
+		})
+
+		it("should return all messages if no ask or api_req_started found", async () => {
+			mockTask.clineMessages = [
+				{ type: "say", say: "text", text: "Message 1", ts: 1 },
+				{ type: "say", say: "text", text: "Message 2", ts: 2 },
+			]
+
+			const result = await (lifecycleManager as any).prepareResumeHistory()
+
+			// 如果没有找到需要响应的消息，返回所有消息
+			expect(result).toEqual([
+				{ type: "say", say: "text", text: "Message 1", ts: 1 },
+				{ type: "say", say: "text", text: "Message 2", ts: 2 },
+			])
+		})
+
+		it("should clear incorrect reasoning paths after intervention point", async () => {
+			// 模拟人为干涉的场景：AI 走了错误的推理路径，用户暂停并恢复
+			mockTask.clineMessages = [
+				{ type: "say", say: "text", text: "用户：添加用户认证功能", ts: 1 },
+				{ type: "say", say: "reasoning", text: "我需要先读取当前代码结构", ts: 2 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.01}', ts: 3 },
+				{ type: "say", say: "text", text: "已读取代码结构", ts: 4 },
+				{ type: "say", say: "reasoning", text: "我应该使用 JWT 认证", ts: 5 },
+				// 用户在这里发现 AI 理解错误，暂停任务
+				{ type: "say", say: "reasoning", text: "让我继续实现 JWT...", ts: 6 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.02}', ts: 7 },
+			]
+
+			const result = await (lifecycleManager as any).prepareResumeHistory()
+
+			// 应该保留到最后一个需要响应的消息（api_req_started），清除之后的错误路径
+			// 最后一个 api_req_started 在索引 7，所以保留所有消息到索引 7
+			expect(result).toEqual([
+				{ type: "say", say: "text", text: "用户：添加用户认证功能", ts: 1 },
+				{ type: "say", say: "reasoning", text: "我需要先读取当前代码结构", ts: 2 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.01}', ts: 3 },
+				{ type: "say", say: "text", text: "已读取代码结构", ts: 4 },
+				{ type: "say", say: "reasoning", text: "我应该使用 JWT 认证", ts: 5 },
+				{ type: "say", say: "reasoning", text: "让我继续实现 JWT...", ts: 6 },
+				{ type: "say", say: "api_req_started", text: '{"cost": 0.02}', ts: 7 },
 			])
 		})
 	})

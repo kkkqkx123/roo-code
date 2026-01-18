@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import type { ClineProvider } from "../../../webview/ClineProvider"
+import type { ClineProvider } from "../../../../webview/ClineProvider"
 
 const mockBrowserSession = {
 	isSessionActive: vi.fn().mockReturnValue(false),
@@ -16,7 +16,7 @@ vi.mock("../../../../services/browser/BrowserSession", () => ({
 	}),
 }))
 
-import { BrowserSessionManager } from "../browser/BrowserSessionManager"
+import { BrowserSessionManager } from "../../browser/BrowserSessionManager"
 
 describe("BrowserSessionManager", () => {
 	let mockProvider: Partial<ClineProvider>
@@ -30,7 +30,7 @@ describe("BrowserSessionManager", () => {
 		mockBrowserSession.getViewportSize.mockReset().mockReturnValue({ width: 900, height: 600 })
 		mockBrowserSession.dispose.mockReset()
 		mockStateChangeCallback = undefined
-		
+
 		mockOnStatusUpdate = vi.fn()
 		mockOnWebviewUpdate = vi.fn()
 
@@ -54,7 +54,7 @@ describe("BrowserSessionManager", () => {
 			onWebviewUpdate: mockOnWebviewUpdate,
 		})
 
-		vi.spyOn(browserSessionManager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+		vi.spyOn(browserSessionManager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 	})
 
 	describe("constructor", () => {
@@ -88,7 +88,7 @@ describe("BrowserSessionManager", () => {
 				onWebviewUpdate: mockOnWebviewUpdate,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			if (mockStateChangeCallback) {
 				mockStateChangeCallback(true)
@@ -105,7 +105,7 @@ describe("BrowserSessionManager", () => {
 				onWebviewUpdate: mockOnWebviewUpdate,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			if (mockStateChangeCallback) {
 				mockStateChangeCallback(false)
@@ -122,7 +122,7 @@ describe("BrowserSessionManager", () => {
 				onWebviewUpdate: mockOnWebviewUpdate,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			if (mockStateChangeCallback) {
 				mockStateChangeCallback(true)
@@ -174,7 +174,7 @@ describe("BrowserSessionManager", () => {
 				providerRef: { deref: vi.fn().mockReturnValue(mockProvider) } as any,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			expect(() => {
 				if (mockStateChangeCallback) {
@@ -194,7 +194,7 @@ describe("BrowserSessionManager", () => {
 			})
 
 			expect(() => {
-				;(manager as any).autoOpenBrowserSessionPanel()
+				; (manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 
@@ -206,7 +206,7 @@ describe("BrowserSessionManager", () => {
 			})
 
 			expect(() => {
-				;(manager as any).autoOpenBrowserSessionPanel()
+				; (manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 
@@ -218,7 +218,7 @@ describe("BrowserSessionManager", () => {
 			})
 
 			expect(() => {
-				;(manager as any).autoOpenBrowserSessionPanel()
+				; (manager as any).autoOpenBrowserSessionPanel()
 			}).not.toThrow()
 		})
 	})
@@ -314,7 +314,7 @@ describe("BrowserSessionManager", () => {
 				onWebviewUpdate: mockOnWebviewUpdate,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			mockBrowserSession.isSessionActive.mockReturnValue(true)
 			mockBrowserSession.getViewportSize.mockReturnValue({ width: 1280, height: 720 })
@@ -342,7 +342,7 @@ describe("BrowserSessionManager", () => {
 				onWebviewUpdate: mockOnWebviewUpdate,
 			})
 
-			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => {})
+			vi.spyOn(manager as any, "autoOpenBrowserSessionPanel").mockImplementation(() => { })
 
 			mockBrowserSession.isSessionActive.mockReturnValue(true)
 			mockBrowserSession.getViewportSize.mockReturnValue({ width: 900, height: 600 })

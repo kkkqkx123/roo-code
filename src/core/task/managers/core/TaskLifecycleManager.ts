@@ -46,7 +46,7 @@ export class TaskLifecycleManager {
 		provider?.log(`[TaskLifecycleManager#startTask] Starting task: "${task?.substring(0, 100)}..."`)
 		
 		// 检查所有可能的中止状态
-		if (this.task.aborted || this.task.abort || this.task.abandoned === true || this.task.abortReason === "user_cancelled") {
+		if (this.task.abort || this.task.abandoned === true || this.task.abortReason === "user_cancelled") {
 			provider?.log(`[TaskLifecycleManager#startTask] Task aborted, abandoned or cancelled, returning early`)
 			return
 		}
@@ -86,12 +86,7 @@ export class TaskLifecycleManager {
 			return
 		}
 
-		await this.detectToolProtocol()
-
-		const lastApiReqStartedIndex = modifiedClineMessages.findIndex(
-			(msg) => msg.type === "say" && msg.say === "api_req_started",
-		)
-
+		// 检测并设置工具协议（如果尚未设置）
 		if (!this.task.taskToolProtocol) {
 			const detectedProtocol = detectToolProtocolFromHistory(this.task.apiConversationHistory)
 			if (detectedProtocol) {
@@ -101,6 +96,10 @@ export class TaskLifecycleManager {
 				this.task.taskToolProtocol = resolveToolProtocol(this.task.apiConfiguration, this.task.api.getModel().info)
 			}
 		}
+
+		const lastApiReqStartedIndex = modifiedClineMessages.findIndex(
+			(msg) => msg.type === "say" && msg.say === "api_req_started",
+		)
 
 		const shouldUseXmlParser = this.task.taskToolProtocol === "xml"
 		if (shouldUseXmlParser && !this.task.getAssistantMessageParser()) {
@@ -168,54 +167,39 @@ export class TaskLifecycleManager {
 			this.task.apiConfiguration = apiConfiguration
 		}
 
-		const modifiedClineMessages = [...this.task.clineMessages]
-
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "reasoning") {
-				modifiedClineMessages.splice(i, 1)
-			}
+		// 采用响应索引的形式：找到最后一个需要响应的消息，截断历史
+		// 这样可以避免上下文污染，特别是在人为干涉后
+		const lastResponseIndex = this.findLastResponseIndex()
+		
+		// 如果找到响应索引，只保留到该索引之前的消息（包含该消息）
+		// 这样可以清除可能错误的后续推理路径
+		if (lastResponseIndex !== -1) {
+			return this.task.clineMessages.slice(0, lastResponseIndex + 1)
 		}
 
-		while (modifiedClineMessages.length > 0) {
-			const last = modifiedClineMessages[modifiedClineMessages.length - 1]
-			if (last.type === "say" && last.say === "reasoning") {
-				modifiedClineMessages.pop()
-			} else {
-				break
+		// 如果没有找到响应索引，返回原始消息（不应该发生）
+		return [...this.task.clineMessages]
+	}
+
+	/**
+	 * 找到最后一个需要响应的消息索引
+	 * 这是为了避免上下文污染的关键：只保留到需要响应的点
+	 */
+	private findLastResponseIndex(): number {
+		// 从后向前查找，找到最后一个需要响应的消息
+		for (let i = this.task.clineMessages.length - 1; i >= 0; i--) {
+			const msg = this.task.clineMessages[i]
+			
+			// 需要响应的消息类型：
+			// 1. ask 消息：需要用户响应
+			// 2. api_req_started 消息：需要 API 响应
+			if (msg.type === "ask" || (msg.type === "say" && msg.say === "api_req_started")) {
+				return i
 			}
 		}
-
-		const lastRelevantMessageIndex = modifiedClineMessages.findIndex(
-			(msg) => msg.type === "ask" || msg.say === "api_req_started",
-		)
-
-		if (lastRelevantMessageIndex !== -1) {
-			const lastRelevantMessage = modifiedClineMessages[lastRelevantMessageIndex]
-			if (lastRelevantMessage.type === "ask") {
-				modifiedClineMessages.splice(lastRelevantMessageIndex)
-			}
-		}
-
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "api_req_started") {
-				const lastApiReqStartedIndex = i
-
-				if (lastApiReqStartedIndex !== -1) {
-					const lastClineMessage = modifiedClineMessages[lastApiReqStartedIndex]
-					const parsedText: ClineApiReqInfo = JSON.parse(lastClineMessage.text || "{}")
-					const { cost, cancelReason } = parsedText
-
-					if (cost === undefined && cancelReason === undefined) {
-						modifiedClineMessages.splice(lastApiReqStartedIndex, 1)
-					}
-				}
-				break
-			}
-		}
-
-		return modifiedClineMessages
+		
+		// 如果没有找到，返回 -1
+		return -1
 	}
 
 	private async detectToolProtocol(): Promise<void> {
@@ -282,8 +266,15 @@ export class TaskLifecycleManager {
 
 		this.task.abort = true
 
+		// 取消当前正在进行的请求
 		if (this.task.currentRequestAbortController) {
 			this.task.currentRequestAbortController.abort()
+		}
+
+		// 清理自动批准超时
+		if (this.task['autoApprovalTimeoutRef']) {
+			clearTimeout(this.task['autoApprovalTimeoutRef'])
+			this.task['autoApprovalTimeoutRef'] = undefined
 		}
 
 		this.task.emit(RooCodeEventName.TaskAborted)
@@ -296,24 +287,42 @@ export class TaskLifecycleManager {
 	async dispose(): Promise<void> {
 		this.task.abort = true
 
+		// 取消当前请求
 		if (this.task.currentRequestAbortController) {
 			this.task.currentRequestAbortController.abort()
+		}
+
+		// 清理自动批准超时
+		if (this.task['autoApprovalTimeoutRef']) {
+			clearTimeout(this.task['autoApprovalTimeoutRef'])
+			this.task['autoApprovalTimeoutRef'] = undefined
 		}
 
 		const provider = this.providerRef.deref()
 
 		if (provider) {
+			// 清理忽略控制器
 			if (this.task.rooIgnoreController) {
 				this.task.rooIgnoreController.dispose()
+				this.task.rooIgnoreController = undefined
 			}
+			// 清理保护控制器
 			if (this.task.rooProtectedController) {
 				this.task.rooProtectedController.dispose()
+				this.task.rooProtectedController = undefined
 			}
+			// 如果正在流式传输且正在编辑，回滚更改
 			if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
 				this.task.diffViewProvider.revertChanges()
 			}
+			// 清理浏览器会话管理器
+			if (this.task['_browserSessionManager']) {
+				this.task['_browserSessionManager'].dispose()
+				this.task['_browserSessionManager'] = undefined
+			}
 		}
 
+		// 释放终端资源
 		TerminalRegistry.releaseTerminalsForTask(this.taskId)
 	}
 }

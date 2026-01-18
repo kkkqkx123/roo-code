@@ -5,6 +5,21 @@ export interface ConversationHistoryManagerOptions {
 	taskId: string
 }
 
+// 定义扩展的消息类型
+interface ExtendedMessageParam extends Anthropic.Messages.MessageParam {
+	reasoning_details?: any[]
+}
+
+interface ReasoningMessageParam {
+	type: "reasoning"
+	encrypted_content: string
+	id?: string
+	summary?: any[]
+}
+
+// 使用联合类型
+type CleanMessageParam = ExtendedMessageParam | ReasoningMessageParam
+
 export class ConversationHistoryManager {
 	readonly taskId: string
 
@@ -14,158 +29,139 @@ export class ConversationHistoryManager {
 
 	public buildCleanConversationHistory(
 		messages: ApiMessage[],
-	): Array<
-		Anthropic.Messages.MessageParam | { type: "reasoning"; encrypted_content: string; id?: string; summary?: any[] }
-	> {
-		type ReasoningItemForRequest = {
-			type: "reasoning"
-			encrypted_content: string
-			id?: string
-			summary?: any[]
+	): CleanMessageParam[] {
+		if (!Array.isArray(messages)) {
+			throw new Error('[ConversationHistoryManager] messages must be an array')
 		}
 
-		const cleanConversationHistory: (Anthropic.Messages.MessageParam | ReasoningItemForRequest)[] = []
+		const cleanConversationHistory: CleanMessageParam[] = []
 
 		for (const msg of messages) {
-			if (msg.type === "reasoning") {
-				if (msg.encrypted_content) {
-					cleanConversationHistory.push({
-						type: "reasoning",
-						summary: msg.summary,
-						encrypted_content: msg.encrypted_content!,
-						...(msg.id ? { id: msg.id } : {}),
-					})
-				}
+			if (!msg || typeof msg !== 'object') {
+				console.warn('[ConversationHistoryManager] Invalid message, skipping:', msg)
 				continue
 			}
 
-			if (msg.role === "assistant") {
-				const rawContent = msg.content
-
-				const contentArray: Anthropic.Messages.ContentBlockParam[] = Array.isArray(rawContent)
-					? (rawContent as Anthropic.Messages.ContentBlockParam[])
-					: rawContent !== undefined
-						? ([
-								{ type: "text", text: rawContent } satisfies Anthropic.Messages.TextBlockParam,
-							] as Anthropic.Messages.ContentBlockParam[])
-						: []
-
-				const [first, ...rest] = contentArray
-
-				const msgWithDetails = msg
-				if (msgWithDetails.reasoning_details && Array.isArray(msgWithDetails.reasoning_details)) {
-					let assistantContent: Anthropic.Messages.MessageParam["content"]
-
-					if (contentArray.length === 0) {
-						assistantContent = ""
-					} else if (contentArray.length === 1 && contentArray[0].type === "text") {
-						assistantContent = (contentArray[0] as Anthropic.Messages.TextBlockParam).text
-					} else {
-						assistantContent = contentArray
-					}
-
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: assistantContent,
-						reasoning_details: msgWithDetails.reasoning_details,
-					} as any)
-
-					continue
+			try {
+				const cleaned = this.cleanMessage(msg)
+				if (cleaned) {
+					cleanConversationHistory.push(cleaned)
 				}
-
-				const hasEncryptedReasoning =
-					first && (first as any).type === "reasoning" && typeof (first as any).encrypted_content === "string"
-
-				if (hasEncryptedReasoning) {
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: rest.length === 0 ? "" : rest,
-					})
-
-					continue
-				}
-
-				const hasThinkingBlock =
-					first && (first as any).type === "thinking" && typeof (first as any).thinking === "string"
-
-				if (hasThinkingBlock) {
-					cleanConversationHistory.push({
-						role: "assistant",
-						content: rest.length === 0 ? "" : rest,
-					})
-
-					continue
-				}
-
-				cleanConversationHistory.push(msg as Anthropic.Messages.MessageParam)
-			} else if (msg.role) {
-				cleanConversationHistory.push(msg as Anthropic.Messages.MessageParam)
+			} catch (error) {
+				console.error('[ConversationHistoryManager] Error cleaning message:', error)
+				continue
 			}
 		}
 
 		return cleanConversationHistory
 	}
 
-	public cleanAssistantMessage(msg: ApiMessage): Anthropic.Messages.MessageParam | null {
+	private cleanMessage(msg: ApiMessage): CleanMessageParam | null {
+		if (msg.type === "reasoning") {
+			return this.cleanReasoningMessage(msg)
+		}
+		
+		if (msg.role === "assistant") {
+			return this.processAssistantMessage(msg)
+		}
+		
+		if (msg.role) {
+			return msg as ExtendedMessageParam
+		}
+		
+		return null
+	}
+
+	private processAssistantMessage(msg: ApiMessage): ExtendedMessageParam | null {
+		const rawContent = msg.content
+		const contentArray = this.normalizeContent(rawContent)
+		const [first, ...rest] = contentArray
+
+		// 处理 reasoning_details
+		if (this.hasReasoningDetails(msg)) {
+			return this.buildMessageWithReasoningDetails(msg, contentArray)
+		}
+
+		// 处理加密推理
+		if (this.hasEncryptedReasoning(first)) {
+			return {
+				role: "assistant",
+				content: rest.length === 0 ? "" : rest,
+			}
+		}
+
+		// 处理思考块
+		if (this.hasThinkingBlock(first)) {
+			return {
+				role: "assistant",
+				content: rest.length === 0 ? "" : rest,
+			}
+		}
+
+		return msg as ExtendedMessageParam
+	}
+
+	private normalizeContent(rawContent: any): Anthropic.Messages.ContentBlockParam[] {
+		if (Array.isArray(rawContent)) {
+			return rawContent as Anthropic.Messages.ContentBlockParam[]
+		}
+		if (rawContent !== undefined) {
+			return [{
+				type: "text",
+				text: rawContent
+			} satisfies Anthropic.Messages.TextBlockParam]
+		}
+		return []
+	}
+
+	private hasReasoningDetails(msg: ApiMessage): boolean {
+		const msgWithDetails = msg as ApiMessage & { reasoning_details?: any[] }
+		return msgWithDetails.reasoning_details !== undefined && Array.isArray(msgWithDetails.reasoning_details)
+	}
+
+	private hasEncryptedReasoning(first: Anthropic.Messages.ContentBlockParam | undefined): boolean {
+		if (!first) return false
+		const block = first as { type?: string; encrypted_content?: string }
+		return block.type === "reasoning" && typeof block.encrypted_content === "string"
+	}
+
+	private hasThinkingBlock(first: Anthropic.Messages.ContentBlockParam | undefined): boolean {
+		if (!first) return false
+		const block = first as { type?: string; thinking?: string }
+		return block.type === "thinking" && typeof block.thinking === "string"
+	}
+
+	private buildMessageWithReasoningDetails(
+		msg: ApiMessage,
+		contentArray: Anthropic.Messages.ContentBlockParam[]
+	): ExtendedMessageParam {
+		const msgWithDetails = msg as ApiMessage & { reasoning_details?: any[] }
+		let assistantContent: Anthropic.Messages.MessageParam["content"]
+
+		if (contentArray.length === 0) {
+			assistantContent = ""
+		} else if (contentArray.length === 1 && contentArray[0].type === "text") {
+			assistantContent = (contentArray[0] as Anthropic.Messages.TextBlockParam).text
+		} else {
+			assistantContent = contentArray
+		}
+
+		return {
+			role: "assistant",
+			content: assistantContent,
+			reasoning_details: msgWithDetails.reasoning_details,
+		}
+	}
+
+	public cleanAssistantMessage(msg: ApiMessage): ExtendedMessageParam | null {
 		if (msg.role !== "assistant") {
 			return null
 		}
 
-		const rawContent = msg.content
-
-		const contentArray: Anthropic.Messages.ContentBlockParam[] = Array.isArray(rawContent)
-			? (rawContent as Anthropic.Messages.ContentBlockParam[])
-			: rawContent !== undefined
-				? ([
-						{ type: "text", text: rawContent } satisfies Anthropic.Messages.TextBlockParam,
-					] as Anthropic.Messages.ContentBlockParam[])
-				: []
-
-		const [first, ...rest] = contentArray
-
-		const msgWithDetails = msg
-		if (msgWithDetails.reasoning_details && Array.isArray(msgWithDetails.reasoning_details)) {
-			let assistantContent: Anthropic.Messages.MessageParam["content"]
-
-			if (contentArray.length === 0) {
-				assistantContent = ""
-			} else if (contentArray.length === 1 && contentArray[0].type === "text") {
-				assistantContent = (contentArray[0] as Anthropic.Messages.TextBlockParam).text
-			} else {
-				assistantContent = contentArray
-			}
-
-			return {
-				role: "assistant",
-				content: assistantContent,
-				reasoning_details: msgWithDetails.reasoning_details,
-			} as any
-		}
-
-		const hasEncryptedReasoning =
-			first && (first as any).type === "reasoning" && typeof (first as any).encrypted_content === "string"
-
-		if (hasEncryptedReasoning) {
-			return {
-				role: "assistant",
-				content: rest.length === 0 ? "" : rest,
-			}
-		}
-
-		const hasThinkingBlock =
-			first && (first as any).type === "thinking" && typeof (first as any).thinking === "string"
-
-		if (hasThinkingBlock) {
-			return {
-				role: "assistant",
-				content: rest.length === 0 ? "" : rest,
-			}
-		}
-
-		return msg as Anthropic.Messages.MessageParam
+		return this.processAssistantMessage(msg)
 	}
 
-	public cleanReasoningMessage(msg: ApiMessage): { type: "reasoning"; encrypted_content: string; id?: string; summary?: any[] } | null {
+	public cleanReasoningMessage(msg: ApiMessage): ReasoningMessageParam | null {
 		if (msg.type !== "reasoning") {
 			return null
 		}
@@ -211,7 +207,10 @@ export class ConversationHistoryManager {
 	public convertToApiMessages(messages: ApiMessage[]): Anthropic.Messages.MessageParam[] {
 		const cleanHistory = this.buildCleanConversationHistory(messages)
 		return cleanHistory.filter(
-			(msg): msg is Anthropic.Messages.MessageParam => (msg as any).type !== "reasoning",
+			(msg): msg is Anthropic.Messages.MessageParam => {
+				const reasoningMsg = msg as ReasoningMessageParam
+				return reasoningMsg.type !== "reasoning"
+			},
 		)
 	}
 }

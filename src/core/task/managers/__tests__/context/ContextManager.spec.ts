@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { ContextManager } from "../context/ContextManager"
-import type { ClineProvider } from "../../../webview/ClineProvider"
-import * as contextManagement from "../../../context-management"
-import type { ApiHandler } from "../../../../api"
-import { DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../context-management"
+import { ContextManager } from "../../context/ContextManager"
+import type { ClineProvider } from "../../../../webview/ClineProvider"
+import * as contextManagement from "../../../../context-management"
+import type { ApiHandler } from "../../../../../api"
+import { DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../../context-management"
 
 vi.mock("../../../ignore/RooIgnoreController", () => ({
 	RooIgnoreController: vi.fn().mockImplementation(() => ({
@@ -325,36 +325,36 @@ describe("ContextManager", () => {
 				showRooIgnoredFiles: false,
 				maxReadFileLine: 500,
 				maxImageFileSize: 5,
-			maxTotalImageSize: 10,
-			experiments: {},
-			mcpEnabled: false,
-			enableMcpServerCreation: false,
-			cwd: "/test",
-			machineId: "test-machine",
-			uriScheme: "vscode",
-			currentTaskItem: undefined,
-			currentTaskTodos: undefined,
-			toolRequirements: {},
-			settingsImportedAt: undefined,
-			historyPreviewCollapsed: false,
-			isBrowserSessionActive: false,
-			messageQueue: undefined,
-			lastShownAnnouncementId: undefined,
-			apiModelId: undefined,
-			mcpServers: undefined,
-			remoteControlEnabled: false,
-			taskSyncEnabled: false,
-			featureRoomoteControlEnabled: false,
-			
-			// Terminal command checkpoint configurations
-			checkpointBeforeHighRiskCommands: false,
-			checkpointAfterHighRiskCommands: false,
-			checkpointOnCommandError: true,
-			checkpointCommands: [],
-			noCheckpointCommands: [],
-			checkpointShellSpecific: {},
-			
-			claudeCodeIsAuthenticated: undefined,
+				maxTotalImageSize: 10,
+				experiments: {},
+				mcpEnabled: false,
+				enableMcpServerCreation: false,
+				cwd: "/test",
+				machineId: "test-machine",
+				uriScheme: "vscode",
+				currentTaskItem: undefined,
+				currentTaskTodos: undefined,
+				toolRequirements: {},
+				settingsImportedAt: undefined,
+				historyPreviewCollapsed: false,
+				isBrowserSessionActive: false,
+				messageQueue: undefined,
+				lastShownAnnouncementId: undefined,
+				apiModelId: undefined,
+				mcpServers: undefined,
+				remoteControlEnabled: false,
+				taskSyncEnabled: false,
+				featureRoomoteControlEnabled: false,
+
+				// Terminal command checkpoint configurations
+				checkpointBeforeHighRiskCommands: false,
+				checkpointAfterHighRiskCommands: false,
+				checkpointOnCommandError: true,
+				checkpointCommands: [],
+				noCheckpointCommands: [],
+				checkpointShellSpecific: {},
+
+				claudeCodeIsAuthenticated: undefined,
 			}) as any
 
 			// Mock postMessageToWebview
@@ -585,29 +585,29 @@ describe("ContextManager", () => {
 				cwd: "/test",
 				machineId: "test-machine",
 				uriScheme: "vscode",
-			currentTaskItem: undefined,
-			currentTaskTodos: undefined,
-			toolRequirements: {},
-			settingsImportedAt: undefined,
-			historyPreviewCollapsed: false,
-			isBrowserSessionActive: false,
-			messageQueue: undefined,
-			lastShownAnnouncementId: undefined,
-			apiModelId: undefined,
-			mcpServers: undefined,
-			remoteControlEnabled: false,
-			taskSyncEnabled: false,
-			featureRoomoteControlEnabled: false,
-			
-			// Terminal command checkpoint configurations
-			checkpointBeforeHighRiskCommands: false,
-			checkpointAfterHighRiskCommands: false,
-			checkpointOnCommandError: true,
-			checkpointCommands: [],
-			noCheckpointCommands: [],
-			checkpointShellSpecific: {},
-			
-			claudeCodeIsAuthenticated: undefined,
+				currentTaskItem: undefined,
+				currentTaskTodos: undefined,
+				toolRequirements: {},
+				settingsImportedAt: undefined,
+				historyPreviewCollapsed: false,
+				isBrowserSessionActive: false,
+				messageQueue: undefined,
+				lastShownAnnouncementId: undefined,
+				apiModelId: undefined,
+				mcpServers: undefined,
+				remoteControlEnabled: false,
+				taskSyncEnabled: false,
+				featureRoomoteControlEnabled: false,
+
+				// Terminal command checkpoint configurations
+				checkpointBeforeHighRiskCommands: false,
+				checkpointAfterHighRiskCommands: false,
+				checkpointOnCommandError: true,
+				checkpointCommands: [],
+				noCheckpointCommands: [],
+				checkpointShellSpecific: {},
+
+				claudeCodeIsAuthenticated: undefined,
 			}) as any
 
 			// Mock provider settings manager

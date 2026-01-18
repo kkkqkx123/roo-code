@@ -14,13 +14,18 @@ export interface QueueEvents {
 	stateChanged: [messages: QueuedMessage[]]
 }
 
+export interface MessageQueueServiceOptions {
+	maxSize?: number // 队列最大大小
+}
+
 export class MessageQueueService extends EventEmitter<QueueEvents> {
 	private _messages: QueuedMessage[]
+	private maxSize: number
 
-	constructor() {
+	constructor(options: MessageQueueServiceOptions = {}) {
 		super()
-
 		this._messages = []
+		this.maxSize = options.maxSize ?? 10 // 默认最多 10 条消息
 	}
 
 	private findMessage(id: string) {
@@ -35,6 +40,12 @@ export class MessageQueueService extends EventEmitter<QueueEvents> {
 
 	public addMessage(text: string, images?: string[]): QueuedMessage | undefined {
 		if (!text && !images?.length) {
+			return undefined
+		}
+
+		// 检查队列是否已满
+		if (this._messages.length >= this.maxSize) {
+			console.warn('[MessageQueueService] Queue is full, cannot add message')
 			return undefined
 		}
 

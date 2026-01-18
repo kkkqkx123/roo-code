@@ -20,12 +20,36 @@ export class ConversationRewindManager {
 
 		const clineIndex = this.task.clineMessages.findIndex((m: ClineMessage) => m.ts === ts)
 		if (clineIndex === -1) {
+			// 尝试找到最接近的消息
+			const closestIndex = this.findClosestMessageIndex(ts)
+			if (closestIndex !== -1) {
+				console.warn(`[ConversationRewindManager] Message with timestamp ${ts} not found, using closest message at ${this.task.clineMessages[closestIndex].ts}`)
+				const cutoffIndex = includeTargetMessage ? closestIndex + 1 : closestIndex
+				await this.performRewind(cutoffIndex, this.task.clineMessages[closestIndex].ts, { skipCleanup })
+				return
+			}
+			
 			throw new Error(`Message with timestamp ${ts} not found in clineMessages`)
 		}
 
 		const cutoffIndex = includeTargetMessage ? clineIndex + 1 : clineIndex
 
 		await this.performRewind(cutoffIndex, ts, { skipCleanup })
+	}
+
+	private findClosestMessageIndex(ts: number): number {
+		let closestIndex = -1
+		let minDiff = Infinity
+
+		for (let i = 0; i < this.task.clineMessages.length; i++) {
+			const diff = Math.abs(this.task.clineMessages[i].ts - ts)
+			if (diff < minDiff) {
+				minDiff = diff
+				closestIndex = i
+			}
+		}
+
+		return closestIndex
 	}
 
 	async rewindToIndex(toIndex: number, options: RewindOptions = {}): Promise<void> {
@@ -76,12 +100,32 @@ export class ConversationRewindManager {
 		skipCleanup: boolean,
 	): Promise<void> {
 		const originalHistory = this.task.apiConversationHistory
-		let apiHistory = [...originalHistory]
+		
+		// 1. 计算实际的截止时间戳
+		const actualCutoff = this.calculateActualCutoff(cutoffTs)
 
+		// 2. 按时间戳过滤
+		let apiHistory = this.filterByTimestamp(originalHistory, actualCutoff)
+
+		// 3. 移除孤立的摘要
+		apiHistory = this.removeOrphanedSummaries(apiHistory, removedIds.condenseIds)
+
+		// 4. 移除孤立的截断标记
+		apiHistory = this.removeOrphanedTruncationMarkers(apiHistory, removedIds.truncationIds)
+
+		// 5. 清理（如果需要）
+		if (!skipCleanup) {
+			apiHistory = cleanupAfterTruncation(apiHistory)
+		}
+
+		// 6. 保存（仅当有变化时）
+		await this.saveIfChanged(apiHistory, originalHistory)
+	}
+
+	private calculateActualCutoff(cutoffTs: number): number {
+		const apiHistory = this.task.apiConversationHistory
 		const hasExactMatch = apiHistory.some((m) => m.ts === cutoffTs)
 		const hasMessageBeforeCutoff = apiHistory.some((m) => m.ts !== undefined && m.ts < cutoffTs)
-
-		let actualCutoff: number = cutoffTs
 
 		if (!hasExactMatch && hasMessageBeforeCutoff) {
 			const firstUserMsgIndexToRemove = apiHistory.findIndex(
@@ -89,43 +133,54 @@ export class ConversationRewindManager {
 			)
 
 			if (firstUserMsgIndexToRemove !== -1) {
-				actualCutoff = apiHistory[firstUserMsgIndexToRemove].ts!
+				return apiHistory[firstUserMsgIndexToRemove].ts!
 			}
 		}
 
-		apiHistory = apiHistory.filter((m) => !m.ts || m.ts < actualCutoff)
+		return cutoffTs
+	}
 
-		if (removedIds.condenseIds.size > 0) {
-			apiHistory = apiHistory.filter((msg) => {
-				if (msg.isSummary && msg.condenseId && removedIds.condenseIds.has(msg.condenseId)) {
-					console.log(`[ConversationRewindManager] Removing orphaned Summary with condenseId: ${msg.condenseId}`)
-					return false
-				}
-				return true
-			})
+	private filterByTimestamp(history: ApiMessage[], cutoffTs: number): ApiMessage[] {
+		return history.filter((m) => !m.ts || m.ts < cutoffTs)
+	}
+
+	private removeOrphanedSummaries(history: ApiMessage[], condenseIds: Set<string>): ApiMessage[] {
+		if (condenseIds.size === 0) {
+			return history
 		}
 
-		if (removedIds.truncationIds.size > 0) {
-			apiHistory = apiHistory.filter((msg) => {
-				if (msg.isTruncationMarker && msg.truncationId && removedIds.truncationIds.has(msg.truncationId)) {
-					console.log(
-						`[ConversationRewindManager] Removing orphaned truncation marker with truncationId: ${msg.truncationId}`,
-					)
-					return false
-				}
-				return true
-			})
+		return history.filter((msg) => {
+			if (msg.isSummary && msg.condenseId && condenseIds.has(msg.condenseId)) {
+				console.log(`[ConversationRewindManager] Removing orphaned Summary with condenseId: ${msg.condenseId}`)
+				return false
+			}
+			return true
+		})
+	}
+
+	private removeOrphanedTruncationMarkers(history: ApiMessage[], truncationIds: Set<string>): ApiMessage[] {
+		if (truncationIds.size === 0) {
+			return history
 		}
 
-		if (!skipCleanup) {
-			apiHistory = cleanupAfterTruncation(apiHistory)
-		}
+		return history.filter((msg) => {
+			if (msg.isTruncationMarker && msg.truncationId && truncationIds.has(msg.truncationId)) {
+				console.log(
+					`[ConversationRewindManager] Removing orphaned truncation marker with truncationId: ${msg.truncationId}`,
+				)
+				return false
+			}
+			return true
+		})
+	}
 
+	private async saveIfChanged(newHistory: ApiMessage[], originalHistory: ApiMessage[]): Promise<void> {
 		const historyChanged =
-			apiHistory.length !== originalHistory.length || apiHistory.some((msg, i) => msg !== originalHistory[i])
+			newHistory.length !== originalHistory.length ||
+			newHistory.some((msg, i) => msg !== originalHistory[i])
 
 		if (historyChanged) {
-			await this.task.overwriteApiConversationHistory(apiHistory)
+			await this.task.overwriteApiConversationHistory(newHistory)
 		}
 	}
 }

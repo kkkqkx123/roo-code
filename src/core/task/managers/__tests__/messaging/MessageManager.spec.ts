@@ -19,7 +19,7 @@ describe("MessageManager", () => {
 	let mockStateManager: Partial<TaskStateManager>
 	let messageManager: MessageManager
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		mockStateManager = {
 			taskId: "task-1",
 			lastMessageTs: undefined,
@@ -31,6 +31,9 @@ describe("MessageManager", () => {
 			taskId: "task-1",
 			globalStoragePath: "/tmp/storage",
 		})
+		
+		// 初始化 MessageManager
+		await messageManager.initialize()
 	})
 
 	afterEach(() => {

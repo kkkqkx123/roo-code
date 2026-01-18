@@ -21,6 +21,7 @@ export class MessageManager {
 	private globalStoragePath: string
 	private task?: any // Store task reference for token usage updates
 	private eventBus?: any // Store event bus reference
+	private initialized: boolean = false // 初始化状态标志
 
 	apiConversationHistory: ApiMessage[] = []
 	clineMessages: ClineMessage[] = []
@@ -33,9 +34,27 @@ export class MessageManager {
 		this.globalStoragePath = options.globalStoragePath
 		this.task = options.task
 		this.eventBus = options.eventBus
+	}
+
+	/**
+	 * 异步初始化方法，必须在构造后调用
+	 */
+	async initialize(): Promise<void> {
+		if (this.initialized) {
+			return
+		}
 		
-		// 从保存的历史中恢复对话索引
-		this.initializeConversationIndex()
+		await this.initializeConversationIndex()
+		this.initialized = true
+	}
+
+	/**
+	 * 确保已初始化
+	 */
+	private ensureInitialized(): void {
+		if (!this.initialized) {
+			throw new Error('[MessageManager] Not initialized. Call initialize() first.')
+		}
 	}
 
 	/**
@@ -97,6 +116,8 @@ export class MessageManager {
 	}
 
 	async addToApiConversationHistory(message: ApiMessage, reasoning?: string, api?: any): Promise<void> {
+		this.ensureInitialized()
+		
 		// 修改：基于请求索引的策略
 		let conversationIndex: number | undefined
 		
@@ -109,6 +130,9 @@ export class MessageManager {
 				conversationIndex = this.conversationIndexCounter++
 				console.warn(`[MessageManager] Assistant message without active request, assigned new index: ${conversationIndex}`)
 			}
+		} else if (message.role === "user") {
+			// 用户消息也分配索引
+			conversationIndex = this.conversationIndexCounter++
 		}
 
 		const messageWithTs = {
@@ -198,7 +222,18 @@ export class MessageManager {
 	}
 
 	async saveApiConversationHistory(): Promise<void> {
-		await saveApiMessages({ messages: this.apiConversationHistory, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+		// 确保所有消息都有 conversationIndex
+		const messagesWithIndex = this.apiConversationHistory.map(msg => {
+			if (msg.conversationIndex === undefined && msg.role) {
+				return {
+					...msg,
+					conversationIndex: this.conversationIndexCounter++
+				}
+			}
+			return msg
+		})
+		
+		await saveApiMessages({ messages: messagesWithIndex, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
 	async saveClineMessages(messages?: ClineMessage[]): Promise<void> {
@@ -272,5 +307,6 @@ export class MessageManager {
 		this.apiConversationHistory = []
 		this.clineMessages = []
 		this.task = undefined
+		this.initialized = false
 	}
 }

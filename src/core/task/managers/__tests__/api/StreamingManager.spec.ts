@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { StreamingManager } from "../api/StreamingManager"
+import { StreamingManager } from "../../api/StreamingManager"
 
 describe("StreamingManager", () => {
 	let streamingManager: StreamingManager
