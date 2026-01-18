@@ -83,8 +83,6 @@
 		"zod": "^3.25.61"
 	},
 	"devDependencies": {
-		"@roo-code/config-eslint": "workspace:^",
-		"@roo-code/config-typescript": "workspace:^",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/react": "^16.2.0",
 		"@testing-library/user-event": "^14.6.1",

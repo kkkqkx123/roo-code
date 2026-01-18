@@ -8,7 +8,7 @@ import {
 	type ExperimentId,
 	type TodoItem,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
-} from "@roo-code/types"
+} from "@shared/types"
 
 import { ExtensionMessage, ExtensionState, Command } from "@roo/ExtensionMessage"
 import { findLastIndex } from "@roo/array"
@@ -79,7 +79,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setEnableCheckpoints: (value: boolean) => void
 	checkpointTimeout: number
 	setCheckpointTimeout: (value: number) => void
-	
+
 	// Terminal command checkpoint settings
 	checkpointBeforeHighRiskCommands: boolean
 	setCheckpointBeforeHighRiskCommands: (value: boolean) => void
@@ -202,7 +202,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		diffEnabled: false,
 		enableCheckpoints: true,
 		checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS, // Default to 15 seconds
-		
+
 		// Terminal command checkpoint settings
 		checkpointBeforeHighRiskCommands: false, // Default to false for safety
 		checkpointAfterHighRiskCommands: false, // Default to false for performance
@@ -423,7 +423,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		profileThresholds: state.profileThresholds ?? {},
 		alwaysAllowFollowupQuestions,
 		followupAutoApproveTimeoutMs,
-		
+
 		// Terminal command checkpoint properties
 		checkpointBeforeHighRiskCommands: state.checkpointBeforeHighRiskCommands ?? false,
 		checkpointAfterHighRiskCommands: state.checkpointAfterHighRiskCommands ?? false,
@@ -463,15 +463,15 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		setTtsSpeed: (value) => setState((prevState) => ({ ...prevState, ttsSpeed: value })),
 		setDiffEnabled: (value) => setState((prevState) => ({ ...prevState, diffEnabled: value })),
 		setEnableCheckpoints: (value) => setState((prevState) => ({ ...prevState, enableCheckpoints: value })),
-	setCheckpointTimeout: (value) => setState((prevState) => ({ ...prevState, checkpointTimeout: value })),
-	
-	// Terminal command checkpoint setters
-	setCheckpointBeforeHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointBeforeHighRiskCommands: value })),
-	setCheckpointAfterHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointAfterHighRiskCommands: value })),
-	setCheckpointOnCommandError: (value) => setState((prevState) => ({ ...prevState, checkpointOnCommandError: value })),
-	setCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, checkpointCommands: value })),
-	setNoCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, noCheckpointCommands: value })),
-	setCheckpointShellSpecific: (value) => setState((prevState) => ({ ...prevState, checkpointShellSpecific: value })),
+		setCheckpointTimeout: (value) => setState((prevState) => ({ ...prevState, checkpointTimeout: value })),
+
+		// Terminal command checkpoint setters
+		setCheckpointBeforeHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointBeforeHighRiskCommands: value })),
+		setCheckpointAfterHighRiskCommands: (value) => setState((prevState) => ({ ...prevState, checkpointAfterHighRiskCommands: value })),
+		setCheckpointOnCommandError: (value) => setState((prevState) => ({ ...prevState, checkpointOnCommandError: value })),
+		setCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, checkpointCommands: value })),
+		setNoCheckpointCommands: (value) => setState((prevState) => ({ ...prevState, noCheckpointCommands: value })),
+		setCheckpointShellSpecific: (value) => setState((prevState) => ({ ...prevState, checkpointShellSpecific: value })),
 		setBrowserViewportSize: (value: string) =>
 			setState((prevState) => ({ ...prevState, browserViewportSize: value })),
 		setFuzzyMatchThreshold: (value) => setState((prevState) => ({ ...prevState, fuzzyMatchThreshold: value })),

@@ -30,8 +30,6 @@
 		"zod": "^3.25.61"
 	},
 	"devDependencies": {
-		"@roo-code/config-eslint": "workspace:^",
-		"@roo-code/config-typescript": "workspace:^",
 		"@types/better-sqlite3": "^7.6.8",
 		"@types/node": "20.x",
 		"@types/ps-tree": "^1.1.6",

@@ -19,7 +19,7 @@ import {
 	IpcOrigin,
 	IpcMessageType,
 } from "@shared/types"
-import { IpcServer } from "@roo-code/ipc"
+import { IpcServer } from "../services/ipc"
 
 import { Package } from "../shared/package"
 import { ClineProvider } from "../core/webview/ClineProvider"
