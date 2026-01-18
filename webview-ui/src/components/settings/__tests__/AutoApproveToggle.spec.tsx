@@ -10,6 +10,7 @@ vi.mock("@/i18n/TranslationContext", () => {
 		...actual,
 		useAppTranslation: () => ({
 			t: (key: string) => key,
+			tDynamic: (key: string) => key,
 		}),
 	}
 })

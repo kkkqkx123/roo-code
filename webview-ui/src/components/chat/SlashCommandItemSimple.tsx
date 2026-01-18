@@ -1,6 +1,6 @@
 import React from "react"
 
-import type { Command } from "@roo/ExtensionMessage"
+import type { Command } from "@shared/ExtensionMessage"
 
 interface SlashCommandItemSimpleProps {
 	command: Command

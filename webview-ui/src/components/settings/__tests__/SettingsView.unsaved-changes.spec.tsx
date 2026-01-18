@@ -21,6 +21,7 @@ vi.mock("@src/context/ExtensionStateContext", () => ({
 vi.mock("@src/i18n/TranslationContext", () => ({
 	useAppTranslation: () => ({
 		t: (key: string) => key,
+		tDynamic: (key: string) => key,
 	}),
 	useTranslation: () => ({
 		t: (key: string) => key,

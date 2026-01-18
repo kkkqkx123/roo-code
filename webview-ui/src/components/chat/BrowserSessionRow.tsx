@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import type { ClineMessage } from "@shared/types"
 
-import { BrowserAction, BrowserActionResult, ClineSayBrowserAction } from "@roo/ExtensionMessage"
+import { BrowserAction, BrowserActionResult, ClineSayBrowserAction } from "@shared/ExtensionMessage"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -12,7 +12,7 @@ import { useExtensionState } from "@src/context/ExtensionStateContext"
 import CodeBlock from "../common/CodeBlock"
 import { ProgressIndicator } from "./ProgressIndicator"
 import { Button, StandardTooltip } from "@src/components/ui"
-import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@roo/browserUtils"
+import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@shared/browserUtils"
 import {
 	Globe,
 	Pointer,

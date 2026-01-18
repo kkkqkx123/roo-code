@@ -1,6 +1,6 @@
 import React from "react"
 import { ToolGroup, ToolName } from "@shared/types"
-import { TOOL_GROUPS } from "@roo/tools"
+import { TOOL_GROUPS } from "@shared/tools"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { StandardTooltip } from "@src/components/ui"
 

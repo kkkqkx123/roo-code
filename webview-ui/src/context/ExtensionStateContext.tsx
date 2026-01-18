@@ -10,13 +10,13 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@shared/types"
 
-import { ExtensionMessage, ExtensionState, Command } from "@roo/ExtensionMessage"
-import { findLastIndex } from "@roo/array"
-import { McpServer } from "@roo/mcp"
-import { checkExistKey } from "@roo/checkExistApiConfig"
-import { Mode, defaultModeSlug, defaultPrompts } from "@roo/modes"
-import { CustomSupportPrompts } from "@roo/support-prompt"
-import { experimentDefault } from "@roo/experiments"
+import { ExtensionMessage, ExtensionState, Command } from "@shared/ExtensionMessage"
+import { findLastIndex } from "@shared/array"
+import { McpServer } from "@shared/mcp"
+import { checkExistKey } from "@shared/checkExistApiConfig"
+import { Mode, defaultModeSlug, defaultPrompts } from "@shared/modes"
+import { CustomSupportPrompts } from "@shared/support-prompt"
+import { experimentDefault } from "@shared/experiments"
 
 import { vscode } from "@src/utils/vscode"
 import { convertTextMateToHljs } from "@src/utils/textMateToHljs"

@@ -1,18 +1,26 @@
 {
 	"$schema": "https://turbo.build/schema.json",
-	"extends": ["//"],
+	"extends": [
+		"//"
+	],
 	"tasks": {
 		"bundle": {
-			"dependsOn": ["^build", "@roo-code/vscode-webview#build"],
-			"outputs": ["dist/**"]
+			"outputs": [
+				"dist/**"
+			]
 		},
 		"vsix": {
-			"dependsOn": ["bundle"],
-			"inputs": ["dist/**"],
-			"outputs": ["../bin/**"]
+			"dependsOn": [
+				"bundle"
+			],
+			"inputs": [
+				"dist/**"
+			],
+			"outputs": [
+				"../bin/**"
+			]
 		},
 		"watch:bundle": {
-			"dependsOn": ["@roo-code/build#build"],
 			"cache": false
 		}
 	}

@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
-import { Package } from "@roo/package"
+import { Package } from "@shared/package"
 
 import { vscode } from "@/utils/vscode"
 import { cn } from "@/lib/utils"

@@ -14,7 +14,7 @@ import prettyBytes from "pretty-bytes"
 
 import type { ClineMessage } from "@shared/types"
 
-import { getModelMaxOutputTokens } from "@roo/api"
+import { getModelMaxOutputTokens } from "@shared/api"
 
 import { formatLargeNumber } from "@src/utils/format"
 import { cn } from "@src/lib/utils"

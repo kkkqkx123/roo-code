@@ -20,6 +20,13 @@ vi.mock("@src/i18n/TranslationContext", () => ({
 			}
 			return translations[key] || key
 		},
+		tDynamic: (key: string) => {
+			const translations: Record<string, string> = {
+				"common:dismiss": "Dismiss",
+				"common:dismissAndDontShowAgain": "Dismiss and don't show again",
+			}
+			return translations[key] || key
+		},
 	}),
 }))
 

@@ -76,8 +76,8 @@ vi.mock("@src/components/cloud/CloudUpsellDialog", () => ({
 	CloudUpsellDialog: () => null,
 }))
 
-// Mock findLastIndex from @roo/array
-vi.mock("@roo/array", () => ({
+// Mock findLastIndex from @shared/array
+vi.mock("@shared/array", () => ({
 	findLastIndex: (array: any[], predicate: (item: any) => boolean) => {
 		for (let i = array.length - 1; i >= 0; i--) {
 			if (predicate(array[i])) {

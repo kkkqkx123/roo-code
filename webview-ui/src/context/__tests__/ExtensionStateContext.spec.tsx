@@ -2,7 +2,7 @@ import { render, screen, act } from "@/utils/test-utils"
 
 import { ProviderSettings, ExperimentId, DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@shared/types"
 
-import { ExtensionState } from "@roo/ExtensionMessage"
+import { ExtensionState } from "@shared/ExtensionMessage"
 
 import { ExtensionStateContextProvider, useExtensionState, mergeExtensionState } from "../ExtensionStateContext"
 

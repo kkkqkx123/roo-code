@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@/utils/test-utils"
 
-import type { Command } from "@roo/ExtensionMessage"
+import type { Command } from "@shared/ExtensionMessage"
 
 import { SlashCommandItemSimple } from "../SlashCommandItemSimple"
 

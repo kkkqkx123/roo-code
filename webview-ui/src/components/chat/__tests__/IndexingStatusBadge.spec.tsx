@@ -91,6 +91,27 @@ vi.mock("@/i18n/TranslationContext", () => ({
 			}
 			return translations[cleanKey] || cleanKey
 		},
+		tDynamic: (key: string, params?: any) => {
+			// Remove namespace prefix if present
+			const cleanKey = key.includes(":") ? key.split(":")[1] : key
+
+			const translations: Record<string, string> = {
+				"indexingStatus.ready": "Index ready",
+				"indexingStatus.indexing":
+					params?.percentage !== undefined ? `Indexing ${params.percentage}%` : "Indexing",
+				"indexingStatus.error": "Index error",
+				"indexingStatus.indexed": "Indexed",
+				"indexingStatus.tooltip.ready": "The codebase index is ready for use",
+				"indexingStatus.tooltip.indexing":
+					params?.percentage !== undefined
+						? `Indexing in progress: ${params.percentage}% complete`
+						: "Indexing in progress",
+				"indexingStatus.tooltip.error": "An error occurred during indexing",
+				"indexingStatus.tooltip.indexed": "Codebase has been successfully indexed",
+				"indexingStatus.tooltip.clickToSettings": "Click to open indexing settings",
+			}
+			return translations[cleanKey] || cleanKey
+		},
 	}),
 }))
 

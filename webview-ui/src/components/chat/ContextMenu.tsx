@@ -3,7 +3,7 @@ import { getIconForFilePath, getIconUrlByName, getIconForDirectoryPath } from "v
 import { Settings } from "lucide-react"
 
 import type { ModeConfig } from "@shared/types"
-import type { Command } from "@roo/ExtensionMessage"
+import type { Command } from "@shared/ExtensionMessage"
 
 import {
 	ContextMenuOptionType,

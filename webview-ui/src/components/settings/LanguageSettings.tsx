@@ -4,7 +4,7 @@ import { Globe } from "lucide-react"
 
 import type { Language } from "@shared/types"
 
-import { LANGUAGES } from "@roo/language"
+import { LANGUAGES } from "@shared/language"
 
 import { cn } from "@src/lib/utils"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@src/components/ui"

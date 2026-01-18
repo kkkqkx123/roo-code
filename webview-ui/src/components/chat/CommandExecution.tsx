@@ -5,11 +5,11 @@ import { ChevronDown, OctagonX } from "lucide-react"
 
 import { CommandExecutionStatus, commandExecutionStatusSchema } from "@shared/types"
 
-import { ExtensionMessage } from "@roo/ExtensionMessage"
-import { safeJsonParse } from "@roo/safeJsonParse"
+import { ExtensionMessage } from "@shared/ExtensionMessage"
+import { safeJsonParse } from "@shared/safeJsonParse"
 
-import { COMMAND_OUTPUT_STRING } from "@roo/combineCommandSequences"
-import { parseCommand } from "@roo/parse-command"
+import { COMMAND_OUTPUT_STRING } from "@shared/combineCommandSequences"
+import { parseCommand } from "@shared/parse-command"
 
 import { vscode } from "@src/utils/vscode"
 import { extractPatternsFromCommand } from "@src/utils/command-parser"
