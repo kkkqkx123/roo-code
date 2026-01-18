@@ -1,5 +1,5 @@
-import { type ToolName, toolNames, type AssistantMessageContent } from "@shared/types"
-import { TextContent, ToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
+import { type ToolName, toolNames, type AssistantMessageContent, type TextContent } from "@shared/types"
+import { ToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
 
 /**
  * Parser for assistant messages. Maintains state between chunks

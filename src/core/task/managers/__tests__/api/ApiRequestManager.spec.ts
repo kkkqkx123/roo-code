@@ -8,8 +8,7 @@ import type { ContextManager } from "../../context/ContextManager"
 import type { UsageTracker } from "../../monitoring/UsageTracker"
 import type { FileEditorManager } from "../../execution/FileEditorManager"
 import type { ApiHandler } from "../../../../../api"
-import type { ProviderSettings } from "@shared/types"
-import type { TextContent } from "../../../../../shared/tools"
+import type { ProviderSettings, TextContent } from "@shared/types"
 
 vi.mock("../../../environment/getEnvironmentDetails", () => ({
 	getEnvironmentDetails: vi.fn().mockResolvedValue("<environment_details>\nMock environment details\n</environment_details>"),

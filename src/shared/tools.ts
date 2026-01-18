@@ -28,12 +28,6 @@ export type AskFinishSubTaskApproval = () => Promise<boolean>
 
 export type ToolDescription = () => string
 
-export interface TextContent {
-	type: "text"
-	content: string
-	partial: boolean
-}
-
 export const toolParamNames = [
 	"command",
 	"path",
@@ -78,8 +72,6 @@ export const toolParamNames = [
 ] as const
 
 export type ToolParamName = (typeof toolParamNames)[number]
-
-export type ToolProtocol = "xml" | "native"
 
 /**
  * Type map defining the native (typed) argument structure for each tool.

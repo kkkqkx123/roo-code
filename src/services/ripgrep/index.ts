@@ -11,7 +11,7 @@ This file provides functionality to perform regex searches on files using ripgre
 Inspired by: https://github.com/DiscreteTom/vscode-ripgrep-utils
 
 Key components:
-1. getBinPath: Locates the ripgrep binary within the VSCode installation.
+1. getBinPath: Locates the ripgrep binary, prioritizing system installation over VSCode bundled version. Uses caching to avoid repeated system checks.
 2. execRipgrep: Executes the ripgrep command and returns the output.
 3. regexSearchFiles: The main function that performs regex searches on files.
    - Parameters:
@@ -51,6 +51,9 @@ rel/path/to/helper.ts
 const isWindows = process.platform.startsWith("win")
 const binName = isWindows ? "rg.exe" : "rg"
 
+// Cache for system ripgrep detection
+let systemRgCache: string | undefined | null = null // undefined = not checked, null = not found
+
 interface SearchFileResult {
 	file: string
 	searchResults: SearchResult[]
@@ -80,9 +83,67 @@ export function truncateLine(line: string, maxLength: number = MAX_LINE_LENGTH):
 	return line.length > maxLength ? line.substring(0, maxLength) + " [truncated...]" : line
 }
 /**
- * Get the path to the ripgrep binary within the VSCode installation
+ * Check if ripgrep is available in system PATH with caching
+ */
+async function checkSystemRg(): Promise<string | undefined> {
+	// Return cached result if available
+	if (systemRgCache !== undefined) {
+		return systemRgCache || undefined
+	}
+	
+	return new Promise((resolve) => {
+		const cp = childProcess.spawn(binName, ["--version"], {
+			stdio: ['pipe', 'pipe', 'pipe'],
+			shell: true
+		})
+		
+		cp.on('error', () => {
+			systemRgCache = null // Mark as not found
+			resolve(undefined)
+		})
+		cp.on('exit', (code) => {
+			if (code === 0) {
+				// Try to find the executable path using which/where
+				const whichCp = childProcess.spawn(isWindows ? 'where' : 'which', [binName], {
+					stdio: ['pipe', 'pipe', 'pipe'],
+					shell: true
+				})
+				
+				let output = ''
+				whichCp.stdout.on('data', (data) => {
+					output += data.toString()
+				})
+				
+				whichCp.on('close', () => {
+					const path = output.trim().split('\n')[0] // Take first match
+					systemRgCache = path || null
+					resolve(path || undefined)
+				})
+				
+				whichCp.on('error', () => {
+					systemRgCache = null // Mark as not found
+					resolve(undefined)
+				})
+			} else {
+				systemRgCache = null // Mark as not found
+				resolve(undefined)
+			}
+		})
+	})
+}
+
+/**
+ * Get the path to the ripgrep binary, prioritizing system installation over VSCode bundled version
+ * Uses caching to avoid repeated system checks
  */
 export async function getBinPath(vscodeAppRoot: string): Promise<string | undefined> {
+	// First, try to find ripgrep in system PATH
+	const systemRg = await checkSystemRg()
+	if (systemRg) {
+		return systemRg
+	}
+	
+	// Fall back to VSCode bundled ripgrep
 	const checkPath = async (pkgFolder: string) => {
 		const fullPath = path.join(vscodeAppRoot, pkgFolder, binName)
 		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined

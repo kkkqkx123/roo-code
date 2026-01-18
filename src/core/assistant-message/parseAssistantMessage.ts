@@ -1,6 +1,7 @@
 import { type ToolName, toolNames, type AssistantMessageContent } from "@shared/types"
 
-import { TextContent, ToolUse, McpToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
+import type { TextContent } from "@shared/types"
+import { ToolUse, ToolParamName, toolParamNames } from "../../shared/tools"
 
 export function parseAssistantMessage(assistantMessage: string): AssistantMessageContent[] {
 	const contentBlocks: AssistantMessageContent[] = []
