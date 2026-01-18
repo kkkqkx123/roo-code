@@ -14,12 +14,8 @@ import {
 	type TaskEvent,
 	type CreateTaskOptions,
 	RooCodeEventName,
-	TaskCommandName,
 	isSecretStateKey,
-	IpcOrigin,
-	IpcMessageType,
 } from "@shared/types"
-import { IpcServer } from "../services/ipc"
 
 import { Package } from "../shared/package"
 import { ClineProvider } from "../core/webview/ClineProvider"
@@ -29,7 +25,6 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 	private readonly outputChannel: vscode.OutputChannel
 	private readonly sidebarProvider: ClineProvider
 	private readonly context: vscode.ExtensionContext
-	private readonly ipc?: IpcServer
 	private readonly taskMap = new Map<string, ClineProvider>()
 	private readonly log: (...args: unknown[]) => void
 	private logfile?: string
@@ -37,7 +32,6 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 	constructor(
 		outputChannel: vscode.OutputChannel,
 		provider: ClineProvider,
-		socketPath?: string,
 		enableLogging = false,
 	) {
 		super()
@@ -54,58 +48,21 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 
 			this.logfile = path.join(os.tmpdir(), "roo-code-messages.log")
 		} else {
-			this.log = () => {}
+			this.log = () => { }
 		}
 
 		this.registerListeners(this.sidebarProvider)
 
-		if (socketPath) {
-			const ipc = (this.ipc = new IpcServer(socketPath, this.log))
-
-			ipc.listen()
-			this.log(`[API] ipc server started: socketPath=${socketPath}, pid=${process.pid}, ppid=${process.ppid}`)
-
-			ipc.on(IpcMessageType.TaskCommand, async (_clientId, { commandName, data }) => {
-				switch (commandName) {
-					case TaskCommandName.StartNewTask:
-						this.log(`[API] StartNewTask -> ${data.text}, ${JSON.stringify(data.configuration)}`)
-						await this.startNewTask(data)
-						break
-					case TaskCommandName.CancelTask:
-						this.log(`[API] CancelTask -> ${data}`)
-						await this.cancelTask(data)
-						break
-					case TaskCommandName.CloseTask:
-						this.log(`[API] CloseTask -> ${data}`)
-						await vscode.commands.executeCommand("workbench.action.files.saveFiles")
-						await vscode.commands.executeCommand("workbench.action.closeWindow")
-						break
-					case TaskCommandName.ResumeTask:
-						this.log(`[API] ResumeTask -> ${data}`)
-						try {
-							await this.resumeTask(data)
-						} catch (error) {
-							const errorMessage = error instanceof Error ? error.message : String(error)
-							this.log(`[API] ResumeTask failed for taskId ${data}: ${errorMessage}`)
-							// Don't rethrow - we want to prevent IPC server crashes
-							// The error is logged for debugging purposes
-						}
-						break
-					case TaskCommandName.SendMessage:
-						this.log(`[API] SendMessage -> ${data.text}`)
-						await this.sendMessage(data.text, data.images)
-						break
-				}
-			})
-		}
+		// IPC functionality removed as evals system was removed
+		// The socketPath parameter is no longer used but kept for API compatibility
 	}
 
 	public override emit<K extends keyof RooCodeEvents>(
 		eventName: K,
 		...args: K extends keyof RooCodeEvents ? RooCodeEvents[K] : never
 	) {
-		const data = { eventName: eventName as RooCodeEventName, payload: args } as TaskEvent
-		this.ipc?.broadcast({ type: IpcMessageType.TaskEvent, origin: IpcOrigin.Server, data })
+		// Removed IPC broadcasting as evals system was removed
+		// Only emit events locally within the extension
 		return super.emit(eventName, ...args)
 	}
 
@@ -272,15 +229,15 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 			})
 
 			task.on(RooCodeEventName.TaskDelegated as any, (childTaskId: string) => {
-				;(this.emit as any)(RooCodeEventName.TaskDelegated, task.taskId, childTaskId)
+				; (this.emit as any)(RooCodeEventName.TaskDelegated, task.taskId, childTaskId)
 			})
 
 			task.on(RooCodeEventName.TaskDelegationCompleted as any, (childTaskId: string, summary: string) => {
-				;(this.emit as any)(RooCodeEventName.TaskDelegationCompleted, task.taskId, childTaskId, summary)
+				; (this.emit as any)(RooCodeEventName.TaskDelegationCompleted, task.taskId, childTaskId, summary)
 			})
 
 			task.on(RooCodeEventName.TaskDelegationResumed as any, (childTaskId: string) => {
-				;(this.emit as any)(RooCodeEventName.TaskDelegationResumed, task.taskId, childTaskId)
+				; (this.emit as any)(RooCodeEventName.TaskDelegationResumed, task.taskId, childTaskId)
 			})
 
 			// Task Execution

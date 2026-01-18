@@ -3,9 +3,7 @@
 	"tasks": {
 		"lint": {},
 		"check-types": {},
-		"test": {
-			"dependsOn": ["@roo-code/types#build"]
-		},
+		"test": {},
 		"format": {},
 		"clean": {
 			"cache": false

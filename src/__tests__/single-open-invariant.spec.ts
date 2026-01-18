@@ -158,7 +158,7 @@ describe("Single-open-task invariant", () => {
 		} as unknown as ClineProvider
 
 		const output = { appendLine: vi.fn() } as any
-		const api = new API(output, provider, undefined, false)
+		const api = new API(output, provider, false)
 
 		const taskId = await api.startNewTask({
 			configuration: {},

@@ -225,7 +225,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	logger.info(`Activation completed. Total subscriptions: ${context.subscriptions.length}`)
 
-	return new API(outputChannel, provider, socketPath, enableLogging)
+	return new API(outputChannel, provider, enableLogging)
 }
 
 // This method is called when your extension is deactivated.
