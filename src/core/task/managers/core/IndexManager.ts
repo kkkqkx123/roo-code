@@ -26,6 +26,8 @@ export class IndexManager {
 	private conversationIndexCounter: number = 0
 	private currentRequestIndex: number | undefined
 	private checkpointRequestIndexes: Map<string, number> = new Map()
+	private initialized: boolean = false
+	private initializationPromise: Promise<void> | null = null
 
 	constructor(options: IndexManagerOptions) {
 		this.taskId = options.taskId
@@ -36,15 +38,44 @@ export class IndexManager {
 	 * 异步初始化方法，必须在构造后调用
 	 */
 	async initialize(): Promise<void> {
-		await this.loadIndexes()
+		if (this.initializationPromise) {
+			return this.initializationPromise
+		}
+
+		this.initializationPromise = (async () => {
+			try {
+				await this.loadIndexes()
+				this.initialized = true
+				console.log(`[IndexManager] Initialized for task ${this.taskId}`)
+			} catch (error) {
+				console.error("[IndexManager] Initialization failed:", error)
+				throw error
+			}
+		})()
+
+		return this.initializationPromise
+	}
+
+	/**
+	 * 等待初始化完成
+	 */
+	async waitForInitialization(): Promise<void> {
+		if (this.initializationPromise) {
+			await this.initializationPromise
+		} else {
+			throw new Error("IndexManager not initialized. Call initialize() first.")
+		}
 	}
 
 	/**
 	 * 开始新的API请求，分配请求索引
 	 */
-	startNewApiRequest(): number {
+	async startNewApiRequest(): Promise<number> {
+		await this.waitForInitialization()
+		
 		const requestIndex = this.conversationIndexCounter++
 		this.currentRequestIndex = requestIndex
+		console.log(`[IndexManager] Started new API request with index: ${requestIndex}`)
 		return requestIndex
 	}
 
@@ -87,12 +118,20 @@ export class IndexManager {
 	 * 关联检查点和请求索引
 	 */
 	async associateCheckpointWithRequest(commitHash: string, requestIndex: number): Promise<void> {
+		await this.waitForInitialization()
+		
 		this.checkpointRequestIndexes.set(commitHash, requestIndex)
 		console.log(`[IndexManager] Associated checkpoint ${commitHash} with request index ${requestIndex}`)
-		// 异步保存到持久化存储
-		this.persistCheckpointIndexes().catch((error) => {
+		
+		// 立即持久化以确保数据一致性
+		try {
+			await this.persistCheckpointIndexes()
+		} catch (error) {
 			console.error("[IndexManager] Failed to persist checkpoint indexes:", error)
-		})
+			// 回滚内存中的更改
+			this.checkpointRequestIndexes.delete(commitHash)
+			throw error
+		}
 	}
 
 	/**
@@ -151,9 +190,23 @@ export class IndexManager {
 	/**
 	 * 清理资源
 	 */
-	dispose(): void {
-		this.conversationIndexCounter = 0
-		this.currentRequestIndex = undefined
-		this.checkpointRequestIndexes.clear()
+	async dispose(): Promise<void> {
+		try {
+			// 确保所有待处理的持久化操作完成
+			if (this.initializationPromise) {
+				await this.initializationPromise
+			}
+			
+			// 清理状态
+			this.conversationIndexCounter = 0
+			this.currentRequestIndex = undefined
+			this.checkpointRequestIndexes.clear()
+			this.initialized = false
+			this.initializationPromise = null
+			
+			console.log(`[IndexManager] Disposed for task ${this.taskId}`)
+		} catch (error) {
+			console.error("[IndexManager] Dispose failed:", error)
+		}
 	}
 }

@@ -45,38 +45,50 @@ export class TaskLifecycleManager {
 		const provider = this.providerRef.deref()
 		provider?.log(`[TaskLifecycleManager#startTask] Starting task: "${task?.substring(0, 100)}..."`)
 		
-		// 检查所有可能的中止状态
-		if (this.task.abort || this.task.abandoned === true || this.task.abortReason === "user_cancelled") {
-			provider?.log(`[TaskLifecycleManager#startTask] Task aborted, abandoned or cancelled, returning early`)
+		// 简化中止检查
+		if (this.shouldAbortEarly()) {
+			provider?.log(`[TaskLifecycleManager#startTask] Task should abort early, returning`)
 			return
 		}
 
-		if (task) {
-			provider?.log(`[TaskLifecycleManager#startTask] About to say text message`)
-			await this.task.say("text", task)
-			provider?.log(`[TaskLifecycleManager#startTask] Text message said, clineMessages count: ${this.task.clineMessages.length}`)
-		}
-
-		if (images && images.length > 0) {
-			for (const image of images) {
-				provider?.log(`[TaskLifecycleManager#startTask] About to say user_feedback message`)
-				await this.task.say("user_feedback", "", [image])
-				provider?.log(`[TaskLifecycleManager#startTask] User feedback message said, clineMessages count: ${this.task.clineMessages.length}`)
+		try {
+			if (task) {
+				provider?.log(`[TaskLifecycleManager#startTask] About to say text message`)
+				await this.task.say("text", task)
+				provider?.log(`[TaskLifecycleManager#startTask] Text message said, clineMessages count: ${this.task.clineMessages.length}`)
 			}
+
+			if (images && images.length > 0) {
+				for (const image of images) {
+					provider?.log(`[TaskLifecycleManager#startTask] About to say user_feedback message`)
+					await this.task.say("user_feedback", "", [image])
+					provider?.log(`[TaskLifecycleManager#startTask] User feedback message said, clineMessages count: ${this.task.clineMessages.length}`)
+				}
+			}
+
+			await this.prepareTaskHistory()
+			provider?.log(`[TaskLifecycleManager#startTask] Task history prepared, clineMessages count: ${this.task.clineMessages.length}`)
+
+			await this.detectToolProtocol()
+			provider?.log(`[TaskLifecycleManager#startTask] Tool protocol detected: ${this.task.taskToolProtocol}`)
+
+			provider?.log(`[TaskLifecycleManager#startTask] Posting state to webview before starting task loop`)
+			await provider?.postStateToWebview()
+			provider?.log(`[TaskLifecycleManager#startTask] State posted to webview`)
+
+			await this.initiateTaskLoop()
+			provider?.log(`[TaskLifecycleManager#startTask] Task loop completed`)
+		} catch (error) {
+			console.error("[TaskLifecycleManager] Task execution failed:", error)
+			throw error
 		}
+	}
 
-		await this.prepareTaskHistory()
-		provider?.log(`[TaskLifecycleManager#startTask] Task history prepared, clineMessages count: ${this.task.clineMessages.length}`)
-
-		await this.detectToolProtocol()
-		provider?.log(`[TaskLifecycleManager#startTask] Tool protocol detected: ${this.task.taskToolProtocol}`)
-
-		provider?.log(`[TaskLifecycleManager#startTask] Posting state to webview before starting task loop`)
-		await provider?.postStateToWebview()
-		provider?.log(`[TaskLifecycleManager#startTask] State posted to webview`)
-
-		await this.initiateTaskLoop()
-		provider?.log(`[TaskLifecycleManager#startTask] Task loop completed`)
+	/**
+	 * 检查是否应该提前中止任务
+	 */
+	private shouldAbortEarly(): boolean {
+		return this.task.abort || this.task.abandoned === true || this.task.abortReason === "user_cancelled"
 	}
 
 	async resumeTaskFromHistory(): Promise<void> {
@@ -285,44 +297,51 @@ export class TaskLifecycleManager {
 	}
 
 	async dispose(): Promise<void> {
-		this.task.abort = true
+		try {
+			this.task.abort = true
 
-		// 取消当前请求
-		if (this.task.currentRequestAbortController) {
-			this.task.currentRequestAbortController.abort()
+			// 取消当前请求
+			if (this.task.currentRequestAbortController) {
+				this.task.currentRequestAbortController.abort()
+				this.task.currentRequestAbortController = undefined
+			}
+
+			// 清理自动批准超时
+			if (this.task['autoApprovalTimeoutRef']) {
+				clearTimeout(this.task['autoApprovalTimeoutRef'])
+				this.task['autoApprovalTimeoutRef'] = undefined
+			}
+
+			const provider = this.providerRef.deref()
+
+			if (provider) {
+				// 清理忽略控制器
+				if (this.task.rooIgnoreController) {
+					this.task.rooIgnoreController.dispose()
+					this.task.rooIgnoreController = undefined
+				}
+				// 清理保护控制器
+				if (this.task.rooProtectedController) {
+					this.task.rooProtectedController.dispose()
+					this.task.rooProtectedController = undefined
+				}
+				// 如果正在流式传输且正在编辑，回滚更改
+				if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
+					this.task.diffViewProvider.revertChanges()
+				}
+				// 清理浏览器会话管理器
+				if (this.task['_browserSessionManager']) {
+					this.task['_browserSessionManager'].dispose()
+					this.task['_browserSessionManager'] = undefined
+				}
+			}
+
+			// 释放终端资源
+			TerminalRegistry.releaseTerminalsForTask(this.taskId)
+
+			console.log(`[TaskLifecycleManager] Disposed for task ${this.taskId}`)
+		} catch (error) {
+			console.error("[TaskLifecycleManager] Dispose failed:", error)
 		}
-
-		// 清理自动批准超时
-		if (this.task['autoApprovalTimeoutRef']) {
-			clearTimeout(this.task['autoApprovalTimeoutRef'])
-			this.task['autoApprovalTimeoutRef'] = undefined
-		}
-
-		const provider = this.providerRef.deref()
-
-		if (provider) {
-			// 清理忽略控制器
-			if (this.task.rooIgnoreController) {
-				this.task.rooIgnoreController.dispose()
-				this.task.rooIgnoreController = undefined
-			}
-			// 清理保护控制器
-			if (this.task.rooProtectedController) {
-				this.task.rooProtectedController.dispose()
-				this.task.rooProtectedController = undefined
-			}
-			// 如果正在流式传输且正在编辑，回滚更改
-			if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
-				this.task.diffViewProvider.revertChanges()
-			}
-			// 清理浏览器会话管理器
-			if (this.task['_browserSessionManager']) {
-				this.task['_browserSessionManager'].dispose()
-				this.task['_browserSessionManager'] = undefined
-			}
-		}
-
-		// 释放终端资源
-		TerminalRegistry.releaseTerminalsForTask(this.taskId)
 	}
 }

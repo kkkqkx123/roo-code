@@ -10,6 +10,13 @@ export interface ContextRestoreOptions {
 	stateManager: TaskStateManager
 }
 
+export interface RestoreResult {
+	success: boolean
+	reason?: string
+	restoredIndex?: number
+	error?: unknown
+}
+
 /**
  * 上下文恢复服务
  * 
@@ -26,7 +33,7 @@ export class ContextRestoreService {
 	 * @param options 恢复选项
 	 * @returns 是否恢复成功
 	 */
-	async restoreContext(options: ContextRestoreOptions): Promise<boolean> {
+	async restoreContext(options: ContextRestoreOptions): Promise<RestoreResult> {
 		const { targetIndex, indexType, messageManager, stateManager } = options
 
 		try {
@@ -35,7 +42,7 @@ export class ContextRestoreService {
 
 			if (!fullHistory || fullHistory.length === 0) {
 				console.warn(`[ContextRestoreService] No persisted API conversation history found`)
-				return false
+				return { success: false, reason: 'NO_HISTORY' }
 			}
 
 			// 2. 根据索引类型找到恢复点
@@ -45,7 +52,7 @@ export class ContextRestoreService {
 				console.warn(
 					`[ContextRestoreService] No suitable restore point found before ${indexType} index ${targetIndex}`,
 				)
-				return false
+				return { success: false, reason: 'NO_RESTORE_POINT' }
 			}
 
 			// 3. 截取到恢复点的历史记录
@@ -65,10 +72,10 @@ export class ContextRestoreService {
 			console.log(
 				`[ContextRestoreService] Successfully restored context to ${indexType} index ${actualRequestIndex} (target: ${targetIndex})`,
 			)
-			return true
+			return { success: true, restoredIndex: actualRequestIndex }
 		} catch (error) {
 			console.error("[ContextRestoreService] Context restoration failed:", error)
-			return false
+			return { success: false, reason: 'RESTORATION_FAILED', error }
 		}
 	}
 
@@ -85,14 +92,31 @@ export class ContextRestoreService {
 		targetIndex: number,
 		indexType: "request" | "conversation",
 	): number {
-		// 从后向前查找，找到最后一条不超过目标索引的助手消息
+		// 改进的恢复点查找：考虑多种消息类型
 		for (let i = history.length - 1; i >= 0; i--) {
 			const message = history[i]
+			
+			// 优先查找检查点消息
+			if (message.checkpointMetadata?.isCheckpoint &&
+				message.conversationIndex !== undefined &&
+				message.conversationIndex <= targetIndex) {
+				return i
+			}
+			
+			// 其次查找助手消息
 			if (
 				message.role === "assistant" &&
 				message.conversationIndex !== undefined &&
 				message.conversationIndex <= targetIndex
 			) {
+				return i
+			}
+			
+			// 对于请求索引类型，也考虑用户消息
+			if (indexType === "request" &&
+				message.role === "user" &&
+				message.conversationIndex !== undefined &&
+				message.conversationIndex <= targetIndex) {
 				return i
 			}
 		}
@@ -124,9 +148,9 @@ export class ContextRestoreService {
 			if (checkpointMessage && checkpointMessage.checkpointMetadata) {
 				const { toolProtocol } = checkpointMessage.checkpointMetadata
 
-				// 恢复工具协议
-				if (toolProtocol && stateManager.setTaskToolProtocol) {
-					stateManager.setTaskToolProtocol(toolProtocol as ToolProtocol)
+				// 恢复工具协议 - 使用类型保护
+				if (toolProtocol && this.isValidToolProtocol(toolProtocol) && stateManager.setTaskToolProtocol) {
+					stateManager.setTaskToolProtocol(toolProtocol)
 					console.log(`[ContextRestoreService] Restored tool protocol from checkpoint metadata: ${toolProtocol}`)
 				}
 
@@ -136,7 +160,7 @@ export class ContextRestoreService {
 			}
 
 			// 3. 回退：从最近的助手消息中检测工具协议
-			let detectedToolProtocol: string | undefined
+			let detectedToolProtocol: ToolProtocol | undefined
 			for (let i = history.length - 1; i >= 0; i--) {
 				const message = history[i]
 				if (message.role === "assistant" && Array.isArray(message.content)) {
@@ -151,7 +175,7 @@ export class ContextRestoreService {
 
 			// 恢复检测到的工具协议
 			if (detectedToolProtocol && stateManager.setTaskToolProtocol) {
-				stateManager.setTaskToolProtocol(detectedToolProtocol as ToolProtocol)
+				stateManager.setTaskToolProtocol(detectedToolProtocol)
 			}
 
 			// 4. 系统提示词由PromptManager管理，不需要从对话历史恢复
@@ -161,5 +185,12 @@ export class ContextRestoreService {
 			console.error(`[ContextRestoreService] Failed to restore task state from history:`, error)
 			// 不影响主恢复流程，继续执行
 		}
+	}
+
+	/**
+		* 验证工具协议类型
+		*/
+	private isValidToolProtocol(protocol: string): protocol is ToolProtocol {
+		return protocol === "native" || protocol === "xml"
 	}
 }

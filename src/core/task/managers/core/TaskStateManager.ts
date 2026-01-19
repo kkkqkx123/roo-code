@@ -35,6 +35,7 @@ export class TaskStateManager extends EventEmitter {
 	private _taskMode: string | undefined
 	private _taskToolProtocol: ToolProtocol | undefined
 	private taskModeReady: Promise<void>
+	private initializationError: Error | null = null
 
 	providerRef: WeakRef<ClineProvider>
 	abort: boolean = false
@@ -82,6 +83,7 @@ export class TaskStateManager extends EventEmitter {
 			// 异步初始化任务模式，但不阻塞构造函数
 			this.taskModeReady = this.initializeTaskMode(options.provider).catch((error) => {
 				console.error("[TaskStateManager] Failed to initialize task mode:", error)
+				this.initializationError = error instanceof Error ? error : new Error(String(error))
 				this._taskMode = defaultModeSlug
 			})
 			const modelInfo = options.modelInfo
@@ -105,12 +107,18 @@ export class TaskStateManager extends EventEmitter {
 
 	async getTaskMode(): Promise<string> {
 		await this.taskModeReady
+		if (this.initializationError) {
+			throw this.initializationError
+		}
 		return this._taskMode || defaultModeSlug
 	}
 
 	get taskMode(): string {
 		// 如果尚未初始化，返回默认值
 		// 注意：如果需要确保获取初始化后的值，应使用 getTaskMode() 方法
+		if (this.initializationError) {
+			console.warn("[TaskStateManager] Using taskMode getter while initialization failed:", this.initializationError)
+		}
 		return this._taskMode ?? defaultModeSlug
 	}
 
@@ -180,25 +188,32 @@ export class TaskStateManager extends EventEmitter {
 		messageQueueStateChangedHandler?: (() => void) | undefined,
 		providerProfileChangeListener?: (config: { name: string; provider?: string }) => void,
 	): void {
-		// 移除所有事件监听器
-		this.removeAllListeners()
-		
-		// 取消当前请求
-		this.cancelCurrentRequest()
-		
-		// 清理引用
-		this.providerRef = new WeakRef({} as ClineProvider)
-		
-		// 清理待办列表
-		this.todoList = undefined
-		
-		// 清理状态标志
-		this.abort = false
-		this.isPaused = false
-		this.didFinishAbortingStream = false
-		this.abandoned = false
-		this.abortReason = undefined
-		this.isInitialized = false
+		try {
+			// 移除所有事件监听器
+			this.removeAllListeners()
+			
+			// 取消当前请求
+			this.cancelCurrentRequest()
+			
+			// 清理引用 - 使用传入的 providerRef 而不是创建空引用
+			this.providerRef = providerRef
+			
+			// 清理待办列表
+			this.todoList = undefined
+			
+			// 清理状态标志
+			this.abort = false
+			this.isPaused = false
+			this.didFinishAbortingStream = false
+			this.abandoned = false
+			this.abortReason = undefined
+			this.isInitialized = false
+			this.initializationError = null
+			
+			console.log(`[TaskStateManager] Disposed for task ${this.taskId}`)
+		} catch (error) {
+			console.error("[TaskStateManager] Dispose failed:", error)
+		}
 	}
 
 	updateApiConfiguration(newApiConfiguration: ProviderSettings): void {

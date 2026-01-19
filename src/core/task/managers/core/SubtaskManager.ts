@@ -38,105 +38,93 @@ export class SubtaskManager {
 		this.taskNumber = options.taskNumber
 		this.workspacePath = options.workspacePath
 		this.apiConfiguration = options.apiConfiguration
+
+		// 验证 provider 引用有效性
+		if (!this.providerRef.deref()) {
+			console.warn("[SubtaskManager] Provider reference is invalid at construction time")
+		}
 	}
 
-	async startSubtask(message: string, initialTodos: TodoItem[], mode: string): Promise<void> {
+	async startSubtask(message: string, initialTodos: TodoItem[], mode: string): Promise<string> {
 		const provider = this.providerRef.deref()
 		if (!provider) {
 			throw new Error("Provider reference lost")
 		}
 
-		const subtask = await (provider as any).delegateParentAndOpenChild({
-			parentTaskId: this.taskId,
-			message,
-			initialTodos,
-			mode,
-		})
+		try {
+			// 使用类型安全的调用方式
+			const subtask = await provider.delegateParentAndOpenChild({
+				parentTaskId: this.taskId,
+				message,
+				initialTodos,
+				mode,
+			})
 
-		this.childTaskId = subtask.taskId
-
-		this.task.emit(RooCodeEventName.TaskDelegated, this.taskId, subtask.taskId)
+			this.childTaskId = subtask.taskId
+			this.task.emit(RooCodeEventName.TaskDelegated, this.taskId, subtask.taskId)
+			
+			console.log(`[SubtaskManager] Started subtask ${subtask.taskId} for parent ${this.taskId}`)
+			return subtask.taskId
+		} catch (error) {
+			console.error("[SubtaskManager] Failed to start subtask:", error)
+			throw new Error(`Failed to start subtask: ${error instanceof Error ? error.message : String(error)}`)
+		}
 	}
 
 	async resumeAfterDelegation(): Promise<void> {
-		const apiConversationHistory = this.task.apiConversationHistory
-		const clineMessages = this.task.clineMessages
+		try {
+			const apiConversationHistory = this.task.apiConversationHistory
+			const clineMessages = this.task.clineMessages
 
-		if (apiConversationHistory.length === 0) {
-			return
-		}
-
-		const lastUserMsgIndex = findLastIndex(apiConversationHistory, (msg: any) => msg.role === "user")
-
-		if (lastUserMsgIndex >= 0) {
-			const lastUserMsg = apiConversationHistory[lastUserMsgIndex]
-
-			if (Array.isArray(lastUserMsg.content)) {
-				const textBlocks = lastUserMsg.content.filter((block: any) => block.type === "text")
-
-				if (textBlocks.length > 0) {
-					const lastTextBlock = textBlocks[textBlocks.length - 1] as any
-
-					if (lastTextBlock.text.includes("Task delegated to subtask")) {
-						lastTextBlock.text = lastTextBlock.text.replace(/Task delegated to subtask[\s\S]*?$/g, "")
-					}
-				}
+			if (apiConversationHistory.length === 0) {
+				return
 			}
+
+			// 简化消息清理逻辑
+			const cleanedMessages = this.cleanupDelegationMessages(clineMessages)
+			this.task.clineMessages = cleanedMessages
+			await this.task.saveClineMessages()
+
+			this.childTaskId = undefined
+			console.log(`[SubtaskManager] Resumed after delegation, cleaned ${clineMessages.length - cleanedMessages.length} messages`)
+		} catch (error) {
+			console.error("[SubtaskManager] Failed to resume after delegation:", error)
+			throw error
 		}
+	}
 
-		let modifiedClineMessages = [...clineMessages]
-
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "reasoning") {
-				modifiedClineMessages.splice(i, 1)
-			}
-		}
-
-		while (modifiedClineMessages.length > 0) {
-			const last = modifiedClineMessages[modifiedClineMessages.length - 1]
-			if (last.type === "say" && last.say === "reasoning") {
-				modifiedClineMessages.pop()
-			} else {
-				break
-			}
-		}
-
-		const lastRelevantMessageIndex = findLastIndex(
-			modifiedClineMessages,
-			(msg: any) => msg.type === "ask" || msg.say === "api_req_started",
+	/**
+	 * 清理委托相关的消息
+	 */
+	private cleanupDelegationMessages(clineMessages: ClineMessage[]): ClineMessage[] {
+		let cleanedMessages = [...clineMessages]
+		
+		// 1. 移除所有推理消息
+		cleanedMessages = cleanedMessages.filter(msg =>
+			!(msg.type === "say" && msg.say === "reasoning")
 		)
 
-		if (lastRelevantMessageIndex !== -1) {
-			const lastRelevantMessage = modifiedClineMessages[lastRelevantMessageIndex]
-			if (lastRelevantMessage.type === "ask") {
-				modifiedClineMessages = modifiedClineMessages.slice(0, lastRelevantMessageIndex)
-			}
-		}
+		// 2. 找到最后一个相关消息索引
+		const lastRelevantIndex = findLastIndex(
+			cleanedMessages,
+			(msg: ClineMessage) => msg.type === "ask" || (msg.type === "say" && msg.say === "api_req_started")
+		)
 
-		for (let i = modifiedClineMessages.length - 1; i >= 0; i--) {
-			const msg = modifiedClineMessages[i]
-			if (msg.type === "say" && msg.say === "api_req_started") {
-				const lastApiReqStartedIndex = i
-
-				if (lastApiReqStartedIndex !== -1) {
-					const lastClineMessage = modifiedClineMessages[lastApiReqStartedIndex]
-					if (lastClineMessage?.say === "api_req_started") {
-						const { cost, cancelReason }: ClineApiReqInfo = JSON.parse(lastClineMessage.text || "{}")
-
-						if (cost === undefined && cancelReason === undefined) {
-							modifiedClineMessages.splice(lastApiReqStartedIndex, 1)
-						}
-					}
+		// 3. 如果找到相关消息，截断到该位置
+		if (lastRelevantIndex !== -1) {
+			const lastMsg = cleanedMessages[lastRelevantIndex]
+			if (lastMsg.type === "ask") {
+				cleanedMessages = cleanedMessages.slice(0, lastRelevantIndex)
+			} else if (lastMsg.type === "say" && lastMsg.say === "api_req_started") {
+				// 检查是否需要保留该消息
+				const info: ClineApiReqInfo = JSON.parse(lastMsg.text || "{}")
+				if (info.cost === undefined && info.cancelReason === undefined) {
+					cleanedMessages = cleanedMessages.slice(0, lastRelevantIndex)
 				}
-				break
 			}
 		}
 
-		this.task.clineMessages = modifiedClineMessages
-		await this.task.saveClineMessages()
-
-		this.childTaskId = undefined
+		return cleanedMessages
 	}
 
 	getChildTaskId(): string | undefined {

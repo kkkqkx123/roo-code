@@ -154,12 +154,13 @@ export class CheckpointManager {
 	 * 根据请求索引找到对应的对话状态并恢复
 	 */
 	async restoreContextFromPersistedDataByRequestIndex(targetRequestIndex: number): Promise<boolean> {
-		return this.contextRestoreService.restoreContext({
+		const result = await this.contextRestoreService.restoreContext({
 			targetIndex: targetRequestIndex,
 			indexType: "request",
 			messageManager: this.messageManager,
 			stateManager: this.stateManager,
 		})
+		return result.success
 	}
 
 	/**
@@ -167,12 +168,13 @@ export class CheckpointManager {
 	 * 根据对话索引找到对应的对话状态并恢复
 	 */
 	async restoreContextFromPersistedDataByIndex(targetConversationIndex: number): Promise<boolean> {
-		return this.contextRestoreService.restoreContext({
+		const result = await this.contextRestoreService.restoreContext({
 			targetIndex: targetConversationIndex,
 			indexType: "conversation",
 			messageManager: this.messageManager,
 			stateManager: this.stateManager,
 		})
+		return result.success
 	}
 
 	/**

@@ -1302,8 +1302,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	/**
 	 * 开始新的API请求（新增）
 	 */
-	public startNewApiRequest(): number {
-		return this.taskMessageManager.startNewApiRequest()
+	public async startNewApiRequest(): Promise<number> {
+		return await this.taskMessageManager.startNewApiRequest()
 	}
 
 	/**

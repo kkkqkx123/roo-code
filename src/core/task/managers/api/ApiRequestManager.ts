@@ -293,7 +293,7 @@ export class ApiRequestManager {
 		try {
 			provider?.log(`[ApiRequestManager#processStream] About to start new API request`)
 			// 开始新的API请求，分配请求索引
-			currentRequestIndex = this.messageManager.startNewApiRequest()
+			currentRequestIndex = await this.messageManager.startNewApiRequest()
 			this.currentRequestIndex = currentRequestIndex
 			provider?.log(`[ApiRequestManager#processStream] Started new API request with index: ${currentRequestIndex}`)
 

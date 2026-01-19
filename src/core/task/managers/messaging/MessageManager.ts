@@ -71,8 +71,8 @@ export class MessageManager {
 	/**
 	 * 开始新的API请求，分配请求索引
 	 */
-	startNewApiRequest(): number {
-		return this.indexManager.startNewApiRequest()
+	async startNewApiRequest(): Promise<number> {
+		return await this.indexManager.startNewApiRequest()
 	}
 
 	/**
