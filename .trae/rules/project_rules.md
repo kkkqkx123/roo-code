@@ -18,33 +18,12 @@ Roo Code is an AI-powered development team that operates directly within your VS
 The project follows a monorepo structure with multiple packages:
 - **`src`**: Main VS Code extension code (the `roo-cline` package)
 - **`webview-ui`**: React-based webview UI components for the sidebar and panels
-- **`apps/`**: 
-  - `vscode-e2e`: End-to-end testing
-  - `vscode-nightly`: Nightly build version
-- **`packages/`**:
-  - `build`: Build configuration
-  - `config-eslint`: ESLint configuration
-  - `config-typescript`: TypeScript configuration
-  - `docs`: Documentation
-  - `evals`: Evaluation framework
-  - `ipc`: Inter-process communication layer
-  - `types`: Shared TypeScript types
 
 ## Building and Running
 
 ### Prerequisites
-- Node.js 20.19.2 (managed via .tool-versions)
 - pnpm package manager
 - VS Code
-
-### Development Setup
-```bash
-# Install dependencies
-pnpm install
-
-# Run the extension in development mode
-# Press F5 in VS Code to start debugging (opens new VS Code window with extension)
-```
 
 ### Alternative Installation Methods
 1. **Automated VSIX Installation**:
@@ -106,14 +85,3 @@ The extension supports multiple AI providers:
 
 ### Internationalization
 The project supports multiple languages with i18n implementation in `src/i18n/`.
-
-## Key Files and Directories
-
-- `package.json` - Root workspace configuration
-- `pnpm-workspace.yaml` - Monorepo workspace definition
-- `src/extension.ts` - Extension activation entry point
-- `src/package.json` - VS Code extension manifest
-- `webview-ui/package.json` - Webview UI dependencies
-- `apps/web-roo-code/` - Web version of the application
-- `packages/types/` - Shared TypeScript types across packages
-- `packages/ipc/` - Inter-process communication layer

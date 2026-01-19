@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { truncateConversation } from "../index"
-import { getEffectiveApiHistory, cleanupAfterTruncation } from "../../condense"
+import { truncateConversation, getEffectiveApiHistory, cleanupAfterTruncation } from "../../context"
 import { ApiMessage } from "../../task-persistence"
 
 describe("Non-Destructive Sliding Window Truncation", () => {

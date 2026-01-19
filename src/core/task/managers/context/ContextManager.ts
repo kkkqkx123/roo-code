@@ -2,7 +2,7 @@ import { FileContextTracker } from "../../../context-tracking/FileContextTracker
 import { RooIgnoreController } from "../../../ignore/RooIgnoreController"
 import { RooProtectedController } from "../../../protect/RooProtectedController"
 import type { ClineProvider } from "../../../webview/ClineProvider"
-import { manageContext, type ContextManagementOptions, type ContextManagementResult, DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../context-management"
+import { manageContext, type ContextManagementOptions, type ContextManagementResult, DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../context"
 import { getModelMaxOutputTokens } from "../../../../shared/api"
 import { isNativeProtocol, TOOL_PROTOCOL } from "@shared/types"
 import { buildApiHandler, type ApiHandler } from "../../../../api"

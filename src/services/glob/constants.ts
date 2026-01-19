@@ -7,7 +7,6 @@
 export const DIRS_TO_IGNORE = [
 	"node_modules",
 	"__pycache__",
-	"env",
 	"venv",
 	"target/dependency",
 	"build/dependencies",
@@ -22,4 +21,6 @@ export const DIRS_TO_IGNORE = [
 	"Pods",
 	".git",
 	".*",
+	"target",
+	".venv",
 ]

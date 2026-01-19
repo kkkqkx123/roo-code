@@ -11,9 +11,7 @@ import {
 } from "@shared/types"
 
 import { ContextProxy } from "../config/ContextProxy"
-import { GlobalFileNames } from "../../shared/globalFileNames"
 import { getWorkspacePath } from "../../utils/path"
-import { getGitRepositoryInfo } from "../../utils/git"
 import { getTheme } from "../../integrations/theme/getTheme"
 import { formatLanguage } from "../../shared/language"
 import { experimentDefault } from "../../shared/experiments"
@@ -50,7 +48,7 @@ export class StateCoordinator {
 	public async applyTerminalSettings(): Promise<void> {
 		try {
 			const state = await this.getState()
-			
+
 			Terminal.setShellIntegrationTimeout(state.terminalShellIntegrationTimeout ?? Terminal.defaultShellIntegrationTimeout)
 			Terminal.setShellIntegrationDisabled(state.terminalShellIntegrationDisabled ?? false)
 			Terminal.setCommandDelay(state.terminalCommandDelay ?? 0)
@@ -59,7 +57,7 @@ export class StateCoordinator {
 			Terminal.setTerminalZshP10k(state.terminalZshP10k ?? false)
 			Terminal.setPowershellCounter(state.terminalPowershellCounter ?? false)
 			Terminal.setTerminalZdotdir(state.terminalZdotdir ?? false)
-			
+
 			console.log("[StateCoordinator] Terminal settings applied")
 		} catch (error) {
 			console.warn(`[StateCoordinator] Failed to apply terminal settings: ${error instanceof Error ? error.message : String(error)}`)
@@ -220,14 +218,14 @@ export class StateCoordinator {
 			clineMessages: currentTask?.clineMessages ?? [],
 			currentTaskItem: currentTask
 				? {
-						id: currentTask.taskId,
-						number: currentTask.taskNumber,
-						ts: Date.now(),
-						task: currentTask.metadata.task || "",
-						tokensIn: 0,
-						tokensOut: 0,
-						totalCost: 0,
-				  }
+					id: currentTask.taskId,
+					number: currentTask.taskNumber,
+					ts: Date.now(),
+					task: currentTask.metadata.task || "",
+					tokensIn: 0,
+					tokensOut: 0,
+					totalCost: 0,
+				}
 				: undefined,
 			uriScheme: undefined,
 			shouldShowAnnouncement: false,
@@ -257,20 +255,6 @@ export class StateCoordinator {
 	 */
 	public async getState(): Promise<ExtensionState> {
 		return this.getStateToPostToWebview()
-	}
-
-	/**
-	 * Gets API configuration
-	 */
-	public getApiConfiguration(): any {
-		return this.contextProxy.getProviderSettings()
-	}
-
-	/**
-	 * Updates API configuration
-	 */
-	public async updateApiConfiguration(config: any): Promise<void> {
-		await this.contextProxy.setProviderSettings(config)
 	}
 
 	/**

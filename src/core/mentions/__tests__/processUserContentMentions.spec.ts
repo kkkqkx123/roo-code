@@ -3,7 +3,7 @@
 import { processUserContentMentions } from "../processUserContentMentions"
 import { parseMentions } from "../index"
 import { UrlContentFetcher } from "../../../services/browser/UrlContentFetcher"
-import { FileContextTracker } from "../../context-tracking/FileContextTracker"
+import { FileContextTracker } from "../../file-tracking/FileContextTracker"
 
 // Mock the parseMentions function
 vi.mock("../index", () => ({

@@ -1,12 +1,11 @@
-// cd src && npx vitest run core/context-management/__tests__/context-management.spec.ts
+// cd src && npx vitest run core/context/__tests__/context-manager.spec.ts
 
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import type { ModelInfo } from "@shared/types"
+import type { ModelInfo } from "../../../shared/types"
 
 import { BaseProvider } from "../../../api/providers/base-provider"
 import { ApiMessage } from "../../task-persistence"
-import * as contextModule from "../../context"
 
 import {
 	TOKEN_BUFFER_PERCENTAGE,
@@ -14,7 +13,18 @@ import {
 	truncateConversation,
 	manageContext,
 	willManageContext,
-} from "../../context"
+} from "../"
+
+// Mock the summarization module
+vi.mock("../summarization", () => ({
+	summarizeConversation: vi.fn(),
+	getKeepMessagesWithToolBlocks: vi.fn(),
+	getMessagesSinceLastSummary: vi.fn(),
+	getEffectiveApiHistory: vi.fn(),
+	cleanupAfterTruncation: vi.fn(),
+}))
+
+import { summarizeConversation } from "../summarization"
 
 // Create a mock ApiHandler for testing
 class MockApiHandler extends BaseProvider {
@@ -569,7 +579,7 @@ describe("Context Management", () => {
 			// Mock the summarizeConversation function
 			const mockSummary = "This is a summary of the conversation"
 			const mockCost = 0.05
-			const mockSummarizeResponse: contextModule.SummarizeResponse = {
+			const mockSummarizeResponse = {
 				messages: [
 					{ role: "user", content: "First message" },
 					{ role: "assistant", content: mockSummary, isSummary: true },
@@ -580,9 +590,7 @@ describe("Context Management", () => {
 				newContextTokens: 100,
 			}
 
-			const summarizeSpy = vi
-				.spyOn(contextModule, "summarizeConversation")
-				.mockResolvedValue(mockSummarizeResponse)
+			vi.mocked(summarizeConversation).mockResolvedValue(mockSummarizeResponse)
 
 			const modelInfo = createModelInfo(100000, 30000)
 			const totalTokens = 70001 // Above threshold
@@ -606,7 +614,7 @@ describe("Context Management", () => {
 			})
 
 			// Verify summarizeConversation was called with the right parameters
-			expect(summarizeSpy).toHaveBeenCalledWith(
+			expect(summarizeConversation).toHaveBeenCalledWith(
 				messagesWithSmallContent,
 				mockApiHandler,
 				"System prompt",
@@ -628,21 +636,19 @@ describe("Context Management", () => {
 			// newContextTokens might be present, but we don't need to verify its exact value
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		it("should fall back to truncateConversation when autoCondenseContext is true but summarization fails", async () => {
 			// Mock the summarizeConversation function to return an error
-			const mockSummarizeResponse: contextModule.SummarizeResponse = {
+			const mockSummarizeResponse = {
 				messages: messages, // Original messages unchanged
 				summary: "", // Empty summary
 				cost: 0.01,
 				error: "Summarization failed", // Error indicates failure
 			}
 
-			const summarizeSpy = vi
-				.spyOn(contextModule, "summarizeConversation")
-				.mockResolvedValue(mockSummarizeResponse)
+			vi.mocked(summarizeConversation).mockResolvedValue(mockSummarizeResponse)
 
 			const modelInfo = createModelInfo(100000, 30000)
 			const totalTokens = 70001 // Above threshold
@@ -674,7 +680,7 @@ describe("Context Management", () => {
 			})
 
 			// Verify summarizeConversation was called
-			expect(summarizeSpy).toHaveBeenCalled()
+			expect(summarizeConversation).toHaveBeenCalled()
 
 			// Verify it fell back to truncation (non-destructive)
 			expect(result.truncationId).toBeDefined()
@@ -686,13 +692,13 @@ describe("Context Management", () => {
 			// The cost might be different than expected, so we don't check it
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		it("should not call summarizeConversation when autoCondenseContext is false", async () => {
 			// Reset any previous mock calls
 			vi.clearAllMocks()
-			const summarizeSpy = vi.spyOn(contextModule, "summarizeConversation")
+			vi.mocked(summarizeConversation).mockReset()
 
 			const modelInfo = createModelInfo(100000, 30000)
 			const totalTokens = 70001 // Above threshold
@@ -724,7 +730,7 @@ describe("Context Management", () => {
 			})
 
 			// Verify summarizeConversation was not called
-			expect(summarizeSpy).not.toHaveBeenCalled()
+			expect(summarizeConversation).not.toHaveBeenCalled()
 
 			// Verify it used truncation (non-destructive)
 			expect(result.truncationId).toBeDefined()
@@ -736,14 +742,14 @@ describe("Context Management", () => {
 			expect(result.messages.length).toBe(6) // 5 original + 1 marker
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		it("should use summarizeConversation when autoCondenseContext is true and context percent exceeds threshold", async () => {
 			// Mock the summarizeConversation function
 			const mockSummary = "This is a summary of the conversation"
 			const mockCost = 0.05
-			const mockSummarizeResponse: contextModule.SummarizeResponse = {
+			const mockSummarizeResponse = {
 				messages: [
 					{ role: "user", content: "First message" },
 					{ role: "assistant", content: mockSummary, isSummary: true },
@@ -754,9 +760,7 @@ describe("Context Management", () => {
 				newContextTokens: 100,
 			}
 
-			const summarizeSpy = vi
-				.spyOn(contextModule, "summarizeConversation")
-				.mockResolvedValue(mockSummarizeResponse)
+			vi.mocked(summarizeConversation).mockResolvedValue(mockSummarizeResponse)
 
 			const modelInfo = createModelInfo(100000, 30000)
 			// Set tokens to be below the allowedTokens threshold but above the percentage threshold
@@ -782,7 +786,7 @@ describe("Context Management", () => {
 			})
 
 			// Verify summarizeConversation was called with the right parameters
-			expect(summarizeSpy).toHaveBeenCalledWith(
+			expect(summarizeConversation).toHaveBeenCalledWith(
 				messagesWithSmallContent,
 				mockApiHandler,
 				"System prompt",
@@ -803,13 +807,13 @@ describe("Context Management", () => {
 			})
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		it("should not use summarizeConversation when autoCondenseContext is true but context percent is below threshold", async () => {
 			// Reset any previous mock calls
 			vi.clearAllMocks()
-			const summarizeSpy = vi.spyOn(contextModule, "summarizeConversation")
+			vi.mocked(summarizeConversation).mockReset()
 
 			const modelInfo = createModelInfo(100000, 30000)
 			// Set tokens to be below both the allowedTokens threshold and the percentage threshold
@@ -835,7 +839,7 @@ describe("Context Management", () => {
 			})
 
 			// Verify summarizeConversation was not called
-			expect(summarizeSpy).not.toHaveBeenCalled()
+			expect(summarizeConversation).not.toHaveBeenCalled()
 
 			// Verify no truncation or summarization occurred
 			expect(result).toEqual({
@@ -846,7 +850,7 @@ describe("Context Management", () => {
 			})
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 	})
 
@@ -892,7 +896,7 @@ describe("Context Management", () => {
 			// Mock the summarizeConversation function
 			const mockSummary = "Profile-specific threshold summary"
 			const mockCost = 0.03
-			const mockSummarizeResponse: contextModule.SummarizeResponse = {
+			const mockSummarizeResponse = {
 				messages: [
 					{ role: "user", content: "First message" },
 					{ role: "assistant", content: mockSummary, isSummary: true },
@@ -903,9 +907,7 @@ describe("Context Management", () => {
 				newContextTokens: 100,
 			}
 
-			const summarizeSpy = vi
-				.spyOn(contextModule, "summarizeConversation")
-				.mockResolvedValue(mockSummarizeResponse)
+			vi.mocked(summarizeConversation).mockResolvedValue(mockSummarizeResponse)
 
 			const result = await manageContext({
 				messages: messagesWithSmallContent,
@@ -922,7 +924,7 @@ describe("Context Management", () => {
 			})
 
 			// Should use summarization because 65% > 60% (profile threshold)
-			expect(summarizeSpy).toHaveBeenCalled()
+			expect(summarizeConversation).toHaveBeenCalled()
 			expect(result).toMatchObject({
 				messages: mockSummarizeResponse.messages,
 				summary: mockSummary,
@@ -931,7 +933,7 @@ describe("Context Management", () => {
 			})
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		/**
@@ -958,7 +960,7 @@ describe("Context Management", () => {
 			// Mock the summarizeConversation function
 			const mockSummary = "Global threshold fallback summary"
 			const mockCost = 0.04
-			const mockSummarizeResponse: contextModule.SummarizeResponse = {
+			const mockSummarizeResponse = {
 				messages: [
 					{ role: "user", content: "First message" },
 					{ role: "assistant", content: mockSummary, isSummary: true },
@@ -969,9 +971,7 @@ describe("Context Management", () => {
 				newContextTokens: 120,
 			}
 
-			const summarizeSpy = vi
-				.spyOn(contextModule, "summarizeConversation")
-				.mockResolvedValue(mockSummarizeResponse)
+			vi.mocked(summarizeConversation).mockResolvedValue(mockSummarizeResponse)
 
 			const result = await manageContext({
 				messages: messagesWithSmallContent,
@@ -988,7 +988,7 @@ describe("Context Management", () => {
 			})
 
 			// Should use summarization because 80% > 75% (global threshold, since profile is -1)
-			expect(summarizeSpy).toHaveBeenCalled()
+			expect(summarizeConversation).toHaveBeenCalled()
 			expect(result).toMatchObject({
 				messages: mockSummarizeResponse.messages,
 				summary: mockSummary,
@@ -997,7 +997,7 @@ describe("Context Management", () => {
 			})
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 
 		/**
@@ -1025,7 +1025,7 @@ describe("Context Management", () => {
 
 			// Reset any previous mock calls
 			vi.clearAllMocks()
-			const summarizeSpy = vi.spyOn(contextModule, "summarizeConversation")
+			vi.mocked(summarizeConversation).mockReset()
 
 			const result = await manageContext({
 				messages: messagesWithSmallContent,
@@ -1043,7 +1043,7 @@ describe("Context Management", () => {
 
 			// Should NOT use summarization because 50% < 80% (global threshold, since profile has no specific threshold)
 			// and totalTokens (50000) < allowedTokens (60000)
-			expect(summarizeSpy).not.toHaveBeenCalled()
+			expect(summarizeConversation).not.toHaveBeenCalled()
 			expect(result).toEqual({
 				messages: messagesWithSmallContent,
 				summary: "",
@@ -1052,7 +1052,7 @@ describe("Context Management", () => {
 			})
 
 			// Clean up
-			summarizeSpy.mockRestore()
+			vi.mocked(summarizeConversation).mockReset()
 		})
 	})
 

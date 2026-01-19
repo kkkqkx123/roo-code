@@ -57,7 +57,7 @@ import { getWorkspacePath } from "../../utils/path"
 
 // core modules
 import { ToolRepetitionDetector } from "../tools/ToolRepetitionDetector"
-import { FileContextTracker } from "../context-tracking/FileContextTracker"
+import { FileContextTracker } from "../file-tracking/FileContextTracker"
 import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
 import { AssistantMessageParser } from "../assistant-message/AssistantMessageParser"
@@ -72,7 +72,7 @@ import {
 	type CheckpointDiffOptions,
 	type CheckpointRestoreOptions,
 } from "../checkpoints"
-import { summarizeConversation } from "../condense"
+import { summarizeConversation } from "../context"
 import { AutoApprovalHandler } from "../auto-approval"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 

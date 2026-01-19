@@ -13,7 +13,7 @@ import { diagnosticsToProblemsString } from "../../integrations/diagnostics"
 
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
 
-import { FileContextTracker } from "../context-tracking/FileContextTracker"
+import { FileContextTracker } from "../file-tracking/FileContextTracker"
 
 import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { getCommand, type Command } from "../../services/command/commands"

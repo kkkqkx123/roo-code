@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ContextManager } from "../../context/ContextManager"
 import type { ClineProvider } from "../../../../webview/ClineProvider"
-import * as contextManagement from "../../../../context-management"
+import * as contextManagement from "../../../../context"
 import type { ApiHandler } from "../../../../../api"
-import { DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../../context-management"
+import { DEFAULT_CONTEXT_CONDENSE_PERCENT } from "../../../../context"
 
 vi.mock("../../../ignore/RooIgnoreController", () => ({
 	RooIgnoreController: vi.fn().mockImplementation(() => ({

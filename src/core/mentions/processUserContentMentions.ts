@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import { parseMentions } from "./index"
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
-import { FileContextTracker } from "../context-tracking/FileContextTracker"
+import { FileContextTracker } from "../file-tracking/FileContextTracker"
 
 /**
  * Process mentions in user content, specifically within task and feedback tags

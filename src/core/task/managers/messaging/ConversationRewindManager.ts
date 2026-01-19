@@ -1,7 +1,7 @@
 import { Task } from "../../Task"
 import { ClineMessage } from "@shared/types"
 import { ApiMessage } from "../../../task-persistence"
-import { cleanupAfterTruncation } from "../../../condense"
+import { cleanupAfterTruncation } from "../../../context"
 
 export interface RewindOptions {
 	includeTargetMessage?: boolean
