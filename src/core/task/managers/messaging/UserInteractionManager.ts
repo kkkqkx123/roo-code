@@ -142,6 +142,12 @@ export class UserInteractionManager {
 
 	private async waitForResponse(askTs: number): Promise<void> {
 		return new Promise((resolve, reject) => {
+			// 先检查是否已经有响应
+			if (this.lastMessageTs !== undefined && this.lastMessageTs !== askTs) {
+				resolve()
+				return
+			}
+
 			// 设置超时
 			const timeoutRef = setTimeout(() => {
 				this.responseResolvers.delete(askTs)
@@ -153,11 +159,6 @@ export class UserInteractionManager {
 				clearTimeout(timeoutRef)
 				resolve()
 			})
-
-			// 检查是否已经有响应
-			if (this.lastMessageTs !== askTs) {
-				this.responseResolvers.get(askTs)?.()
-			}
 		})
 	}
 
@@ -282,7 +283,7 @@ export class UserInteractionManager {
 			this.interactiveAsk = undefined
 		}
 
-		// 触发等待的 Promise
+		// 触发等待的 Promise - 使用正确的 key
 		if (this.lastMessageTs) {
 			const resolver = this.responseResolvers.get(this.lastMessageTs)
 			if (resolver) {
@@ -338,9 +339,13 @@ export class UserInteractionManager {
 	dispose(): void {
 		this.cancelAutoApprovalTimeout()
 		
-		// 清理所有等待的 Promise
+		// 清理所有等待的 Promise，使用 try-catch 避免未处理的异常
 		this.responseResolvers.forEach((resolver) => {
-			resolver()
+			try {
+				resolver()
+			} catch (error) {
+				console.error('[UserInteractionManager] Error resolving promise during dispose:', error)
+			}
 		})
 		this.responseResolvers.clear()
 

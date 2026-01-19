@@ -100,14 +100,17 @@ export class MessageQueueManager {
 			console.error(`[MessageQueueManager] Failed to submit message (attempt ${retryCount + 1}):`, error)
 			
 			if (retryCount < this.maxRetries) {
+				// 检查队列是否已满
+				if (this.messageQueueService.isFull()) {
+					console.error('[MessageQueueManager] Queue is full, cannot retry message:', queued)
+					return
+				}
+				
 				// 重新加入队列
 				this.messageQueueService.addMessage(queued.text, queued.images)
 				
-				// 延迟重试
+				// 延迟重试（不递归调用，让队列自然处理）
 				await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)))
-				
-				// 重新处理
-				await this.processQueuedMessages()
 			} else {
 				console.error('[MessageQueueManager] Max retries exceeded, message dropped:', queued)
 			}

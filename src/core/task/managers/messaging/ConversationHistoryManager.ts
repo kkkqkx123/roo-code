@@ -6,15 +6,22 @@ export interface ConversationHistoryManagerOptions {
 }
 
 // 定义扩展的消息类型
+interface ReasoningDetail {
+	type: string
+	reasoning?: string
+	signature?: string
+	[key: string]: unknown
+}
+
 interface ExtendedMessageParam extends Anthropic.Messages.MessageParam {
-	reasoning_details?: any[]
+	reasoning_details?: ReasoningDetail[]
 }
 
 interface ReasoningMessageParam {
 	type: "reasoning"
 	encrypted_content: string
 	id?: string
-	summary?: any[]
+	summary?: Array<{ type: string; content: string }>
 }
 
 // 使用联合类型
@@ -115,7 +122,7 @@ export class ConversationHistoryManager {
 	}
 
 	private hasReasoningDetails(msg: ApiMessage): boolean {
-		const msgWithDetails = msg as ApiMessage & { reasoning_details?: any[] }
+		const msgWithDetails = msg as ApiMessage & { reasoning_details?: ReasoningDetail[] }
 		return msgWithDetails.reasoning_details !== undefined && Array.isArray(msgWithDetails.reasoning_details)
 	}
 
@@ -135,7 +142,7 @@ export class ConversationHistoryManager {
 		msg: ApiMessage,
 		contentArray: Anthropic.Messages.ContentBlockParam[]
 	): ExtendedMessageParam {
-		const msgWithDetails = msg as ApiMessage & { reasoning_details?: any[] }
+		const msgWithDetails = msg as ApiMessage & { reasoning_details?: ReasoningDetail[] }
 		let assistantContent: Anthropic.Messages.MessageParam["content"]
 
 		if (contentArray.length === 0) {
@@ -149,7 +156,7 @@ export class ConversationHistoryManager {
 		return {
 			role: "assistant",
 			content: assistantContent,
-			reasoning_details: msgWithDetails.reasoning_details,
+			...(msgWithDetails.reasoning_details ? { reasoning_details: msgWithDetails.reasoning_details } : {}),
 		}
 	}
 
@@ -185,6 +192,11 @@ export class ConversationHistoryManager {
 
 		for (const msg of messages) {
 			if (!msg || typeof msg !== "object") {
+				return false
+			}
+
+			// 验证 ts 字段
+			if (msg.ts !== undefined && typeof msg.ts !== "number") {
 				return false
 			}
 

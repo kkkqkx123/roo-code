@@ -23,14 +23,14 @@ export class ConversationRewindManager {
 		if (clineIndex === -1) {
 			// 尝试找到最接近的消息
 			const closestIndex = this.findClosestMessageIndex(ts)
-			if (closestIndex !== -1) {
-				console.warn(`[ConversationRewindManager] Message with timestamp ${ts} not found, using closest message at ${this.task.clineMessages[closestIndex].ts}`)
-				const cutoffIndex = includeTargetMessage ? closestIndex + 1 : closestIndex
-				await this.performRewind(cutoffIndex, this.task.clineMessages[closestIndex].ts, { skipCleanup })
-				return
+			if (closestIndex === -1) {
+				throw new Error(`Message with timestamp ${ts} not found in clineMessages`)
 			}
 			
-			throw new Error(`Message with timestamp ${ts} not found in clineMessages`)
+			console.warn(`[ConversationRewindManager] Message with timestamp ${ts} not found, using closest message at ${this.task.clineMessages[closestIndex].ts}`)
+			const cutoffIndex = includeTargetMessage ? closestIndex + 1 : closestIndex
+			await this.performRewind(cutoffIndex, this.task.clineMessages[closestIndex].ts, { skipCleanup })
+			return
 		}
 
 		const cutoffIndex = includeTargetMessage ? clineIndex + 1 : clineIndex
@@ -68,11 +68,11 @@ export class ConversationRewindManager {
 		await this.truncateApiHistoryWithCleanup(cutoffTs, removedIds, skipCleanup)
 	}
 
-	private collectRemovedContextEventIds(fromIndex: number): ContextEventIds {
+	private collectRemovedContextEventIds(toIndex: number): ContextEventIds {
 		const condenseIds = new Set<string>()
 		const truncationIds = new Set<string>()
 
-		for (let i = fromIndex; i < this.task.clineMessages.length; i++) {
+		for (let i = toIndex; i < this.task.clineMessages.length; i++) {
 			const msg = this.task.clineMessages[i]
 
 			if (msg.say === "condense_context" && msg.contextCondense?.condenseId) {
@@ -178,7 +178,7 @@ export class ConversationRewindManager {
 	private async saveIfChanged(newHistory: ApiMessage[], originalHistory: ApiMessage[]): Promise<void> {
 		const historyChanged =
 			newHistory.length !== originalHistory.length ||
-			newHistory.some((msg, i) => msg !== originalHistory[i])
+			newHistory.some((msg, i) => JSON.stringify(msg) !== JSON.stringify(originalHistory[i]))
 
 		if (historyChanged) {
 			await this.task.overwriteApiConversationHistory(newHistory)

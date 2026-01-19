@@ -20,7 +20,7 @@ export interface MessageQueueServiceOptions {
 
 export class MessageQueueService extends EventEmitter<QueueEvents> {
 	private _messages: QueuedMessage[]
-	private maxSize: number
+	public readonly maxSize: number
 
 	constructor(options: MessageQueueServiceOptions = {}) {
 		super()
@@ -38,15 +38,15 @@ export class MessageQueueService extends EventEmitter<QueueEvents> {
 		return { index, message: this._messages[index] }
 	}
 
-	public addMessage(text: string, images?: string[]): QueuedMessage | undefined {
+	public addMessage(text: string, images?: string[]): { success: boolean; message?: QueuedMessage; reason?: string } {
 		if (!text && !images?.length) {
-			return undefined
+			return { success: false, reason: 'Empty message' }
 		}
 
 		// 检查队列是否已满
 		if (this._messages.length >= this.maxSize) {
 			console.warn('[MessageQueueService] Queue is full, cannot add message')
-			return undefined
+			return { success: false, reason: 'Queue is full' }
 		}
 
 		const message: QueuedMessage = {
@@ -59,7 +59,7 @@ export class MessageQueueService extends EventEmitter<QueueEvents> {
 		this._messages.push(message)
 		this.emit("stateChanged", this._messages)
 
-		return message
+		return { success: true, message }
 	}
 
 	public removeMessage(id: string): boolean {
@@ -100,6 +100,10 @@ export class MessageQueueService extends EventEmitter<QueueEvents> {
 
 	public isEmpty(): boolean {
 		return this._messages.length === 0
+	}
+
+	public isFull(): boolean {
+		return this._messages.length >= this.maxSize
 	}
 
 	public dispose(): void {

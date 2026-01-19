@@ -581,9 +581,9 @@ describe("Context Management", () => {
 			const mockCost = 0.05
 			const mockSummarizeResponse = {
 				messages: [
-					{ role: "user", content: "First message" },
-					{ role: "assistant", content: mockSummary, isSummary: true },
-					{ role: "user", content: "Last message" },
+					{ role: "user" as const, content: "First message" },
+					{ role: "assistant" as const, content: mockSummary, isSummary: true },
+					{ role: "user" as const, content: "Last message" },
 				],
 				summary: mockSummary,
 				cost: mockCost,
@@ -751,9 +751,9 @@ describe("Context Management", () => {
 			const mockCost = 0.05
 			const mockSummarizeResponse = {
 				messages: [
-					{ role: "user", content: "First message" },
-					{ role: "assistant", content: mockSummary, isSummary: true },
-					{ role: "user", content: "Last message" },
+					{ role: "user" as const, content: "First message" },
+					{ role: "assistant" as const, content: mockSummary, isSummary: true },
+					{ role: "user" as const, content: "Last message" },
 				],
 				summary: mockSummary,
 				cost: mockCost,
@@ -898,9 +898,9 @@ describe("Context Management", () => {
 			const mockCost = 0.03
 			const mockSummarizeResponse = {
 				messages: [
-					{ role: "user", content: "First message" },
-					{ role: "assistant", content: mockSummary, isSummary: true },
-					{ role: "user", content: "Last message" },
+					{ role: "user" as const, content: "First message" },
+					{ role: "assistant" as const, content: mockSummary, isSummary: true },
+					{ role: "user" as const, content: "Last message" },
 				],
 				summary: mockSummary,
 				cost: mockCost,
@@ -962,9 +962,9 @@ describe("Context Management", () => {
 			const mockCost = 0.04
 			const mockSummarizeResponse = {
 				messages: [
-					{ role: "user", content: "First message" },
-					{ role: "assistant", content: mockSummary, isSummary: true },
-					{ role: "user", content: "Last message" },
+					{ role: "user" as const, content: "First message" },
+					{ role: "assistant" as const, content: mockSummary, isSummary: true },
+					{ role: "user" as const, content: "Last message" },
 				],
 				summary: mockSummary,
 				cost: mockCost,
