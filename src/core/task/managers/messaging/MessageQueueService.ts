@@ -20,7 +20,7 @@ export interface MessageQueueServiceOptions {
 
 export class MessageQueueService extends EventEmitter<QueueEvents> {
 	private _messages: QueuedMessage[]
-	public readonly maxSize: number
+	public maxSize: number
 
 	constructor(options: MessageQueueServiceOptions = {}) {
 		super()
@@ -109,5 +109,25 @@ export class MessageQueueService extends EventEmitter<QueueEvents> {
 	public dispose(): void {
 		this._messages = []
 		this.removeAllListeners()
+		// 清理所有定时器和异步操作
+	}
+
+	/**
+	 * 动态设置队列最大大小
+	 */
+	public setMaxSize(newSize: number): void {
+		if (newSize < 1) {
+			console.warn('[MessageQueueService] Invalid maxSize, must be at least 1')
+			return
+		}
+		
+		this.maxSize = newSize
+		
+		// 如果当前队列超过新大小，移除最旧的消息
+		while (this._messages.length > this.maxSize) {
+			this._messages.shift()
+		}
+		
+		this.emit("stateChanged", this._messages)
 	}
 }

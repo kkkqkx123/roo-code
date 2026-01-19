@@ -39,14 +39,29 @@ export class ConversationRewindManager {
 	}
 
 	private findClosestMessageIndex(ts: number): number {
+		if (this.task.clineMessages.length === 0) {
+			return -1
+		}
+
+		// 使用二分查找优化性能（假设消息按时间戳排序）
+		let left = 0
+		let right = this.task.clineMessages.length - 1
 		let closestIndex = -1
 		let minDiff = Infinity
 
-		for (let i = 0; i < this.task.clineMessages.length; i++) {
-			const diff = Math.abs(this.task.clineMessages[i].ts - ts)
+		while (left <= right) {
+			const mid = Math.floor((left + right) / 2)
+			const diff = Math.abs(this.task.clineMessages[mid].ts - ts)
+
 			if (diff < minDiff) {
 				minDiff = diff
-				closestIndex = i
+				closestIndex = mid
+			}
+
+			if (this.task.clineMessages[mid].ts < ts) {
+				left = mid + 1
+			} else {
+				right = mid - 1
 			}
 		}
 

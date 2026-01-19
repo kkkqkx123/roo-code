@@ -20,6 +20,11 @@ interface AskState {
 	timestamp: number
 }
 
+interface ResponseResolver {
+	resolve: (value: void) => void
+	timeout: NodeJS.Timeout
+}
+
 export class UserInteractionManager {
 	private stateManager: TaskStateManager
 	private messageManager: MessageManager
@@ -32,7 +37,7 @@ export class UserInteractionManager {
 	private askState: AskState | null = null
 	public lastMessageTs?: number
 	private autoApprovalTimeoutRef?: NodeJS.Timeout
-	private responseResolvers: Map<number, (value: void) => void> = new Map()
+	private responseResolvers: Map<number, ResponseResolver> = new Map()
 
 	constructor(options: UserInteractionManagerOptions) {
 		this.stateManager = options.stateManager
@@ -154,11 +159,8 @@ export class UserInteractionManager {
 				reject(new Error(`[UserInteractionManager] Response timeout after ${this.responseTimeout}ms`))
 			}, this.responseTimeout)
 
-			// 存储 resolver
-			this.responseResolvers.set(askTs, () => {
-				clearTimeout(timeoutRef)
-				resolve()
-			})
+			// 存储 resolver 和 timeout
+			this.responseResolvers.set(askTs, { resolve, timeout: timeoutRef })
 		})
 	}
 
@@ -287,7 +289,7 @@ export class UserInteractionManager {
 		if (this.lastMessageTs) {
 			const resolver = this.responseResolvers.get(this.lastMessageTs)
 			if (resolver) {
-				resolver()
+				resolver.resolve()
 				this.responseResolvers.delete(this.lastMessageTs)
 			}
 		}
@@ -340,9 +342,10 @@ export class UserInteractionManager {
 		this.cancelAutoApprovalTimeout()
 		
 		// 清理所有等待的 Promise，使用 try-catch 避免未处理的异常
-		this.responseResolvers.forEach((resolver) => {
+		this.responseResolvers.forEach(({ resolve, timeout }) => {
+			clearTimeout(timeout)
 			try {
-				resolver()
+				resolve()
 			} catch (error) {
 				console.error('[UserInteractionManager] Error resolving promise during dispose:', error)
 			}

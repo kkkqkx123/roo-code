@@ -49,9 +49,14 @@ export class MessageManager {
 			return
 		}
 		
-		// 初始化 IndexManager
-		await this.indexManager.initialize()
-		this.initialized = true
+		try {
+			// 初始化 IndexManager
+			await this.indexManager.initialize()
+			this.initialized = true
+		} catch (error) {
+			console.error('[MessageManager] Failed to initialize:', error)
+			throw error
+		}
 	}
 
 	/**
@@ -153,15 +158,20 @@ export class MessageManager {
 
 	async addToClineMessages(message: ClineMessage, providerRef?: WeakRef<ClineProvider>, cloudSyncedMessageTimestamps?: Set<number>): Promise<void> {
 		const provider = this.stateManager.getProvider()
-		provider?.log(`[MessageManager#addToClineMessages] Adding message, type: ${message.type}, say: ${message.say}, current count: ${this.clineMessages.length}`)
+		if (!provider) {
+			console.warn('[MessageManager#addToClineMessages] Provider reference lost')
+			return
+		}
+		
+		provider.log(`[MessageManager#addToClineMessages] Adding message, type: ${message.type}, say: ${message.say}, current count: ${this.clineMessages.length}`)
 		
 		this.clineMessages.push(message)
 		await this.saveClineMessages()
 		
-		provider?.log(`[MessageManager#addToClineMessages] Message saved, new count: ${this.clineMessages.length}`)
+		provider.log(`[MessageManager#addToClineMessages] Message saved, new count: ${this.clineMessages.length}`)
 		
 		if (this.eventBus) {
-			provider?.log(`[MessageManager#addToClineMessages] Emitting TaskUserMessage event`)
+			provider.log(`[MessageManager#addToClineMessages] Emitting TaskUserMessage event`)
 			this.eventBus.emit(RooCodeEventName.TaskUserMessage, this.taskId)
 		}
 	}

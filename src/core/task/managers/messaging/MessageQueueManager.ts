@@ -96,23 +96,22 @@ export class MessageQueueManager {
 	private async processMessageWithRetry(queued: QueuedMessage, retryCount: number): Promise<void> {
 		try {
 			await this.submitUserMessage(queued.text, queued.images)
+			// 成功处理后从队列中移除
+			this.messageQueueService.removeMessage(queued.id)
 		} catch (error) {
 			console.error(`[MessageQueueManager] Failed to submit message (attempt ${retryCount + 1}):`, error)
 			
 			if (retryCount < this.maxRetries) {
-				// 检查队列是否已满
-				if (this.messageQueueService.isFull()) {
-					console.error('[MessageQueueManager] Queue is full, cannot retry message:', queued)
-					return
-				}
+				// 使用指数退避策略
+				const delay = this.retryDelay * Math.pow(2, retryCount)
+				await new Promise(resolve => setTimeout(resolve, delay))
 				
-				// 重新加入队列
-				this.messageQueueService.addMessage(queued.text, queued.images)
-				
-				// 延迟重试（不递归调用，让队列自然处理）
-				await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)))
+				// 递归重试
+				await this.processMessageWithRetry(queued, retryCount + 1)
 			} else {
 				console.error('[MessageQueueManager] Max retries exceeded, message dropped:', queued)
+				// 从队列中移除失败的消息
+				this.messageQueueService.removeMessage(queued.id)
 			}
 		}
 	}

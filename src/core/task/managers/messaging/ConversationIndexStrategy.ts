@@ -13,13 +13,20 @@ export class ConversationIndexStrategy {
 	constructor(private indexManager: IndexManager) {}
 
 	/**
+	 * 验证索引是否有效
+	 */
+	private validateIndex(index: number): boolean {
+		return Number.isInteger(index) && index >= 0
+	}
+
+	/**
 	 * 为消息分配对话索引
-	 * 
+	 *
 	 * 策略：
 	 * - 用户消息：分配新的对话索引
 	 * - 助手消息：继承当前请求索引，如果没有则分配新索引
 	 * - 其他消息：不分配索引
-	 * 
+	 *
 	 * @param message 要分配索引的消息
 	 * @returns 分配的对话索引，如果不需要分配则返回 undefined
 	 */
@@ -34,24 +41,24 @@ export class ConversationIndexStrategy {
 
 	/**
 	 * 为助手消息分配索引
-	 * 
+	 *
 	 * 策略：
 	 * - 优先继承当前请求索引
 	 * - 如果没有当前请求索引，分配新索引并记录警告
-	 * 
+	 *
 	 * @returns 分配的对话索引
 	 */
 	private assignAssistantMessageIndex(): number {
 		const currentIndex = this.indexManager.getCurrentRequestIndex()
 
-		if (currentIndex !== undefined) {
+		if (currentIndex !== undefined && this.validateIndex(currentIndex)) {
 			return currentIndex
 		}
 
-		// 异常情况：助手消息没有当前请求索引
+		// 异常情况：助手消息没有当前请求索引或索引无效
 		const newIndex = this.indexManager.getConversationIndexCounter()
 		this.indexManager.setConversationIndexCounter(newIndex + 1)
-		console.warn(`[ConversationIndexStrategy] Assistant message without active request, assigned new index: ${newIndex}`)
+		console.error(`[ConversationIndexStrategy] Assistant message without valid active request, assigned new index: ${newIndex}`)
 		return newIndex
 	}
 

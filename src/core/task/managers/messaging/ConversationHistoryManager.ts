@@ -27,6 +27,15 @@ interface ReasoningMessageParam {
 // 使用联合类型
 type CleanMessageParam = ExtendedMessageParam | ReasoningMessageParam
 
+// 类型守卫函数
+function isReasoningMessageParam(msg: any): msg is ReasoningMessageParam {
+	return msg.type === "reasoning" && typeof msg.encrypted_content === "string"
+}
+
+function isExtendedMessageParam(msg: any): msg is ExtendedMessageParam {
+	return msg.role && (msg.role === "user" || msg.role === "assistant" || msg.role === "system")
+}
+
 export class ConversationHistoryManager {
 	readonly taskId: string
 
@@ -64,6 +73,10 @@ export class ConversationHistoryManager {
 	}
 
 	private cleanMessage(msg: ApiMessage): CleanMessageParam | null {
+		if (!msg || typeof msg !== 'object') {
+			throw new Error('[ConversationHistoryManager] Invalid message object')
+		}
+
 		if (msg.type === "reasoning") {
 			return this.cleanReasoningMessage(msg)
 		}
