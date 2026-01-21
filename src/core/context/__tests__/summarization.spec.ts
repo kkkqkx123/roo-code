@@ -1,4 +1,4 @@
-// npx vitest src/core/condense/__tests__/condense.spec.ts
+// npx vitest src/core/context/__tests__/summarization.spec.ts
 
 import { Anthropic } from "@anthropic-ai/sdk"
 import type { ModelInfo } from "@shared/types"
@@ -10,7 +10,7 @@ import {
 	getMessagesSinceLastSummary,
 	getEffectiveApiHistory,
 	N_MESSAGES_TO_KEEP,
-} from "../index"
+} from "../"
 
 // Create a mock ApiHandler for testing
 class MockApiHandler extends BaseProvider {
@@ -55,7 +55,7 @@ class MockApiHandler extends BaseProvider {
 const mockApiHandler = new MockApiHandler()
 const taskId = "test-task-id"
 
-describe("Condense", () => {
+describe("Summarization", () => {
 	describe("summarizeConversation", () => {
 		it("should preserve the first message when summarizing", async () => {
 			const messages: ApiMessage[] = [
@@ -72,7 +72,7 @@ describe("Condense", () => {
 
 			const result = await summarizeConversation(messages, mockApiHandler, "System prompt", taskId, 5000, false)
 
-			// Verify the first message is preserved
+			// Verify of first message is preserved
 			expect(result.messages[0]).toEqual(messages[0])
 			expect(result.messages[0].content).toBe("First message with /prr command content")
 
@@ -82,12 +82,12 @@ describe("Condense", () => {
 			expect(summaryMessage?.content).toBe("Mock summary of the conversation")
 
 			// With non-destructive condensing, all messages are retained (tagged but not deleted)
-			// Use getEffectiveApiHistory to verify the effective view matches the old behavior
+			// Use getEffectiveApiHistory to verify the effective view matches to old behavior
 			expect(result.messages.length).toBe(messages.length + 1) // All original messages + summary
 			const effectiveHistory = getEffectiveApiHistory(result.messages)
 			expect(effectiveHistory.length).toBe(1 + 1 + N_MESSAGES_TO_KEEP) // first + summary + last N
 
-			// Verify the last N messages are preserved (same messages by reference)
+			// Verify of last N messages are preserved (same messages by reference)
 			const lastMessages = result.messages.slice(-N_MESSAGES_TO_KEEP)
 			expect(lastMessages).toEqual(messages.slice(-N_MESSAGES_TO_KEEP))
 		})
@@ -100,7 +100,7 @@ describe("Condense", () => {
 				{ role: "user", content: "The issue is with JWT tokens" },
 				{ role: "assistant", content: "Let me examine the JWT implementation" },
 				{ role: "user", content: "It's failing on refresh" },
-				{ role: "assistant", content: "I found the issue" },
+				{ role: "assistant", content: "I found of issue" },
 				{ role: "user", content: "Great, can you fix it?" },
 				{ role: "assistant", content: "Here's the fix" },
 				{ role: "user", content: "Thanks!" },
@@ -229,7 +229,7 @@ describe("Condense", () => {
 
 			const result = getMessagesSinceLastSummary(messages)
 
-			// Should include the original first user message for context preservation, the summary, and messages after
+			// Should include of original first user message for context preservation, summary, and messages after
 			expect(result[0].role).toBe("user")
 			expect(result[0].content).toBe("First message") // Preserves original first message
 			expect(result[1]).toEqual(messages[2]) // The summary

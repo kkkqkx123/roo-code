@@ -72,11 +72,11 @@ async function generatePrompt(
 	const effectiveDiffStrategy = diffEnabled ? diffStrategy : undefined
 
 	// Get the full mode config to ensure we have the role definition (used for groups, etc.)
-	const modeConfig = getModeBySlug(mode, customModeConfigs) || modes.find((m) => m.slug === mode) || modes[0]
+	const modeConfig = getModeBySlug(mode, customModeConfigs) || modes.find((m: { slug: any }) => m.slug === mode) || modes[0]
 	const { roleDefinition, baseInstructions } = getModeSelection(mode, promptComponent, customModeConfigs)
 
 	// Check if MCP functionality should be included
-	const hasMcpGroup = modeConfig.groups.some((groupEntry) => getGroupName(groupEntry) === "mcp")
+	const hasMcpGroup = modeConfig.groups.some((groupEntry: any) => getGroupName(groupEntry) === "mcp")
 	const hasMcpServers = mcpHub && mcpHub.getServers().length > 0
 	const shouldIncludeMcp = hasMcpGroup && hasMcpServers
 
@@ -184,7 +184,7 @@ export const SYSTEM_PROMPT = async (
 	const promptComponent = getPromptComponent(customModePrompts, mode)
 
 	// Get full mode config from custom modes or fall back to built-in modes
-	const currentMode = getModeBySlug(mode, customModes) || modes.find((m) => m.slug === mode) || modes[0]
+	const currentMode = getModeBySlug(mode, customModes) || modes.find((m: { slug: any }) => m.slug === mode) || modes[0]
 
 	// If a file-based custom system prompt exists, use it
 	if (fileCustomSystemPrompt) {

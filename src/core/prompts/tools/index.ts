@@ -93,11 +93,11 @@ export function getToolDescriptionsForMode(
 	const tools = new Set<string>()
 
 	// Add tools from mode's groups
-	config.groups.forEach((groupEntry) => {
+	config.groups.forEach((groupEntry: any) => {
 		const groupName = getGroupName(groupEntry)
 		const toolGroup = TOOL_GROUPS[groupName]
 		if (toolGroup) {
-			toolGroup.tools.forEach((tool) => {
+			toolGroup.tools.forEach((tool: string) => {
 				if (
 					isToolAllowedForMode(
 						tool as ToolName,

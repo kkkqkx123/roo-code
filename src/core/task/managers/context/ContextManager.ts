@@ -1,4 +1,4 @@
-import { FileContextTracker } from "../../../context-tracking/FileContextTracker"
+import { FileContextTracker } from "../../../file-tracking/FileContextTracker"
 import { RooIgnoreController } from "../../../ignore/RooIgnoreController"
 import { RooProtectedController } from "../../../protect/RooProtectedController"
 import type { ClineProvider } from "../../../webview/ClineProvider"
