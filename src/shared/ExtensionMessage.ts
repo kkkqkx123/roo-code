@@ -12,9 +12,9 @@ import type {
 
 import { GitCommit } from "../utils/git"
 
-import { McpServer } from "./mcp"
-import { Mode } from "./modes"
-import { ModelRecord } from "./api"
+import { McpServer } from "@services/mcp/mcp-types"
+import { Mode } from "@core/modes/mode-utils"
+import { ModelRecord } from "@api/api-utils"
 
 // Command interface for frontend/backend communication
 export interface Command {

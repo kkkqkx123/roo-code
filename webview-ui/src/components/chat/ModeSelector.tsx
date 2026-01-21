@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react"
 
 import { type ModeConfig, type CustomModePrompts } from "@shared/types"
 
-import { type Mode, getAllModes } from "@shared/modes"
+import { type Mode, getAllModes } from "@core/modes/mode-utils"
 
 import { vscode } from "@/utils/vscode"
 import { cn } from "@/lib/utils"

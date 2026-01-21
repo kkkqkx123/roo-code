@@ -8,11 +8,11 @@ import {
 	discriminatedProviderSettingsWithIdSchema,
 	isSecretStateKey,
 	ProviderSettingsEntry,
-	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	getModelId,
 	type ProviderName,
 	isProviderName,
 } from "@shared/types"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
 
 import { Mode, modes } from "../../shared/modes"
 import { buildApiHandler } from "../../api"

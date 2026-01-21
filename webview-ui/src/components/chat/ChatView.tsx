@@ -18,7 +18,7 @@ import { combineApiRequests } from "@shared/combineApiRequests"
 import { combineCommandSequences } from "@shared/combineCommandSequences"
 import { getApiMetrics } from "@shared/getApiMetrics"
 import { AudioType } from "@shared/WebviewMessage"
-import { getAllModes } from "@shared/modes"
+import { getAllModes } from "@core/modes/mode-utils"
 import { getLatestTodo } from "@shared/todo"
 
 import { vscode } from "@src/utils/vscode"

@@ -6,7 +6,7 @@ import type {
 	RemoveClosingTag,
 	AskApproval,
 	NativeToolArgs,
-} from "../../shared/tools"
+} from "./tool-config"
 import type { ToolName, ToolProtocol } from "@shared/types"
 
 /**

@@ -13,7 +13,7 @@ import {
 	type ServiceTier,
 } from "@shared/types"
 
-import type { ApiHandlerOptions } from "../../shared/api"
+import type { ApiHandlerOptions } from "../api-utils"
 
 import { calculateApiCostOpenAI } from "../../shared/cost"
 

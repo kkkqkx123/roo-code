@@ -1,7 +1,7 @@
 import { t } from "i18next"
 
 import { GeminiHandler } from "../gemini"
-import type { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 
 describe("GeminiHandler backend support", () => {
 	it("passes tools for URL context and grounding in config", async () => {

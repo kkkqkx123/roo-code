@@ -7,7 +7,7 @@ import { listFiles } from "../../services/glob/list-files"
 import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface ListFilesParams {
 	path: string

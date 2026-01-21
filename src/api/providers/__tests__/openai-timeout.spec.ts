@@ -1,7 +1,7 @@
 // npx vitest run api/providers/__tests__/openai-timeout.spec.ts
 
 import { OpenAiHandler } from "../openai"
-import { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 
 // Mock the timeout config utility
 vitest.mock("../utils/timeout-config", () => ({

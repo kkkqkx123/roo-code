@@ -3,7 +3,7 @@ import OpenAI from "openai"
 
 import type { ModelInfo } from "@shared/types"
 
-import { type ApiHandlerOptions, getModelMaxOutputTokens } from "../../shared/api"
+import { type ApiHandlerOptions, getModelMaxOutputTokens } from "../api-utils"
 import { XmlMatcher } from "../../utils/xml-matcher"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"

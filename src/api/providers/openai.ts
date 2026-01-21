@@ -9,7 +9,7 @@ import {
 	OPENAI_AZURE_AI_INFERENCE_PATH,
 } from "@shared/types"
 
-import type { ApiHandlerOptions } from "../../shared/api"
+import type { ApiHandlerOptions } from "../api-utils"
 
 import { XmlMatcher } from "../../utils/xml-matcher"
 

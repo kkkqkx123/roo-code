@@ -16,7 +16,7 @@ import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { convertNewFileToUnifiedDiff, computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface WriteToFileParams {
 	path: string

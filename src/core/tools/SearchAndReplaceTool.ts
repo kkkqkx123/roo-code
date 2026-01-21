@@ -12,7 +12,7 @@ import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { sanitizeUnifiedDiff, computeDiffStats } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface SearchReplaceOperation {
 	search: string

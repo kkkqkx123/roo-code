@@ -3,7 +3,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import { OpenAiNativeHandler } from "../openai-native"
-import { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 
 // Mock OpenAI client - now everything uses Responses API
 const mockResponsesCreate = vitest.fn()

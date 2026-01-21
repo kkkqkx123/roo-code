@@ -1,9 +1,9 @@
 import type { ToolName, ModeConfig, ExperimentId, GroupOptions, GroupEntry } from "@shared/types"
 import { toolNames as validToolNames } from "@shared/types"
 
-import { type Mode, FileRestrictionError, getModeBySlug, getGroupName } from "../../shared/modes"
+import { type Mode, FileRestrictionError, getModeBySlug, getGroupName } from "@core/modes/mode-utils"
 import { EXPERIMENT_IDS } from "../../shared/experiments"
-import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "../../shared/tools"
+import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "./tool-config"
 
 /**
  * Checks if a tool name is a valid, known tool.

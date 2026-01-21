@@ -1,6 +1,6 @@
 import { OpenAI } from "openai"
 import { OpenAiNativeHandler } from "../../../api/providers/openai-native"
-import { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 import { IEmbedder, EmbeddingResponse, EmbedderInfo } from "../interfaces"
 import {
 	MAX_BATCH_TOKENS,

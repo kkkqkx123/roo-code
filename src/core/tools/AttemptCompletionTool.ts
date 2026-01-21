@@ -6,7 +6,7 @@ import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { Package } from "../../shared/package"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 import { t } from "../../i18n"
 
 interface AttemptCompletionParams {

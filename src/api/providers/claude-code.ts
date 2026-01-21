@@ -17,7 +17,7 @@ import {
 	type ThinkingConfig,
 } from "../../integrations/claude-code/streaming-client"
 import { t } from "../../i18n"
-import { ApiHandlerOptions } from "../../shared/api"
+import { ApiHandlerOptions } from "../api-utils"
 import { countTokens } from "../../utils/countTokens"
 import { convertOpenAIToolsToAnthropic } from "../../core/prompts/tools/native-tools/converters"
 

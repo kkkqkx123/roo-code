@@ -5,7 +5,7 @@ import { VolumeX, Image, WandSparkles, SendHorizontal, MessageSquareX } from "lu
 
 import { mentionRegex, mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "@shared/context-mentions"
 import { WebviewMessage } from "@shared/WebviewMessage"
-import { Mode, getAllModes } from "@shared/modes"
+import { Mode, getAllModes } from "@core/modes/mode-utils"
 import { ExtensionMessage } from "@shared/ExtensionMessage"
 
 import { vscode } from "@src/utils/vscode"

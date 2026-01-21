@@ -1,6 +1,6 @@
 import type { PromptComponent } from "@shared/types"
 
-import { getModeSelection, modes } from "../modes"
+import { getModeSelection, modes } from "@core/modes/mode-utils"
 
 describe("getModeSelection with empty promptComponent", () => {
 	it("should use built-in mode instructions when promptComponent is undefined", () => {

@@ -1,4 +1,4 @@
-import { ApiHandlerOptions } from "../../../shared/api" // Adjust path if needed
+import { ApiHandlerOptions } from "@api/api-utils"
 import { EmbedderProvider } from "./manager"
 
 export interface CustomVectorStorageConfig {

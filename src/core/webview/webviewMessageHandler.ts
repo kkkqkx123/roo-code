@@ -23,7 +23,7 @@ import { handleCheckpointRestoreOperation } from "./checkpointRestoreHandler"
 import { generateErrorDiagnostics } from "./diagnosticsHandler"
 import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
-import { type ModelRecord } from "../../shared/api"
+import { type ModelRecord } from "@api/api-utils"
 import { MessageEnhancer } from "./messageEnhancer"
 
 import {
@@ -32,7 +32,7 @@ import {
 	checkoutDiffPayloadSchema,
 	checkoutRestorePayloadSchema,
 } from "../../shared/WebviewMessage"
-import { checkExistKey } from "../../shared/checkExistApiConfig"
+import { checkExistKey } from "@core/providers/config-utils"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile } from "../../integrations/misc/open-file"
@@ -48,7 +48,7 @@ import { exportSettings, importSettingsWithFeedback } from "../config/importExpo
 import { getOpenAiModels } from "../../api/providers/openai"
 import { openMention } from "../mentions"
 import { getWorkspacePath } from "../../utils/path"
-import { Mode, defaultModeSlug } from "../../shared/modes"
+import { Mode, defaultModeSlug } from "@core/modes/mode-utils"
 import { generateSystemPrompt } from "./generateSystemPrompt"
 import { getCommand } from "../../utils/commands"
 

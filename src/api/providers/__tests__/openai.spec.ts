@@ -1,7 +1,7 @@
 // npx vitest run api/providers/__tests__/openai.spec.ts
 
 import { OpenAiHandler, getOpenAiModels } from "../openai"
-import { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 import { openAiModelInfoSaneDefaults } from "@shared/types"

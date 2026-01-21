@@ -1,4 +1,4 @@
-import { McpResource, McpResourceTemplate } from "@shared/mcp"
+import { McpResource, McpResourceTemplate } from "@services/mcp/mcp-types"
 
 type McpResourceRowProps = {
 	item: McpResource | McpResourceTemplate

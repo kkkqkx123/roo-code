@@ -6,7 +6,7 @@ import * as path from "path"
 
 import { type ModelInfo, type QwenCodeModelId, qwenCodeModels, qwenCodeDefaultModelId } from "@shared/types"
 
-import type { ApiHandlerOptions } from "../../shared/api"
+import type { ApiHandlerOptions } from "../api-utils"
 
 import { NativeToolCallParser } from "../../core/assistant-message/NativeToolCallParser"
 

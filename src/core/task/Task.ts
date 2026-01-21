@@ -26,12 +26,12 @@ import {
 	TaskStatus,
 	TodoItem,
 	QueuedMessage,
-	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 } from "@shared/types"
 import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
+	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 } from "@core/constants/default-values"
 import { isNativeProtocol } from "@core/tools/tool-utils"
 

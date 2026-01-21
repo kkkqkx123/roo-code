@@ -26,7 +26,7 @@ import {
 import { Package } from "../../shared/package"
 import type { ExtensionMessage, ExtensionState } from "../../shared/ExtensionMessage"
 import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
-import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
 import { t } from "../../i18n"
 import { findLast } from "../../shared/array"
 import { getWorkspaceGitInfo } from "../../utils/git"
@@ -383,7 +383,7 @@ export class ClineProvider
 
 		// If the history item has a mode, restore it (but only if the mode exists)
 		if (historyItem.mode) {
-			const { getModeBySlug } = await import("../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			const customModes = await this.customModesManager.getCustomModes()
 			const modeConfig = getModeBySlug(historyItem.mode, customModes)
 			if (modeConfig) {

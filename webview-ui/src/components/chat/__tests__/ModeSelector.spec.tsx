@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 
 import type { ModeConfig } from "@shared/types"
 
-import type { Mode } from "@shared/modes"
+import type { Mode } from "@core/modes/mode-utils"
 
 import { ModeSelector } from "../ModeSelector"
 
@@ -32,8 +32,8 @@ vi.mock("@/components/ui/hooks/useRooPortal", () => ({
 // Create a variable to control what getAllModes returns.
 let mockModes: ModeConfig[] = []
 
-vi.mock("@shared/modes", async () => {
-	const actual = await vi.importActual<typeof import("@shared/modes")>("@shared/modes")
+vi.mock("@core/modes/mode-utils", async () => {
+	const actual = await vi.importActual<typeof import("@core/modes/mode-utils")>("@core/modes/mode-utils")
 	return {
 		...actual,
 		getAllModes: () => mockModes,

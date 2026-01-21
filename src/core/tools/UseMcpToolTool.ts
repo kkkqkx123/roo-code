@@ -4,7 +4,7 @@ import { ClineAskUseMcpServer } from "../../shared/ExtensionMessage"
 import { McpExecutionStatus } from "@shared/types"
 import { t } from "../../i18n"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface UseMcpToolParams {
 	server_name: string

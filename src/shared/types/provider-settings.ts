@@ -11,12 +11,6 @@ import {
 } from "./providers/index.js"
 
 /**
- * constants
- */
-
-export const DEFAULT_CONSECUTIVE_MISTAKE_LIMIT = 3
-
-/**
  * CustomProvider
  *
  * Custom providers are completely configurable within Roo Code settings.

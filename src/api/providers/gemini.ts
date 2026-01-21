@@ -16,7 +16,7 @@ import {
 	geminiModels,
 } from "@shared/types"
 
-import type { ApiHandlerOptions } from "../../shared/api"
+import type { ApiHandlerOptions } from "../api-utils"
 import { safeJsonParse } from "../../shared/safeJsonParse"
 
 import { convertAnthropicMessageToGemini } from "../transform/gemini-format"

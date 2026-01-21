@@ -12,9 +12,9 @@ import {
 
 import { ExtensionMessage, ExtensionState, Command } from "@shared/ExtensionMessage"
 import { findLastIndex } from "@shared/array"
-import { McpServer } from "@shared/mcp"
-import { checkExistKey } from "@shared/checkExistApiConfig"
-import { Mode, defaultModeSlug, defaultPrompts } from "@shared/modes"
+import { McpServer } from "@services/mcp/mcp-types"
+import { checkExistKey } from "@core/providers/config-utils"
+import { Mode, defaultModeSlug, defaultPrompts } from "@core/modes/mode-utils"
 import { CustomSupportPrompts } from "@shared/support-prompt"
 import { experimentDefault } from "@shared/experiments"
 

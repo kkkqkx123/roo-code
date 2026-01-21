@@ -1,6 +1,6 @@
 // npx vitest core/tools/__tests__/newTaskTool.spec.ts
 
-import type { AskApproval, HandleError } from "../../../shared/tools"
+import type { AskApproval, HandleError } from "../tool-config"
 
 // Mock vscode module
 vi.mock("vscode", () => ({
@@ -109,8 +109,8 @@ const mockCline = {
 
 // Import the class to test AFTER mocks are set up
 import { newTaskTool } from "../NewTaskTool"
-import type { ToolUse } from "../../../shared/tools"
-import { getModeBySlug } from "../../../shared/modes"
+import type { ToolUse } from "../tool-config"
+import { getModeBySlug } from "@core/modes/mode-utils"
 import * as vscode from "vscode"
 
 describe("newTaskTool", () => {

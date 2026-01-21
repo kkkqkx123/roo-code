@@ -1,5 +1,5 @@
 import { ClaudeCodeHandler } from "../claude-code"
-import { ApiHandlerOptions } from "../../../shared/api"
+import { ApiHandlerOptions } from "@api/api-utils"
 import type { StreamChunk } from "../../../integrations/claude-code/streaming-client"
 
 // Mock the OAuth manager

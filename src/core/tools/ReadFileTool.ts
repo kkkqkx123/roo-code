@@ -6,7 +6,7 @@ import { isNativeProtocol } from "@core/tools/tool-utils"
 import { Task } from "../task/Task"
 import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
-import { getModelMaxOutputTokens } from "../../shared/api"
+import { getModelMaxOutputTokens } from "@api/api-utils"
 import { t } from "../../i18n"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
@@ -29,7 +29,7 @@ import {
 import { FILE_READ_BUDGET_PERCENT, readFileWithTokenBudget } from "./helpers/fileTokenBudget"
 import { truncateDefinitionsToLineLimit } from "./helpers/truncateDefinitions"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface FileResult {
 	path: string

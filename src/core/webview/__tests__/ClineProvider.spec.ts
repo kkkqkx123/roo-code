@@ -11,7 +11,7 @@ import {
 import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
 
 import { ExtensionMessage, ExtensionState } from "../../../shared/ExtensionMessage"
-import { defaultModeSlug } from "../../../shared/modes"
+import { defaultModeSlug } from "@core/modes/mode-utils"
 import { experimentDefault } from "../../../shared/experiments"
 import { setTtsEnabled } from "../../../utils/tts"
 import { ContextProxy } from "../../config/ContextProxy"

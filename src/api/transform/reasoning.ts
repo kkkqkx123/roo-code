@@ -4,7 +4,7 @@ import type { GenerateContentConfig } from "@google/genai"
 
 import type { ModelInfo, ProviderSettings, ReasoningEffortExtended } from "@shared/types"
 
-import { shouldUseReasoningBudget, shouldUseReasoningEffort } from "../../shared/api"
+import { shouldUseReasoningBudget, shouldUseReasoningEffort } from "../api-utils"
 
 export type AnthropicReasoningParams = BetaThinkingConfigParam
 

@@ -12,7 +12,7 @@ import {
 } from "@shared/types"
 import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
-import type { ApiHandlerOptions } from "../../shared/api"
+import type { ApiHandlerOptions } from "../api-utils"
 
 import { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"

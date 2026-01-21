@@ -9,7 +9,7 @@ import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@core/constants/default
 
 import { Task } from "../task/Task"
 
-import { ToolUse, ToolResponse } from "../../shared/tools"
+import { ToolUse, ToolResponse } from "./tool-config"
 import { formatResponse } from "../prompts/responses"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
 import { ExitCodeDetails, RooTerminalCallbacks, RooTerminalProcess } from "../../integrations/terminal/types"

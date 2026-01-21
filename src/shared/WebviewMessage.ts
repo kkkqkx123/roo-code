@@ -8,7 +8,7 @@ import {
 	type QueuedMessage,
 } from "@shared/types"
 
-import { Mode } from "./modes"
+import { Mode } from "@core/modes/mode-utils"
 
 export type ClineAskResponse = "yesButtonClicked" | "noButtonClicked" | "messageResponse" | "objectResponse"
 

@@ -1,6 +1,6 @@
 import { type ModelInfo, type ProviderSettings, ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
 
-import { getModelMaxOutputTokens, shouldUseReasoningBudget, shouldUseReasoningEffort } from "../api"
+import { getModelMaxOutputTokens, shouldUseReasoningBudget, shouldUseReasoningEffort } from "@api/api-utils"
 
 describe("getModelMaxOutputTokens", () => {
 	const mockModel: ModelInfo = {

@@ -1,5 +1,5 @@
 import { Task } from "../task/Task"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "./tool-config"
 import {
 	BrowserAction,
 	BrowserActionResult,

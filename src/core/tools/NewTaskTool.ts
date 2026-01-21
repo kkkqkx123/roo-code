@@ -3,13 +3,13 @@ import * as vscode from "vscode"
 import { TodoItem } from "@shared/types"
 
 import { Task } from "../task/Task"
-import { getModeBySlug } from "../../shared/modes"
+import { getModeBySlug } from "@core/modes/mode-utils"
 import { formatResponse } from "../prompts/responses"
 import { t } from "../../i18n"
 import { parseMarkdownChecklist } from "./UpdateTodoListTool"
 import { Package } from "../../shared/package"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "../../shared/tools"
+import type { ToolUse } from "./tool-config"
 
 interface NewTaskParams {
 	mode: string

@@ -1,5 +1,5 @@
 import { ClaudeCodeHandler } from "../claude-code"
-import type { ApiHandlerOptions } from "../../../shared/api"
+import type { ApiHandlerOptions } from "@api/api-utils"
 import type { StreamChunk } from "../../../integrations/claude-code/streaming-client"
 import type { ApiStreamUsageChunk } from "../../transform/stream"
 

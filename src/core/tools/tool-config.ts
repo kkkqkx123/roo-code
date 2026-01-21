@@ -62,21 +62,17 @@ export const toolParamNames = [
 	"todos",
 	"prompt",
 	"image",
-	"files", // Native protocol parameter for read_file
-	"operations", // search_and_replace parameter for multiple operations
-	"patch", // apply_patch parameter
-	"file_path", // search_replace and edit_file parameter
-	"old_string", // search_replace and edit_file parameter
-	"new_string", // search_replace and edit_file parameter
-	"expected_replacements", // edit_file parameter for multiple occurrences
+	"files",
+	"operations",
+	"patch",
+	"file_path",
+	"old_string",
+	"new_string",
+	"expected_replacements",
 ] as const
 
 export type ToolParamName = (typeof toolParamNames)[number]
 
-/**
- * Type map defining the native (typed) argument structure for each tool.
- * Tools not listed here will fall back to `any` for backward compatibility.
- */
 export type NativeToolArgs = {
 	access_mcp_resource: { server_name: string; uri: string }
 	read_file: { files: FileEntry[] }
@@ -100,54 +96,30 @@ export type NativeToolArgs = {
 	update_todo_list: { todos: string }
 	use_mcp_tool: { server_name: string; tool_name: string; arguments?: Record<string, unknown> }
 	write_to_file: { path: string; content: string }
-	// Add more tools as they are migrated to native protocol
 }
 
-/**
- * Generic ToolUse interface that provides proper typing for both protocols.
- *
- * @template TName - The specific tool name, which determines the nativeArgs type
- */
 export interface ToolUse<TName extends ToolName = ToolName> {
 	type: "tool_use"
-	id?: string // Optional ID to track tool calls
+	id?: string
 	name: TName
-	/**
-	 * The original tool name as called by the model (e.g. an alias like "edit_file"),
-	 * if it differs from the canonical tool name used for execution.
-	 * Used to preserve tool names in API conversation history.
-	 */
 	originalName?: string
-	// params is a partial record, allowing only some or none of the possible parameters to be used
 	params: Partial<Record<ToolParamName, string>>
 	partial: boolean
-	// nativeArgs is properly typed based on TName if it's in NativeToolArgs, otherwise never
 	nativeArgs?: TName extends keyof NativeToolArgs ? NativeToolArgs[TName] : never
 }
 
-/**
- * Represents a native MCP tool call from the model.
- * In native mode, MCP tools are called directly with their prefixed name (e.g., "mcp_serverName_toolName")
- * rather than through the use_mcp_tool wrapper. This type preserves the original tool name
- * so it appears correctly in API conversation history.
- */
 export interface McpToolUse {
 	type: "mcp_tool_use"
-	id?: string // Tool call ID from the API
-	/** The original tool name from the API (e.g., "mcp_serverName_toolName") */
+	id?: string
 	name: string
-	/** Extracted server name from the tool name */
 	serverName: string
-	/** Extracted tool name from the tool name */
 	toolName: string
-	/** Arguments passed to the MCP tool */
 	params: Record<string, unknown>
 	partial: boolean
 }
 
 export interface ExecuteCommandToolUse extends ToolUse<"execute_command"> {
 	name: "execute_command"
-	// Pick<Record<ToolParamName, string>, "command"> makes "command" required, but Partial<> makes it optional
 	params: Partial<Pick<Record<ToolParamName, string>, "command" | "cwd">>
 }
 
@@ -221,16 +193,13 @@ export interface RunSlashCommandToolUse extends ToolUse<"run_slash_command"> {
 	params: Partial<Pick<Record<ToolParamName, string>, "command" | "args">>
 }
 
-// Define tool group configuration
 export type ToolGroupConfig = {
 	tools: readonly string[]
-	alwaysAvailable?: boolean // Whether this group is always available and shouldn't show in prompts view
-	customTools?: readonly string[] // Opt-in only tools - only available when explicitly included via model's includedTools
-	description?: string // Optional description for the tool group
+	alwaysAvailable?: boolean
+	customTools?: readonly string[]
+	description?: string
 }
 
-
-// Define available tool groups.
 export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 	read: {
 		tools: ["read_file", "fetch_instructions", "search_files", "list_files", "codebase_search", "get_workspace_diagnostics"],
@@ -258,7 +227,6 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 	},
 }
 
-// Tools that are always available to all modes.
 export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"ask_followup_question",
 	"attempt_completion",
@@ -267,16 +235,6 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"run_slash_command",
 ] as const
 
-/**
- * Central registry of tool aliases.
- * Maps alias name -> canonical tool name.
- *
- * This allows models to use alternative names for tools (e.g., "edit_file" instead of "apply_diff").
- * When a model calls a tool by its alias, the system resolves it to the canonical name for execution,
- * but preserves the alias in API conversation history for consistency.
- *
- * To add a new alias, simply add an entry here. No other files need to be modified.
- */
 export const TOOL_ALIASES: Record<string, ToolName> = {
 	write_file: "write_to_file",
 } as const
@@ -302,27 +260,10 @@ export interface DiffItem {
 }
 
 export interface DiffStrategy {
-	/**
-	 * Get the name of this diff strategy for analytics and debugging
-	 * @returns The name of the diff strategy
-	 */
 	getName(): string
 
-	/**
-	 * Get the tool description for this diff strategy
-	 * @param args The tool arguments including cwd and toolOptions
-	 * @returns The complete tool description including format requirements and examples
-	 */
 	getToolDescription(args: { cwd: string; toolOptions?: { [key: string]: string } }): string
 
-	/**
-	 * Apply a diff to the original content
-	 * @param originalContent The original file content
-	 * @param diffContent The diff content in the strategy's format (string for legacy, DiffItem[] for new)
-	 * @param startLine Optional line number where the search block starts. If not provided, searches the entire file.
-	 * @param endLine Optional line number where the search block ends. If not provided, searches the entire file.
-	 * @returns A DiffResult object containing either the successful result or error details
-	 */
 	applyDiff(
 		originalContent: string,
 		diffContent: string | DiffItem[],

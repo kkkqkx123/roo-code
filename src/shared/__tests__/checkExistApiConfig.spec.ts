@@ -2,7 +2,7 @@
 
 import type { ProviderSettings } from "@shared/types"
 
-import { checkExistKey } from "../checkExistApiConfig"
+import { checkExistKey } from "@core/providers/config-utils"
 
 describe("checkExistKey", () => {
 	it("should return false for undefined config", () => {
