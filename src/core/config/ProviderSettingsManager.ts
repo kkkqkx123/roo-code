@@ -14,7 +14,7 @@ import {
 } from "@shared/types"
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
 
-import { Mode, modes } from "../../shared/modes"
+import { Mode, modes } from "@core/modes/mode-utils"
 import { buildApiHandler } from "../../api"
 
 export interface SyncCloudProfilesResult {

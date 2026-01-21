@@ -11,7 +11,7 @@ import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@core/constants/default
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 import { EXPERIMENT_IDS, experiments as Experiments } from "../../shared/experiments"
 import { formatLanguage } from "../../shared/language"
-import { defaultModeSlug, getFullModeDetails } from "../../shared/modes"
+import { defaultModeSlug, getFullModeDetails } from "@core/modes/mode-utils"
 import { getApiMetrics } from "../../shared/getApiMetrics"
 import { listFiles } from "../../services/glob/list-files"
 import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"

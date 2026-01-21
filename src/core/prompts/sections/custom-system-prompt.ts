@@ -1,6 +1,6 @@
 import fs from "fs/promises"
 import path from "path"
-import { Mode } from "../../../shared/modes"
+import { Mode } from "@core/modes/mode-utils"
 import { fileExistsAtPath } from "../../../utils/fs"
 
 export type PromptVariables = {

@@ -279,7 +279,7 @@ vi.mock("../../providers/ProviderCoordinator", () => ({
 	})),
 }))
 
-vi.mock("../../../shared/modes", () => ({
+vi.mock("@core/modes/mode-utils", () => ({
 	modes: [
 		{
 			slug: "code",
@@ -1239,7 +1239,7 @@ describe("ClineProvider", () => {
 			;(provider as any)._customModesManager = mockCustomModesManager
 
 			// Mock getModeBySlug to return undefined for non-existent mode
-			const { getModeBySlug } = await import("../../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			vi.mocked(getModeBySlug)
 				.mockReturnValueOnce(undefined) // First call returns undefined (mode doesn't exist)
 				.mockReturnValueOnce({
@@ -1305,7 +1305,7 @@ describe("ClineProvider", () => {
 			;(provider as any)._customModesManager = mockCustomModesManager
 
 			// Mock getModeBySlug to return the custom mode
-			const { getModeBySlug } = await import("../../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			vi.mocked(getModeBySlug).mockReturnValue({
 				slug: "custom-mode",
 				name: "Custom Mode",
@@ -1363,7 +1363,7 @@ describe("ClineProvider", () => {
 			;(provider as any)._customModesManager = mockCustomModesManager
 
 			// Mock getModeBySlug to return built-in architect mode
-			const { getModeBySlug } = await import("../../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			vi.mocked(getModeBySlug).mockReturnValue({
 				slug: "architect",
 				name: "Architect Mode",
@@ -1438,7 +1438,7 @@ describe("ClineProvider", () => {
 			;(provider as any)._customModesManager = mockCustomModesManager
 
 			// Mock getModeBySlug to return built-in mode
-			const { getModeBySlug } = await import("../../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			vi.mocked(getModeBySlug).mockReturnValue({
 				slug: "code",
 				name: "Code Mode",

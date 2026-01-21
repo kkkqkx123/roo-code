@@ -2,14 +2,14 @@
 
 import type { ModeConfig } from "@shared/types"
 
-import { modes } from "../../../shared/modes"
-import { TOOL_GROUPS } from "../../../shared/tools"
+import { modes } from "@core/modes/mode-utils"
+import { TOOL_GROUPS } from "../tool-config"
 
 import { validateToolUse, isToolAllowedForMode } from "../validateToolUse"
 
-const codeMode = modes.find((m) => m.slug === "code")?.slug || "code"
-const architectMode = modes.find((m) => m.slug === "architect")?.slug || "architect"
-const askMode = modes.find((m) => m.slug === "ask")?.slug || "ask"
+const codeMode = modes.find((m: ModeConfig) => m.slug === "code")?.slug || "code"
+const architectMode = modes.find((m: ModeConfig) => m.slug === "architect")?.slug || "architect"
+const askMode = modes.find((m: ModeConfig) => m.slug === "ask")?.slug || "ask"
 
 describe("mode-validator", () => {
 	describe("isToolAllowedForMode", () => {

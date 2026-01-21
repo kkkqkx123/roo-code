@@ -22,7 +22,7 @@ vi.mock("../../../shared/package", () => ({
 }))
 
 // Mock other modules first - these are hoisted to the top
-vi.mock("../../../shared/modes", () => ({
+vi.mock("@core/modes/mode-utils", () => ({
 	getModeBySlug: vi.fn(),
 	defaultModeSlug: "ask",
 }))

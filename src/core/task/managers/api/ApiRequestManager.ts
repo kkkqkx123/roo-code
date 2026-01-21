@@ -17,7 +17,7 @@ import type { CheckpointManager } from "../checkpoint/CheckpointManager"
 import { BaseProvider, TokenValidationOptions } from "../../../../api/providers/base-provider"
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
-import type { ToolUse } from "../../../../shared/tools"
+import type { ToolUse } from "@core/tools/tool-config"
 
 const MAX_CONTEXT_WINDOW_RETRIES = 3
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 120

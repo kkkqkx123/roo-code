@@ -1,7 +1,7 @@
 // npx vitest src/core/assistant-message/__tests__/parseAssistantMessage.spec.ts
 
 import { type AssistantMessageContent, type TextContent } from "@shared/types"
-import { ToolUse } from "../../../shared/tools"
+import { ToolUse } from "@core/tools/tool-config"
 
 import { parseAssistantMessage } from "../parseAssistantMessage"
 

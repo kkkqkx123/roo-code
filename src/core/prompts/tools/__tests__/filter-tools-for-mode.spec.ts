@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import type OpenAI from "openai"
 import type { ModeConfig, ModelInfo } from "@shared/types"
 import { filterNativeToolsForMode, filterMcpToolsForMode, applyModelToolCustomization } from "../filter-tools-for-mode"
-import * as toolsModule from "../../../../shared/tools"
+import * as toolsModule from "@core/tools/tool-config"
 
 describe("filterNativeToolsForMode", () => {
 	const mockNativeTools: OpenAI.Chat.ChatCompletionTool[] = [

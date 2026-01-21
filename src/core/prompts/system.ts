@@ -5,8 +5,8 @@ import type { ModeConfig, PromptComponent, CustomModePrompts, TodoItem } from "@
 
 import type { SystemPromptSettings } from "./types"
 
-import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelection } from "../../shared/modes"
-import { DiffStrategy } from "../../shared/tools"
+import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelection } from "@core/modes/mode-utils"
+import { DiffStrategy } from "@core/tools/tool-config"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
 

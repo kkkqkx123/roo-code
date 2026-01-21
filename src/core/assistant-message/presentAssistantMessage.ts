@@ -6,8 +6,8 @@ import type { ToolName, ClineAsk, ToolProgressStatus } from "@shared/types"
 
 import { t } from "../../i18n"
 
-import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
-import type { ToolParamName, ToolResponse, ToolUse, McpToolUse } from "../../shared/tools"
+import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
+import type { ToolParamName, ToolResponse, ToolUse, McpToolUse } from "@core/tools/tool-config"
 import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
 
 import { AskIgnoredError } from "../task/AskIgnoredError"

@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import type { ModeConfig } from "@shared/types"
 
-import { getAllModesWithPrompts } from "../../../shared/modes"
+import { getAllModesWithPrompts } from "@core/modes/mode-utils"
 import { ensureSettingsDirectoryExists } from "../../../utils/globalContext"
 
 export async function getModesSection(

@@ -123,7 +123,7 @@ vi.mock("../../diff/strategies/multi-search-replace", () => ({
 	})),
 }))
 
-vi.mock("../../../shared/modes", () => ({
+vi.mock("@core/modes/mode-utils", () => ({
 	modes: [
 		{
 			slug: "code",
@@ -794,7 +794,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			}
 
 			// Mock getModeBySlug to return undefined for deleted mode
-			const { getModeBySlug } = await import("../../../shared/modes")
+			const { getModeBySlug } = await import("@core/modes/mode-utils")
 			vi.mocked(getModeBySlug).mockReturnValue(undefined)
 
 			// Mock getTaskWithId

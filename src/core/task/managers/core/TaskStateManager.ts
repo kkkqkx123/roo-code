@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import type { TaskMetadata, ToolProtocol, RooCodeEventName, TodoItem, ModelInfo } from "@shared/types"
 import { resolveToolProtocol } from "../../../../utils/resolveToolProtocol"
-import { defaultModeSlug } from "../../../../shared/modes"
+import { defaultModeSlug } from "@core/modes/mode-utils"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import type { ProviderSettings } from "@shared/types"
 

@@ -40,7 +40,7 @@ vi.mock("../../../utils/fs", () => ({
 }))
 
 import { SYSTEM_PROMPT } from "../system"
-import { defaultModeSlug, modes } from "../../../shared/modes"
+import { defaultModeSlug, modes } from "@core/modes/mode-utils"
 import * as vscode from "vscode"
 import * as fs from "fs/promises"
 import { toPosix } from "./utils"

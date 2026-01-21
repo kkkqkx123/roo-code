@@ -1,5 +1,5 @@
 import { DiffViewProvider } from "../../../../integrations/editor/DiffViewProvider"
-import type { DiffStrategy } from "../../../../shared/tools"
+import type { DiffStrategy } from "@core/tools/tool-config"
 import { MultiSearchReplaceDiffStrategy } from "../../../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../../../diff/strategies/multi-file-search-replace"
 import { EXPERIMENT_IDS, experiments } from "../../../../shared/experiments"

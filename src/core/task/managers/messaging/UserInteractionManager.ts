@@ -1,5 +1,5 @@
 import type { ClineMessage, ClineAsk, ToolName, ClineSay, ToolProgressStatus, ContextCondense, ContextTruncation } from "@shared/types"
-import type { ToolResponse } from "../../../../shared/tools"
+import type { ToolResponse } from "@core/tools/tool-config"
 import { isBlockingAsk, isMutableAsk, isTerminalAsk } from "@core/task/managers/messaging/message-utils"
 import { formatResponse } from "../../../prompts/responses"
 import { t } from "../../../../i18n"

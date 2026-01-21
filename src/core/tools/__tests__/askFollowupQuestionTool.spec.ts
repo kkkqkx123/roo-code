@@ -1,5 +1,5 @@
 import { askFollowupQuestionTool } from "../AskFollowupQuestionTool"
-import { ToolUse } from "../../../shared/tools"
+import { ToolUse } from "@core/tools/tool-config"
 import { NativeToolCallParser } from "../../assistant-message/NativeToolCallParser"
 
 describe("askFollowupQuestionTool", () => {

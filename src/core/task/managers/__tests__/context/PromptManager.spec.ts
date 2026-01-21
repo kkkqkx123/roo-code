@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { PromptManager } from "../../context/PromptManager"
 import type { ClineProvider } from "../../../../webview/ClineProvider"
 import type { RooIgnoreController } from "../../../../ignore/RooIgnoreController"
-import type { DiffStrategy } from "../../../../../shared/tools"
+import type { DiffStrategy } from "@core/tools/tool-config"
 
 describe("PromptManager", () => {
 	let mockProvider: Partial<ClineProvider>

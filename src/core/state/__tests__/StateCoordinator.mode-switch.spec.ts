@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest"
 import * as vscode from "vscode"
 import { ClineProvider } from "../../webview/ClineProvider"
 import { ContextProxy } from "../../config/ContextProxy"
-import { defaultModeSlug } from "../../../shared/modes"
+import { defaultModeSlug } from "@core/modes/mode-utils"
 
 describe("StateCoordinator - Mode Switch and Custom Mode Updates", () => {
 	let provider: ClineProvider

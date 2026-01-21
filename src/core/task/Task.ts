@@ -42,8 +42,8 @@ import { ApiStream } from "../../api/transform/stream"
 // shared
 import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
-import { defaultModeSlug } from "../../shared/modes"
-import { DiffStrategy, type ToolResponse } from "../../shared/tools"
+import { defaultModeSlug } from "@core/modes/mode-utils"
+import { DiffStrategy, type ToolResponse } from "@core/tools/tool-config"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 
 // services

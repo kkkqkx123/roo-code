@@ -2,7 +2,7 @@
 
 import { useMcpToolTool } from "../UseMcpToolTool"
 import { Task } from "../../task/Task"
-import { ToolUse } from "../../../shared/tools"
+import { ToolUse } from "../tool-config"
 
 // Mock dependencies
 vi.mock("../../prompts/responses", () => ({

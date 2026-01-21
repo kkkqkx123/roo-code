@@ -1,6 +1,6 @@
 import type { McpServerUse } from "@shared/types"
 
-import type { McpServer, McpTool } from "../../shared/mcp"
+import type { McpServer, McpTool } from "@services/mcp/mcp-types"
 
 export function isMcpToolAlwaysAllowed(mcpServerUse: McpServerUse, mcpServers: McpServer[] | undefined): boolean {
 	if (mcpServerUse.type === "use_mcp_tool" && mcpServerUse.toolName) {
