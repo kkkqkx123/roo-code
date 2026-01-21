@@ -3,9 +3,9 @@ import getFolderSize from "get-folder-size"
 
 import type { ClineMessage, HistoryItem, ToolProtocol } from "@shared/types"
 
-import { combineApiRequests } from "../../shared/combineApiRequests"
-import { combineCommandSequences } from "../../shared/combineCommandSequences"
-import { getApiMetrics } from "../../shared/getApiMetrics"
+import { combineApiRequests } from "../task/managers/api/message-utils"
+import { combineCommandSequences } from "../task/managers/messaging/message-utils"
+import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"
 import { findLastIndex } from "../../shared/array"
 import { getTaskDirectoryPath } from "../../utils/storage"
 import { t } from "../../i18n"

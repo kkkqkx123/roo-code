@@ -15,7 +15,7 @@ import { AlertTriangle } from "lucide-react"
 import { CODEBASE_INDEX_DEFAULTS } from "@services/code-index/config"
 import type { VectorStorageConfig } from "@shared/types"
 
-import type { EmbedderProvider } from "@shared/embeddingModels"
+import type { EmbedderProvider } from "@services/code-index/embedding-models"
 import type { IndexingStatus, ConfigUpgradeStatus } from "@shared/ExtensionMessage"
 
 import { vscode } from "@src/utils/vscode"

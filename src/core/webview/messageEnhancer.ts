@@ -1,5 +1,5 @@
 import { ProviderSettings, ClineMessage, GlobalState } from "@shared/types"
-import { supportPrompt } from "../../shared/support-prompt"
+import { supportPrompt } from "../prompts/support-prompt"
 import { singleCompletionHandler } from "../../utils/single-completion-handler"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { ClineProvider } from "./ClineProvider"

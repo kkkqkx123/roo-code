@@ -5,27 +5,10 @@ export type ParsedApiReqStartedTextType = {
 	tokensOut: number
 	cacheWrites: number
 	cacheReads: number
-	cost?: number // Only present if combineApiRequests has been called
+	cost?: number
 	apiProtocol?: "anthropic" | "openai"
 }
 
-/**
- * Calculates API metrics from an array of ClineMessages.
- *
- * This function processes 'condense_context' messages and 'api_req_started' messages that have been
- * combined with their corresponding 'api_req_finished' messages by the combineApiRequests function.
- * It extracts and sums up the tokensIn, tokensOut, cacheWrites, cacheReads, and cost from these messages.
- *
- * @param messages - An array of ClineMessage objects to process.
- * @returns An ApiMetrics object containing totalTokensIn, totalTokensOut, totalCacheWrites, totalCacheReads, totalCost, and contextTokens.
- *
- * @example
- * const messages = [
- *   { type: "say", say: "api_req_started", text: '{"request":"GET /api/data","tokensIn":10,"tokensOut":20,"cost":0.005}', ts: 1000 }
- * ];
- * const { totalTokensIn, totalTokensOut, totalCost } = getApiMetrics(messages);
- * // Result: { totalTokensIn: 10, totalTokensOut: 20, totalCost: 0.005 }
- */
 export function getApiMetrics(messages: ClineMessage[]) {
 	const result: TokenUsage = {
 		totalTokensIn: 0,
@@ -36,7 +19,6 @@ export function getApiMetrics(messages: ClineMessage[]) {
 		contextTokens: 0,
 	}
 
-	// Calculate running totals.
 	messages.forEach((message) => {
 		if (message.type === "say" && message.say === "api_req_started" && message.text) {
 			try {
@@ -70,8 +52,6 @@ export function getApiMetrics(messages: ClineMessage[]) {
 		}
 	})
 
-	// Calculate context tokens, from the last API request started or condense
-	// context message.
 	result.contextTokens = 0
 
 	for (let i = messages.length - 1; i >= 0; i--) {
@@ -82,9 +62,6 @@ export function getApiMetrics(messages: ClineMessage[]) {
 				const parsedText: ParsedApiReqStartedTextType = JSON.parse(message.text)
 				const { tokensIn, tokensOut } = parsedText
 
-				// Since tokensIn now stores TOTAL input tokens (including cache tokens),
-				// we no longer need to add cacheWrites and cacheReads separately.
-				// This applies to both Anthropic and OpenAI protocols.
 				result.contextTokens = (tokensIn || 0) + (tokensOut || 0)
 			} catch (error) {
 				console.error("Error parsing JSON:", error)
@@ -101,12 +78,6 @@ export function getApiMetrics(messages: ClineMessage[]) {
 	return result
 }
 
-/**
- * Check if token usage has changed by comparing relevant properties.
- * @param current - Current token usage data
- * @param snapshot - Previous snapshot to compare against
- * @returns true if any relevant property has changed or snapshot is undefined
- */
 export function hasTokenUsageChanged(current: TokenUsage, snapshot?: TokenUsage): boolean {
 	if (!snapshot) {
 		return true
@@ -124,25 +95,16 @@ export function hasTokenUsageChanged(current: TokenUsage, snapshot?: TokenUsage)
 	return keysToCompare.some((key) => current[key] !== snapshot[key])
 }
 
-/**
- * Check if tool usage has changed by comparing attempts and failures.
- * @param current - Current tool usage data
- * @param snapshot - Previous snapshot to compare against (undefined treated as empty)
- * @returns true if any tool's attempts/failures have changed between current and snapshot
- */
 export function hasToolUsageChanged(current: ToolUsage, snapshot?: ToolUsage): boolean {
-	// Treat undefined snapshot as empty object for consistent comparison
 	const effectiveSnapshot = snapshot ?? {}
 
 	const currentKeys = Object.keys(current) as ToolName[]
 	const snapshotKeys = Object.keys(effectiveSnapshot) as ToolName[]
 
-	// Check if number of tools changed
 	if (currentKeys.length !== snapshotKeys.length) {
 		return true
 	}
 
-	// Check if any tool's stats changed
 	return currentKeys.some((key) => {
 		const currentTool = current[key]
 		const snapshotTool = effectiveSnapshot[key]

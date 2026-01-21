@@ -1,6 +1,6 @@
 import { GlobalState, ClineMessage, ClineAsk } from "@shared/types"
 
-import { getApiMetrics } from "../../shared/getApiMetrics"
+import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
 
 export interface AutoApprovalResult {

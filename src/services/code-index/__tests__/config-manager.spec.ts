@@ -7,10 +7,10 @@ import { PreviousConfigSnapshot } from "../interfaces/config"
 vi.mock("../../../core/config/ContextProxy")
 
 // Mock embeddingModels module
-vi.mock("../../../shared/embeddingModels")
+vi.mock("../embedding-models")
 
 // Import mocked functions
-import { getDefaultModelId, getModelDimension, getModelScoreThreshold } from "../../../shared/embeddingModels"
+import { getDefaultModelId, getModelDimension, getModelScoreThreshold } from "../embedding-models"
 
 // Type the mocked functions
 const mockedGetDefaultModelId = vi.mocked(getDefaultModelId)

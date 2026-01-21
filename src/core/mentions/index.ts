@@ -3,7 +3,7 @@ import * as path from "path"
 
 import * as vscode from "vscode"
 
-import { mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "../../shared/context-mentions"
+import { mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "../../utils/context-mentions"
 
 import { getCommitInfo, getWorkingState } from "../../utils/git"
 

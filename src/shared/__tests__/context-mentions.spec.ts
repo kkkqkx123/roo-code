@@ -1,4 +1,4 @@
-import { mentionRegex, mentionRegexGlobal } from "../context-mentions"
+import { mentionRegex, mentionRegexGlobal } from "../../utils/context-mentions"
 
 describe("mentionRegex and mentionRegexGlobal", () => {
 	// Test cases for various mention types

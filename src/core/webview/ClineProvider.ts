@@ -25,7 +25,7 @@ import {
 
 import { Package } from "../../shared/package"
 import type { ExtensionMessage, ExtensionState } from "../../shared/ExtensionMessage"
-import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
+import { EMBEDDING_MODEL_PROFILES } from "../../services/code-index/embedding-models"
 import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
 import { t } from "../../i18n"
 import { findLast } from "../../shared/array"

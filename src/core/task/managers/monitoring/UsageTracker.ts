@@ -1,7 +1,7 @@
 import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@shared/types"
-import { hasTokenUsageChanged, hasToolUsageChanged } from "../../../../shared/getApiMetrics"
-import { combineApiRequests } from "../../../../shared/combineApiRequests"
-import { combineCommandSequences } from "../../../../shared/combineCommandSequences"
+import { hasTokenUsageChanged, hasToolUsageChanged } from "./metrics-utils"
+import { combineApiRequests } from "../api/message-utils"
+import { combineCommandSequences } from "../messaging/message-utils"
 import debounce from "lodash.debounce"
 
 export interface UsageTrackerOptions {

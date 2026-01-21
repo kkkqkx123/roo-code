@@ -4,7 +4,7 @@ import type { ProviderSettings } from "@shared/types"
 
 import { singleCompletionHandler } from "../single-completion-handler"
 import { buildApiHandler, SingleCompletionHandler } from "../../api"
-import { supportPrompt } from "../../shared/support-prompt"
+import { supportPrompt } from "../../core/prompts/support-prompt"
 
 // Mock the API handler
 vi.mock("../../api", () => ({

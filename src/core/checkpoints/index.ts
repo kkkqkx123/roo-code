@@ -8,7 +8,7 @@ import { checkGitInstalled } from "../../utils/git"
 import { t } from "../../i18n"
 
 import { ClineApiReqInfo } from "../../shared/ExtensionMessage"
-import { getApiMetrics } from "../../shared/getApiMetrics"
+import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"
 
 import { DIFF_VIEW_URI_SCHEME } from "../../integrations/editor/DiffViewProvider"
 

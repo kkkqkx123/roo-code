@@ -53,13 +53,13 @@ export type ClineAsk = z.infer<typeof clineAskSchema>
  * These are "blocking" because they pause execution until the user responds.
  */
 
-export type BlockingAsk = import("@core/task/managers/messaging/message-utils").BlockingAsk
+export type BlockingAsk = "followup" | "command" | "tool" | "browser_action_launch" | "use_mcp_server"
 
-export type NonBlockingAsk = import("@core/task/managers/messaging/message-utils").NonBlockingAsk
+export type NonBlockingAsk = "command_output"
 
-export type MutableAsk = import("@core/task/managers/messaging/message-utils").MutableAsk
+export type MutableAsk = "resume_task"
 
-export type TerminalAsk = import("@core/task/managers/messaging/message-utils").TerminalAsk
+export type TerminalAsk = "command"
 
 
 /**

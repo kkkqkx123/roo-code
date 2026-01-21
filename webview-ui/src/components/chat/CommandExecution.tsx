@@ -8,7 +8,7 @@ import { CommandExecutionStatus, commandExecutionStatusSchema } from "@shared/ty
 import { ExtensionMessage } from "@shared/ExtensionMessage"
 import { safeJsonParse } from "@shared/safeJsonParse"
 
-import { COMMAND_OUTPUT_STRING } from "@shared/combineCommandSequences"
+import { COMMAND_OUTPUT_STRING } from "@core/task/managers/messaging/message-utils"
 import { parseCommand } from "@shared/parse-command"
 
 import { vscode } from "@src/utils/vscode"

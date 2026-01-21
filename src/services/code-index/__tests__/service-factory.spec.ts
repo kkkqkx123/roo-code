@@ -32,7 +32,7 @@ vitest.mock("../vector-store/collection-size-estimator")
 vitest.mock("../vector-store/collection-config-upgrade-service")
 
 // Mock the embedding models module
-vitest.mock("../../../shared/embeddingModels", () => ({
+vitest.mock("../embedding-models", () => ({
 	getDefaultModelId: vitest.fn(),
 	getModelDimension: vitest.fn(),
 }))
@@ -46,7 +46,7 @@ const MockedCollectionSizeEstimator = CollectionSizeEstimator as MockedClass<typ
 const MockedCollectionConfigUpgradeService = CollectionConfigUpgradeService as MockedClass<typeof CollectionConfigUpgradeService>
 
 // Import the mocked functions
-import { getDefaultModelId, getModelDimension } from "../../../shared/embeddingModels"
+import { getDefaultModelId, getModelDimension } from "../embedding-models"
 const mockGetDefaultModelId = getDefaultModelId as MockedFunction<typeof getDefaultModelId>
 const mockGetModelDimension = getModelDimension as MockedFunction<typeof getModelDimension>
 

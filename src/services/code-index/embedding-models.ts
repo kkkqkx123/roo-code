@@ -1,7 +1,3 @@
-/**
- * Defines profiles for different embedding models, including their dimensions.
- */
-
 export type EmbedderProvider =
 	| "openai"
 	| "openai-compatible"
@@ -9,9 +5,8 @@ export type EmbedderProvider =
 
 export interface EmbeddingModelProfile {
 	dimension: number
-	scoreThreshold?: number // Model-specific minimum score threshold for semantic search
-	queryPrefix?: string // Optional prefix required by the model for queries
-	// Add other model-specific properties if needed, e.g., context window size
+	scoreThreshold?: number
+	queryPrefix?: string
 }
 
 export type EmbeddingModelProfiles = {
@@ -20,7 +15,6 @@ export type EmbeddingModelProfiles = {
 	}
 }
 
-// Example profiles - expand this list as needed
 export const EMBEDDING_MODEL_PROFILES: EmbeddingModelProfiles = {
 	openai: {
 		"text-embedding-3-small": { dimension: 1536, scoreThreshold: 0.4 },
@@ -43,12 +37,6 @@ export const EMBEDDING_MODEL_PROFILES: EmbeddingModelProfiles = {
 	},
 }
 
-/**
- * Retrieves the embedding dimension for a given provider and model ID.
- * @param provider The embedder provider (e.g., "openai").
- * @param modelId The specific model ID (e.g., "text-embedding-3-small").
- * @returns The dimension size or undefined if the model is not found.
- */
 export function getModelDimension(provider: EmbedderProvider, modelId: string): number | undefined {
 	const providerProfiles = EMBEDDING_MODEL_PROFILES[provider]
 	if (!providerProfiles) {
@@ -58,20 +46,12 @@ export function getModelDimension(provider: EmbedderProvider, modelId: string): 
 
 	const modelProfile = providerProfiles[modelId]
 	if (!modelProfile) {
-		// Don't warn here, as it might be a custom model ID not in our profiles
-		// console.warn(`Model not found for provider ${provider}: ${modelId}`)
-		return undefined // Or potentially return a default/fallback dimension?
+		return undefined
 	}
 
 	return modelProfile.dimension
 }
 
-/**
- * Retrieves the score threshold for a given provider and model ID.
- * @param provider The embedder provider (e.g., "openai").
- * @param modelId The specific model ID (e.g., "text-embedding-3-small").
- * @returns The score threshold or undefined if the model is not found.
- */
 export function getModelScoreThreshold(provider: EmbedderProvider, modelId: string): number | undefined {
 	const providerProfiles = EMBEDDING_MODEL_PROFILES[provider]
 	if (!providerProfiles) {
@@ -82,12 +62,6 @@ export function getModelScoreThreshold(provider: EmbedderProvider, modelId: stri
 	return modelProfile?.scoreThreshold
 }
 
-/**
- * Retrieves the query prefix for a given provider and model ID.
- * @param provider The embedder provider (e.g., "openai").
- * @param modelId The specific model ID (e.g., "nomic-embed-code").
- * @returns The query prefix or undefined if the model doesn't require one.
- */
 export function getModelQueryPrefix(provider: EmbedderProvider, modelId: string): string | undefined {
 	const providerProfiles = EMBEDDING_MODEL_PROFILES[provider]
 	if (!providerProfiles) {
@@ -98,14 +72,6 @@ export function getModelQueryPrefix(provider: EmbedderProvider, modelId: string)
 	return modelProfile?.queryPrefix
 }
 
-/**
- * Gets the default *specific* embedding model ID based on the provider.
- * Does not include the provider prefix.
- * Currently defaults to OpenAI's 'text-embedding-3-small'.
- * TODO: Make this configurable or more sophisticated.
- * @param provider The embedder provider.
- * @returns The default specific model ID for the provider (e.g., "text-embedding-3-small").
- */
 export function getDefaultModelId(provider: EmbedderProvider): string {
 	switch (provider) {
 		case "openai":

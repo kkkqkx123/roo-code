@@ -15,7 +15,7 @@ import { findLastIndex } from "@shared/array"
 import { McpServer } from "@services/mcp/mcp-types"
 import { checkExistKey } from "@core/providers/config-utils"
 import { Mode, defaultModeSlug, defaultPrompts } from "@core/modes/mode-utils"
-import { CustomSupportPrompts } from "@shared/support-prompt"
+import { CustomSupportPrompts } from "@core/prompts/support-prompt"
 import { experimentDefault } from "@shared/experiments"
 
 import { vscode } from "@src/utils/vscode"
