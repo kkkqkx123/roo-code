@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { Anthropic } from "@anthropic-ai/sdk"
 import { presentAssistantMessage } from "../presentAssistantMessage"
 import { Task } from "../../task/Task"
-import { TOOL_PROTOCOL } from "@shared/types"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 // Mock dependencies
 vi.mock("../../task/Task")

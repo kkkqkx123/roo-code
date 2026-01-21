@@ -5,10 +5,12 @@ import {
 	type RooCodeSettings,
 	type HistoryItem,
 	type ProviderName,
+} from "@shared/types"
+import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_WRITE_DELAY_MS,
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
-} from "@shared/types"
+} from "@core/constants/default-values"
 
 import { ContextProxy } from "../config/ContextProxy"
 import { getWorkspacePath } from "../../utils/path"

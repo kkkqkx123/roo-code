@@ -7,8 +7,8 @@ import axios from "axios"
 import {
 	type ProviderSettingsEntry,
 	type ClineMessage,
-	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@shared/types"
+import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
 
 import { ExtensionMessage, ExtensionState } from "../../../shared/ExtensionMessage"
 import { defaultModeSlug } from "../../../shared/modes"

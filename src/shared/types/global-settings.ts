@@ -13,35 +13,13 @@ import { experimentsSchema } from "./experiment.js"
 import { modeConfigSchema } from "./mode.js"
 import { customModePromptsSchema, customSupportPromptsSchema } from "./mode.js"
 import { languagesSchema } from "./vscode.js"
-
-/**
- * Default delay in milliseconds after writes to allow diagnostics to detect potential problems.
- * This delay is particularly important for Go and other languages where tools like goimports
- * need time to automatically clean up unused imports.
- */
-export const DEFAULT_WRITE_DELAY_MS = 1000
-
-/**
- * Default terminal output character limit constant.
- * This provides a reasonable default that aligns with typical terminal usage
- * while preventing context window explosions from extremely long lines.
- */
-export const DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT = 50_000
-
-/**
- * Minimum checkpoint timeout in seconds.
- */
-export const MIN_CHECKPOINT_TIMEOUT_SECONDS = 10
-
-/**
- * Maximum checkpoint timeout in seconds.
- */
-export const MAX_CHECKPOINT_TIMEOUT_SECONDS = 60
-
-/**
- * Default checkpoint timeout in seconds.
- */
-export const DEFAULT_CHECKPOINT_TIMEOUT_SECONDS = 15
+import {
+	DEFAULT_WRITE_DELAY_MS,
+	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
+	MIN_CHECKPOINT_TIMEOUT_SECONDS,
+	MAX_CHECKPOINT_TIMEOUT_SECONDS,
+	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+} from "@core/constants/default-values"
 
 /**
  * GlobalSettings

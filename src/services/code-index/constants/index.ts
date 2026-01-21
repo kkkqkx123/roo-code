@@ -1,4 +1,4 @@
-import { CODEBASE_INDEX_DEFAULTS } from "@shared/types"
+import { CODEBASE_INDEX_DEFAULTS } from "../config"
 
 /**Parser */
 export const MAX_BLOCK_CHARS = 1000

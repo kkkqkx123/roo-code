@@ -1,5 +1,5 @@
 import { getToolUseGuidelinesSection } from "../tool-use-guidelines"
-import { TOOL_PROTOCOL } from "@shared/types"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 describe("getToolUseGuidelinesSection", () => {
 	describe("XML protocol", () => {

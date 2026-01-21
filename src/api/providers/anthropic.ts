@@ -9,8 +9,8 @@ import {
 	anthropicDefaultModelId,
 	anthropicModels,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
-	TOOL_PROTOCOL,
 } from "@shared/types"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 

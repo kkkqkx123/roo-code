@@ -1,5 +1,5 @@
 import { EXPERIMENT_IDS } from "../../../shared/experiments"
-import { TOOL_PROTOCOL } from "@shared/types"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 // Mock vscode
 vi.mock("vscode", () => ({

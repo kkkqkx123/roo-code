@@ -1,5 +1,5 @@
 import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@core/tools/tool-utils"
 
 function getVendorConfidentialitySection(): string {
 	return `

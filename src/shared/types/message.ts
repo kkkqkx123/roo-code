@@ -45,6 +45,7 @@ export const clineAsks = [
 export const clineAskSchema = z.enum(clineAsks)
 
 export type ClineAsk = z.infer<typeof clineAskSchema>
+
 /**
  * BlockingAsk
  *
@@ -52,72 +53,13 @@ export type ClineAsk = z.infer<typeof clineAskSchema>
  * These are "blocking" because they pause execution until the user responds.
  */
 
-export const blockingAsks = [
-	"followup",
-	"command",
-	"tool",
-	"browser_action_launch",
-	"use_mcp_server",
-] as const satisfies readonly ClineAsk[]
+export type BlockingAsk = import("@core/task/managers/messaging/message-utils").BlockingAsk
 
-export type BlockingAsk = (typeof blockingAsks)[number]
+export type NonBlockingAsk = import("@core/task/managers/messaging/message-utils").NonBlockingAsk
 
-export function isBlockingAsk(ask: ClineAsk): ask is BlockingAsk {
-	return (blockingAsks as readonly ClineAsk[]).includes(ask)
-}
+export type MutableAsk = import("@core/task/managers/messaging/message-utils").MutableAsk
 
-/**
- * NonBlockingAsk
- *
- * Asks that do not require user response and are only used to update chat messages.
- * These are "non-blocking" because they don't pause execution.
- */
-
-export const nonBlockingAsks = [
-	"command_output",
-] as const satisfies readonly ClineAsk[]
-
-export type NonBlockingAsk = (typeof nonBlockingAsks)[number]
-
-export function isNonBlockingAsk(ask: ClineAsk): ask is NonBlockingAsk {
-	return (nonBlockingAsks as readonly ClineAsk[]).includes(ask)
-}
-
-/**
- * MutableAsk
- *
- * Asks that can be resumed or have their state changed after being set.
- * Currently only "resume_task" falls into this category.
- */
-
-export const mutableAsks = ["resume_task"] as const satisfies readonly ClineAsk[]
-
-export type MutableAsk = (typeof mutableAsks)[number]
-
-export function isMutableAsk(ask: ClineAsk): ask is MutableAsk {
-	return (mutableAsks as readonly ClineAsk[]).includes(ask)
-}
-
-/**
- * TerminalAsk
- *
- * Asks that put the task into a terminal state (completion, error, or paused).
- * These represent the end of a task flow or a state that requires user intervention to continue.
- */
-
-export const terminalAsks = [
-	"completion_result",
-	"api_req_failed",
-	"resume_completed_task",
-	"mistake_limit_reached",
-	"auto_approval_max_req_reached",
-] as const satisfies readonly ClineAsk[]
-
-export type TerminalAsk = (typeof terminalAsks)[number]
-
-export function isTerminalAsk(ask: ClineAsk): ask is TerminalAsk {
-	return (terminalAsks as readonly ClineAsk[]).includes(ask)
-}
+export type TerminalAsk = import("@core/task/managers/messaging/message-utils").TerminalAsk
 
 
 /**

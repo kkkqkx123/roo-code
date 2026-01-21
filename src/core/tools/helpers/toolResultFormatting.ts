@@ -1,6 +1,7 @@
 import * as vscode from "vscode"
 import { Package } from "../../../shared/package"
-import { TOOL_PROTOCOL, ToolProtocol, isNativeProtocol } from "@shared/types"
+import { ToolProtocol } from "@shared/types"
+import { TOOL_PROTOCOL, isNativeProtocol } from "@core/tools/tool-utils"
 
 /**
  * Gets the current tool protocol from workspace configuration.

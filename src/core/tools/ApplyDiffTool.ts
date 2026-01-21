@@ -1,7 +1,7 @@
 import path from "path"
 import fs from "fs/promises"
 
-import { DEFAULT_WRITE_DELAY_MS } from "@shared/types"
+import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
 
 import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"

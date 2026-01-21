@@ -6,7 +6,7 @@ import { Dirent } from "fs"
 import { isLanguage } from "@shared/types"
 
 import type { SystemPromptSettings } from "../types"
-import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@core/tools/tool-utils"
 
 import { LANGUAGES } from "../../../shared/language"
 import { getRooDirectoriesForCwd, getGlobalRooDirectory } from "../../../services/roo-config"

@@ -21,7 +21,12 @@
 		"useUnknownInCatchVariables": false,
 		"paths": {
 			"@shared/types": ["./shared/types"],
-			"@shared/types/*": ["./shared/types/*"]
+			"@shared/types/*": ["./shared/types/*"],
+			"@shared/*": ["./shared/*"],
+			"@core/*": ["./core/*"],
+			"@services/*": ["./services/*"],
+			"@api/*": ["./api/*"],
+			"@utils/*": ["../utils/*"]
 		}
 	},
 	"include": ["."],

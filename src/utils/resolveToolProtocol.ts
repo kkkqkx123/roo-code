@@ -1,4 +1,5 @@
-import { ToolProtocol, TOOL_PROTOCOL } from "@shared/types"
+import { ToolProtocol } from "@shared/types"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 import type { ProviderSettings, ModelInfo } from "@shared/types"
 import type { Anthropic } from "@anthropic-ai/sdk"
 import { findLast, findLastIndex } from "../shared/array"

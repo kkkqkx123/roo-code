@@ -1,4 +1,5 @@
-import { type ClineAsk, type McpServerUse, type FollowUpData, isNonBlockingAsk } from "@shared/types"
+import { type ClineAsk, type McpServerUse, type FollowUpData } from "@shared/types"
+import { isNonBlockingAsk } from "../task/managers/messaging/message-utils"
 
 import type { ClineSayTool, ExtensionState } from "../../shared/ExtensionMessage"
 import { ClineAskResponse } from "../../shared/WebviewMessage"

@@ -1,6 +1,7 @@
 import path from "path"
 import type { FileEntry, LineRange } from "@shared/types"
-import { isNativeProtocol, ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
+import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
+import { isNativeProtocol } from "@core/tools/tool-utils"
 
 import { Task } from "../task/Task"
 import { ClineSayTool } from "../../shared/ExtensionMessage"

@@ -6,8 +6,9 @@ import {
 	type CustomModePrompts,
 	type ToolGroup,
 	type PromptComponent,
-	DEFAULT_MODES,
 } from "@shared/types"
+
+import { DEFAULT_MODES } from "@core/modes/default-modes"
 
 import { addCustomInstructions } from "../core/prompts/sections/custom-instructions"
 

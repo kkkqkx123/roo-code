@@ -3,7 +3,8 @@ import * as path from "path"
 import * as diff from "diff"
 import { RooIgnoreController, LOCK_TEXT_SYMBOL } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
-import { ToolProtocol, isNativeProtocol, TOOL_PROTOCOL } from "@shared/types"
+import { ToolProtocol } from "@shared/types"
+import { isNativeProtocol, TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 export const formatResponse = {
 	toolDenied: (protocol?: ToolProtocol) => {

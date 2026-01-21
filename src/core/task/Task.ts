@@ -25,13 +25,15 @@ import {
 	RooCodeEventName,
 	TaskStatus,
 	TodoItem,
-	isNativeProtocol,
 	QueuedMessage,
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
+} from "@shared/types"
+import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
-} from "@shared/types"
+} from "@core/constants/default-values"
+import { isNativeProtocol } from "@core/tools/tool-utils"
 
 // api
 import { ApiHandler, buildApiHandler } from "../../api"

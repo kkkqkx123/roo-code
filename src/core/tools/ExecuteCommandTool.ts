@@ -4,7 +4,8 @@ import * as vscode from "vscode"
 
 import delay from "delay"
 
-import { CommandExecutionStatus, DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@shared/types"
+import { CommandExecutionStatus } from "@shared/types"
+import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@core/constants/default-values"
 
 import { Task } from "../task/Task"
 

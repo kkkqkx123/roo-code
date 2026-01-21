@@ -12,7 +12,7 @@ import { stripLineNumbers, everyLineHasLineNumbers } from "../../integrations/mi
 import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
-import { DEFAULT_WRITE_DELAY_MS } from "@shared/types"
+import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { convertNewFileToUnifiedDiff, computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"

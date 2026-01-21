@@ -16,7 +16,7 @@ import { CodeIndexManager } from "../../services/code-index/manager"
 import { PromptVariables, loadSystemPromptFile } from "./sections/custom-system-prompt"
 
 import { getToolDescriptionsForMode } from "./tools"
-import { getEffectiveProtocol, isNativeProtocol } from "@shared/types"
+import { getEffectiveProtocol, isNativeProtocol } from "@core/tools/tool-utils"
 import {
 	getRulesSection,
 	getSystemInfoSection,
