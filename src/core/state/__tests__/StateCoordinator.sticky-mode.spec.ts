@@ -194,6 +194,7 @@ vi.mock("../StateCoordinator", () => ({
 		updateApiConfiguration: vi.fn().mockResolvedValue(undefined),
 		updateGlobalState: vi.fn().mockResolvedValue(undefined),
 		setTaskManager: vi.fn().mockResolvedValue(undefined),
+		applyTerminalSettings: vi.fn().mockResolvedValue(undefined),
 	})),
 }))
 

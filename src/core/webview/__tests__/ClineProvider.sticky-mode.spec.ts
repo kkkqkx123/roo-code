@@ -93,6 +93,8 @@ vi.mock("../../task/Task", () => ({
 		}),
 		isBrowserSessionActive: vi.fn().mockReturnValue(false),
 		getBrowserViewportSize: vi.fn().mockReturnValue({}),
+		metadata: { task: "test task" },
+		taskNumber: 1,
 	})),
 }))
 
@@ -292,6 +294,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				provider,
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
+			// Add missing properties
+			;(mockTask as any).metadata = { task: "test task" }
+			;(mockTask as any).taskNumber = 1
 
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
@@ -356,6 +361,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: 1,
 			}
 
 			// Add task to provider stack
@@ -401,6 +408,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				provider,
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
+			// Add missing properties
+			;(mockTask as any).metadata = { task: "test task" }
+			;(mockTask as any).taskNumber = 1
 
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
@@ -528,6 +538,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				provider,
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
+			// Add missing properties
+			;(mockTask as any).metadata = { task: "test task" }
+			;(mockTask as any).taskNumber = 1
 
 			// Get the actual taskId from the mock
 			const taskId = (mockTask as any).taskId || "test-task-id"
@@ -588,6 +601,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				provider,
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
+			// Add missing properties
+			;(parentTask as any).metadata = { task: "test task" }
+			;(parentTask as any).taskNumber = 1
 
 			// Get the actual taskId from the mock
 			const parentTaskId = (parentTask as any).taskId || "parent-task-id"
@@ -642,6 +658,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				apiConfiguration: { apiProvider: "anthropic" },
 				parentTask: parentTask,
 			})
+			// Add missing properties
+			;(subtask as any).metadata = { task: "test task" }
+			;(subtask as any).taskNumber = 1
 			const subtaskId = (subtask as any).taskId || "subtask-id"
 
 			// Initialize subtask with parent's mode
@@ -685,6 +704,9 @@ describe("ClineProvider - Sticky Mode", () => {
 				provider,
 				apiConfiguration: { apiProvider: "anthropic" },
 			})
+			// Add missing properties
+			;(mockTask as any).metadata = { task: "test task" }
+			;(mockTask as any).taskNumber = 1
 			vi.spyOn(mockTask as any, "saveClineMessages").mockRejectedValue(new Error("Save failed"))
 
 			// Add task to provider stack
@@ -832,6 +854,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: 1,
 			}
 
 			// Add task to provider stack
@@ -912,6 +936,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: 1,
 			}
 
 			// Add task to provider stack
@@ -969,6 +995,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: 1,
 			}
 
 			// Add task to provider stack
@@ -1123,6 +1151,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: 1,
 			}
 
 			// Add task to provider stack
@@ -1240,6 +1270,8 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				isBrowserSessionActive: vi.fn().mockReturnValue(false),
 				getBrowserViewportSize: vi.fn().mockReturnValue({}),
+				metadata: { task: "test task" },
+				taskNumber: i + 1,
 			}))
 
 			// Add all tasks to provider

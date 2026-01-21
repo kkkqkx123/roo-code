@@ -1,10 +1,12 @@
 import { defineConfig } from "vitest/config"
 import path from "path"
+import tsconfigPaths from "vite-tsconfig-paths"
 import { resolveVerbosity } from "./utils/vitest-verbosity"
 
 const { silent, reporters, onConsoleLog } = resolveVerbosity()
 
 export default defineConfig({
+	plugins: [tsconfigPaths()],
 	test: {
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],

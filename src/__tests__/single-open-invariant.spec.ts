@@ -55,6 +55,7 @@ describe("Single-open-task invariant", () => {
 			}),
 			setProviderProfile: vi.fn(),
 			log: vi.fn(),
+			logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 			getStateToPostToWebview: vi.fn(),
 			providerSettingsManager: { getModeConfigId: vi.fn(), listConfig: vi.fn() },
 			customModesManager: { getCustomModes: vi.fn().mockResolvedValue([]) },
@@ -119,6 +120,7 @@ describe("Single-open-task invariant", () => {
 			},
 			postStateToWebview: vi.fn(),
 			handleModeSwitch: vi.fn().mockResolvedValue(undefined),
+			logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 		} as unknown as ClineProvider
 
 		const historyItem = {
