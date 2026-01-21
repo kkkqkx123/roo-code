@@ -2,11 +2,11 @@ import { GlobalState, ClineMessage } from "@shared/types"
 
 import { AutoApprovalHandler } from "../AutoApprovalHandler"
 
-vi.mock("../../../shared/getApiMetrics", () => ({
+vi.mock("../../task/managers/monitoring/metrics-utils", () => ({
 	getApiMetrics: vi.fn(),
 }))
 
-import { getApiMetrics } from "../../../shared/getApiMetrics"
+import { getApiMetrics } from "../../task/managers/monitoring/metrics-utils"
 
 describe("AutoApprovalHandler", () => {
 	let handler: AutoApprovalHandler

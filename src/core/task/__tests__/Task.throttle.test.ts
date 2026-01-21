@@ -2,7 +2,7 @@ import { RooCodeEventName, ProviderSettings, TokenUsage, ToolUsage } from "@shar
 
 import { Task } from "../Task"
 import { ClineProvider } from "../../webview/ClineProvider"
-import { hasToolUsageChanged, hasTokenUsageChanged } from "../../../shared/getApiMetrics"
+import { hasToolUsageChanged, hasTokenUsageChanged } from "../managers/monitoring/metrics-utils"
 
 // Mock dependencies
 vi.mock("../../webview/ClineProvider")

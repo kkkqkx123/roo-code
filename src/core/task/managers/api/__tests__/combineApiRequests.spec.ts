@@ -1,8 +1,8 @@
-// npx vitest run src/shared/__tests__/combineApiRequests.spec.ts
+// npx vitest run src/core/task/managers/api/__tests__/combineApiRequests.spec.ts
 
 import type { ClineMessage, ClineSay } from "@shared/types"
 
-import { combineApiRequests } from "../combineApiRequests"
+import { combineApiRequests } from "../message-utils"
 
 describe("combineApiRequests", () => {
 	// Helper function to create a basic api_req_started message
@@ -37,7 +37,7 @@ describe("combineApiRequests", () => {
 			// Should have one message (the combined one)
 			expect(result).toHaveLength(1)
 
-			// The combined message should have the properties of the start message
+			// The combined message should have properties of start message
 			expect(result[0].type).toBe("say")
 			expect(result[0].say).toBe("api_req_started")
 			expect(result[0].ts).toBe(1000)
@@ -84,7 +84,7 @@ describe("combineApiRequests", () => {
 
 			const result = combineApiRequests(messages)
 
-			// Should have two messages (the other message and the combined one)
+			// Should have two messages (the other message and combined one)
 			expect(result).toHaveLength(2)
 
 			// The first message should be unchanged
@@ -109,7 +109,7 @@ describe("combineApiRequests", () => {
 			// Should have four messages (two other messages and two combined ones)
 			expect(result).toHaveLength(4)
 
-			// Check the order and content of messages
+			// Check order and content of messages
 			expect(result[0]).toEqual(otherMessage1)
 
 			const parsedText1 = JSON.parse(result[1].text || "{}")
@@ -239,14 +239,14 @@ describe("combineApiRequests", () => {
 			// Should have two messages (one combined and one original start message)
 			expect(result).toHaveLength(2)
 
-			// Check first combined message
+			// Check the first combined message
 			const parsedText1 = JSON.parse(result[0].text || "{}")
 			expect(parsedText1).toEqual({
 				request: "GET /api/data1",
 				cost: 0.005,
 			})
 
-			// Check second message (should be the original start message)
+			// Check the second message (should be the original start message)
 			expect(result[1].say).toBe("api_req_started")
 			const parsedText2 = JSON.parse(result[1].text || "{}")
 			expect(parsedText2).toEqual({
@@ -254,7 +254,7 @@ describe("combineApiRequests", () => {
 			})
 		})
 
-		it("should preserve additional properties in the messages", () => {
+		it("should preserve additional properties in messages", () => {
 			const startMessage: ClineMessage = {
 				type: "say",
 				say: "api_req_started",
@@ -348,7 +348,7 @@ describe("combineApiRequests", () => {
 			// The current implementation spreads string characters into the object
 			// This test validates the actual behavior
 			const parsedText = JSON.parse(result[0].text || "{}")
-			// Check that the cost property exists (from finish message)
+			// Check that the cost property exists (from the finish message)
 			expect(parsedText.cost).toBe(0.005)
 			// Check that string characters got spread (actual implementation behavior)
 			expect(typeof parsedText["0"]).toBe("string")
@@ -373,7 +373,7 @@ describe("combineApiRequests", () => {
 			// The current implementation spreads string characters into the object
 			// This test validates the actual behavior
 			const parsedText = JSON.parse(result[0].text || "{}")
-			// Check that request property exists (from start message)
+			// Check that the request property exists (from the start message)
 			expect(parsedText.request).toBe("GET /api/data")
 			// Check that string characters got spread (actual implementation behavior)
 			expect(typeof parsedText["0"]).toBe("string")
@@ -402,7 +402,7 @@ describe("combineApiRequests", () => {
 				request: "GET /api/data",
 				cost: 0.005,
 				metadata: {
-					// 'source' property from start message is lost in shallow merge
+					// 'source' property from the start message is lost in shallow merge
 					priority: "override",
 					duration: 200,
 				},
@@ -519,7 +519,7 @@ describe("combineApiRequests", () => {
 
 			const result = combineApiRequests(messages)
 
-			// Should have three messages (other, combined, and the orphaned start)
+			// Should have three messages (other, combined, and orphaned start)
 			expect(result).toHaveLength(3)
 
 			// First message should be unchanged
@@ -570,14 +570,14 @@ describe("combineApiRequests", () => {
 			// Should have two messages (the combined ones)
 			expect(result).toHaveLength(2)
 
-			// Check first combined message
+			// Check the first combined message
 			const parsedText1 = JSON.parse(result[0].text || "{}")
 			expect(parsedText1).toEqual({
 				request: "GET /api/data1",
 				cost: 0.005,
 			})
 
-			// Check second combined message
+			// Check the second combined message
 			const parsedText2 = JSON.parse(result[1].text || "{}")
 			expect(parsedText2).toEqual({
 				request: "GET /api/data2",
@@ -599,7 +599,7 @@ describe("combineApiRequests", () => {
 			// Should have one message (the combined one)
 			expect(result).toHaveLength(1)
 
-			// The finish message properties should overwrite start message properties with the same name
+			// The finish message properties should overwrite the start message properties with the same name
 			const parsedText = JSON.parse(result[0].text || "{}")
 			expect(parsedText).toEqual({
 				request: "OVERWRITTEN", // This was in both messages, finish value wins

@@ -1,8 +1,8 @@
-// npx vitest run src/shared/__tests__/getApiMetrics.spec.ts
+// npx vitest run src/core/task/managers/monitoring/__tests__/getApiMetrics.spec.ts
 
 import type { ClineMessage } from "@shared/types"
 
-import { getApiMetrics } from "../getApiMetrics"
+import { getApiMetrics } from "../metrics-utils"
 
 describe("getApiMetrics", () => {
 	// Helper function to create a basic api_req_started message
@@ -99,7 +99,7 @@ describe("getApiMetrics", () => {
 			expect(result.totalCacheWrites).toBeUndefined()
 			expect(result.totalCacheReads).toBeUndefined()
 			expect(result.totalCost).toBe(0.005) // 0.002 + 0.003
-			expect(result.contextTokens).toBe(400) // newContextTokens from the last condense_context message
+			expect(result.contextTokens).toBe(400) // newContextTokens from last condense_context message
 		})
 
 		it("should calculate metrics from mixed message types", () => {
@@ -244,12 +244,12 @@ describe("getApiMetrics", () => {
 
 			// The implementation will use the last message that has any tokens
 			// In this case, it's the message with tokensOut:200 (since the last few messages have no tokensIn/Out)
-			expect(result.contextTokens).toBe(200) // 0 + 200 (from the tokensOut message)
+			expect(result.contextTokens).toBe(200) // 0 + 200 (from tokensOut message)
 		})
 
 		it("should handle non-number values in api_req_started message", () => {
 			const messages: ClineMessage[] = [
-				// Use string values that can be parsed as JSON but aren't valid numbers for the metrics
+				// Use string values that can be parsed as JSON but aren't valid numbers for metrics
 				createApiReqStartedMessage(
 					'{"tokensIn":"not-a-number","tokensOut":"not-a-number","cacheWrites":"not-a-number","cacheReads":"not-a-number","cost":"not-a-number"}',
 				),
@@ -270,7 +270,7 @@ describe("getApiMetrics", () => {
 	})
 
 	describe("Context tokens calculation", () => {
-		it("should calculate contextTokens from the last api_req_started message", () => {
+		it("should calculate contextTokens from last api_req_started message", () => {
 			const messages: ClineMessage[] = [
 				createApiReqStartedMessage('{"tokensIn":100,"tokensOut":200,"cacheWrites":5,"cacheReads":10}', 1000),
 				createApiReqStartedMessage('{"tokensIn":50,"tokensOut":150,"cacheWrites":3,"cacheReads":7}', 2000),
@@ -278,7 +278,7 @@ describe("getApiMetrics", () => {
 
 			const result = getApiMetrics(messages)
 
-			// Should use the values from the last api_req_started message
+			// Should use values from the last api_req_started message
 			expect(result.contextTokens).toBe(200) // 50 + 150 (OpenAI default, no cache tokens)
 		})
 
@@ -304,7 +304,7 @@ describe("getApiMetrics", () => {
 
 			const result = getApiMetrics(messages)
 
-			// Should use the values from the last api_req_started message
+			// Should use values from the last api_req_started message
 			expect(result.contextTokens).toBe(200) // 50 + 150 (OpenAI default, no cache tokens)
 		})
 

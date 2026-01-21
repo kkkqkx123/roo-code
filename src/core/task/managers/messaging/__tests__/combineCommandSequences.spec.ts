@@ -1,8 +1,8 @@
-// npx vitest run src/shared/__tests__/combineCommandSequences.spec.ts
+// npx vitest run src/core/task/managers/messaging/__tests__/combineCommandSequences.spec.ts
 
 import type { ClineMessage } from "@shared/types"
 
-import { combineCommandSequences } from "../combineCommandSequences"
+import { combineCommandSequences } from "../message-utils"
 
 describe("combineCommandSequences", () => {
 	describe("command sequences", () => {
