@@ -6,15 +6,15 @@ import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import {
 	type ProviderName,
 	type ProviderSettings,
-	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	openAiNativeDefaultModelId,
 	anthropicDefaultModelId,
 	claudeCodeDefaultModelId,
 	qwenCodeDefaultModelId,
 	geminiDefaultModelId,
 	type ToolProtocol,
-	TOOL_PROTOCOL,
 } from "@shared/types"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
+import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 import { vscode } from "@src/utils/vscode"
 import { validateApiConfiguration } from "@src/utils/validate"

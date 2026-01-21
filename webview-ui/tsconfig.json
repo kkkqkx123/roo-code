@@ -40,6 +40,18 @@
 			],
 			"@shared/types/*": [
 				"../src/shared/types/*"
+			],
+			"@core/*": [
+				"../src/core/*"
+			],
+			"@api/*": [
+				"../src/api/*"
+			],
+			"@services/*": [
+				"../src/services/*"
+			],
+			"@utils/*": [
+				"../src/utils/*"
 			]
 		}
 	},

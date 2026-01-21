@@ -712,8 +712,8 @@ export class CustomModesManager {
 	 */
 	public async exportModeWithRules(slug: string, customPrompts?: PromptComponent): Promise<ExportResult> {
 		try {
-			// Import modes from shared to check built-in modes
-			const { modes: builtInModes } = await import("../../shared/modes")
+			// Import modes from core/modes to check built-in modes
+			const { modes: builtInModes } = await import("@core/modes/mode-utils")
 
 			// Get all current modes
 			const allModes = await this.getCustomModes()
@@ -733,7 +733,7 @@ export class CustomModesManager {
 							const roomodesModes = roomodesData?.customModes || []
 
 							// Find the mode in .roomodes
-							mode = roomodesModes.find((m: any) => m.slug === slug)
+							mode = roomodesModes.find((m: ModeConfig) => m.slug === slug)
 						}
 					} catch (error) {
 						// Continue to check built-in modes
@@ -753,7 +753,7 @@ export class CustomModesManager {
 			}
 
 			// Determine the base directory based on mode source
-			const isGlobalMode = mode.source === "global"
+			const isGlobalMode = mode?.source === "global"
 			let baseDir: string
 			if (isGlobalMode) {
 				// For global modes, use the global .roo directory
@@ -801,7 +801,7 @@ export class CustomModesManager {
 
 			// Create an export mode with rules files preserved
 			const exportMode: ExportedModeConfig = {
-				...mode,
+				...mode!,
 				// Remove source property for export
 				source: "project" as const,
 			}

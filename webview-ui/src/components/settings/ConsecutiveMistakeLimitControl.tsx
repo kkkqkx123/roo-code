@@ -1,4 +1,4 @@
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@shared/types"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 

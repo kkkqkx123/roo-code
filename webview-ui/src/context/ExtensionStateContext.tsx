@@ -7,8 +7,8 @@ import {
 	type ModeConfig,
 	type ExperimentId,
 	type TodoItem,
-	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@shared/types"
+import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
 
 import { ExtensionMessage, ExtensionState, Command } from "@shared/ExtensionMessage"
 import { findLastIndex } from "@shared/array"

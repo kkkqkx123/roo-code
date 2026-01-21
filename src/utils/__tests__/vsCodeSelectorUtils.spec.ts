@@ -1,6 +1,6 @@
 import { LanguageModelChatSelector } from "vscode"
 
-import { stringifyVsCodeLmModelSelector } from "@utils/vsCodeSelectorUtils"
+import { stringifyVsCodeLmModelSelector } from "../vsCodeSelectorUtils"
 
 describe("vsCodeSelectorUtils", () => {
 	describe("stringifyVsCodeLmModelSelector", () => {

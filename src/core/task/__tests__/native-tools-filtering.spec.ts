@@ -23,7 +23,7 @@ describe("Native Tools Filtering by Mode", () => {
 
 			// Import the functions we need to test
 			const { isToolAllowedForMode } = await import("../../tools/validateToolUse")
-			const { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } = await import("../../../shared/tools")
+			const { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } = await import("../../tools/tool-config")
 
 			// Test architect mode - should NOT have edit tools
 			const architectAllowedTools = new Set<string>()
@@ -32,7 +32,7 @@ describe("Native Tools Filtering by Mode", () => {
 				const toolGroup = TOOL_GROUPS[groupName]
 				if (toolGroup) {
 					toolGroup.tools.forEach((tool) => {
-						if (isToolAllowedForMode(tool as any, "architect", [architectMode])) {
+						if (isToolAllowedForMode(tool, "architect", [architectMode])) {
 							architectAllowedTools.add(tool)
 						}
 					})
@@ -59,7 +59,7 @@ describe("Native Tools Filtering by Mode", () => {
 				const toolGroup = TOOL_GROUPS[groupName]
 				if (toolGroup) {
 					toolGroup.tools.forEach((tool) => {
-						if (isToolAllowedForMode(tool as any, "code", [codeMode])) {
+						if (isToolAllowedForMode(tool, "code", [codeMode])) {
 							codeAllowedTools.add(tool)
 						}
 					})
@@ -112,11 +112,11 @@ describe("Native Tools Filtering by Mode", () => {
 			}
 
 			const { isToolAllowedForMode } = await import("../../tools/validateToolUse")
-			const { ALWAYS_AVAILABLE_TOOLS } = await import("../../../shared/tools")
+			const { ALWAYS_AVAILABLE_TOOLS } = await import("../../tools/tool-config")
 
 			// Always-available tools should work even with no groups
 			ALWAYS_AVAILABLE_TOOLS.forEach((tool) => {
-				expect(isToolAllowedForMode(tool as any, "restrictive", [restrictiveMode])).toBe(true)
+				expect(isToolAllowedForMode(tool, "restrictive", [restrictiveMode])).toBe(true)
 			})
 		})
 	})

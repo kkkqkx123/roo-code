@@ -12,7 +12,7 @@ import {
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { AlertTriangle } from "lucide-react"
 
-import { CODEBASE_INDEX_DEFAULTS } from "@shared/types"
+import { CODEBASE_INDEX_DEFAULTS } from "@services/code-index/config"
 import type { VectorStorageConfig } from "@shared/types"
 
 import type { EmbedderProvider } from "@shared/embeddingModels"

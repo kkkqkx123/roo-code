@@ -33,8 +33,8 @@ import {
 import {
 	type ProviderSettings,
 	type ExperimentId,
-	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@shared/types"
+import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
 
 import { vscode } from "@src/utils/vscode"
 import { cn } from "@src/lib/utils"

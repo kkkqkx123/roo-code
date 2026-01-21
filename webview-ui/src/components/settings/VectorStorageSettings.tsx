@@ -2,7 +2,7 @@ import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Section } from "@src/components/settings/Section"
 import { Slider } from "@src/components/ui/slider"
-import { VECTOR_STORAGE_PRESETS } from "@shared/types"
+import { VECTOR_STORAGE_PRESETS } from "@services/code-index/vector-storage-presets"
 import type { VectorStorageConfig } from "@shared/types"
 
 interface VectorStorageSettingsProps {

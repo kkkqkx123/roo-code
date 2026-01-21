@@ -123,7 +123,7 @@ const ModesView = () => {
 	// Optimistic rename map so search reflects new names immediately
 	const [localRenames, setLocalRenames] = useState<Record<string, string>>({})
 	// Display list that overlays optimistic names
-	const displayModes = (modes || []).map((m) => (localRenames[m.slug] ? { ...m, name: localRenames[m.slug] } : m))
+	const displayModes = (modes || []).map((m: ModeConfig) => (localRenames[m.slug] ? { ...m, name: localRenames[m.slug] } : m))
 
 	// Direct update functions
 	const updateAgentPrompt = useCallback(
@@ -267,7 +267,7 @@ const ModesView = () => {
 		}
 		// Prevent duplicate names against other modes
 		const nameTaken = modes.some(
-			(m) => m.name.toLowerCase() === trimmed.toLowerCase() && m.slug !== customMode.slug,
+			(m: ModeConfig) => m.name.toLowerCase() === trimmed.toLowerCase() && m.slug !== customMode.slug,
 		)
 		if (nameTaken) {
 			// simple guard: do nothing if taken
@@ -444,7 +444,7 @@ const ModesView = () => {
 
 	const isNameOrSlugTaken = useCallback(
 		(name: string, slug: string) => {
-			return modes.some((m) => m.slug === slug || m.name === name)
+			return modes.some((m: ModeConfig) => m.slug === slug || m.name === name)
 		},
 		[modes],
 	)
@@ -537,7 +537,7 @@ const ModesView = () => {
 					if (slug) {
 						// Try switching using the freshest mode list available
 						const all = getAllModes(customModesRef.current)
-						const importedMode = all.find((m) => m.slug === slug)
+						const importedMode = all.find((m: ModeConfig) => m.slug === slug)
 						if (importedMode) {
 							handleModeSwitchRef.current(importedMode)
 						} else {
@@ -787,7 +787,7 @@ const ModesView = () => {
 												</CommandEmpty>
 												<CommandGroup>
 													{displayModes
-														.filter((modeConfig) =>
+														.filter((modeConfig: ModeConfig) =>
 															searchValue
 																? modeConfig.name
 																	.toLowerCase()
