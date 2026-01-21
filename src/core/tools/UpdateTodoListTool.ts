@@ -5,7 +5,7 @@ import type { ToolUse } from "./tool-config"
 import cloneDeep from "clone-deep"
 import crypto from "crypto"
 import { TodoItem, TodoStatus, todoStatusSchema } from "@shared/types"
-import { getLatestTodo } from "../../shared/todo"
+import { getLatestTodo } from "../task/managers/todo-utils"
 
 interface UpdateTodoListParams {
 	todos: string

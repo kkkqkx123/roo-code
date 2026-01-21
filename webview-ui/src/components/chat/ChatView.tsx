@@ -19,7 +19,7 @@ import { combineCommandSequences } from "@core/task/managers/messaging/message-u
 import { getApiMetrics } from "@core/task/managers/monitoring/metrics-utils"
 import { AudioType } from "@shared/WebviewMessage"
 import { getAllModes } from "@core/modes/mode-utils"
-import { getLatestTodo } from "@shared/todo"
+import { getLatestTodo } from "@core/task/managers/todo-utils"
 
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@src/i18n/TranslationContext"

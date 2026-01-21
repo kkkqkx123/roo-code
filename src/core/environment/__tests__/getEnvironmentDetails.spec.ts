@@ -5,7 +5,7 @@ import delay from "delay"
 import type { Mock } from "vitest"
 
 import { getEnvironmentDetails } from "../getEnvironmentDetails"
-import { EXPERIMENT_IDS, experiments } from "../../../shared/experiments"
+import { EXPERIMENT_IDS, experiments } from "../../../core/experiments/experiment-utils"
 import { getFullModeDetails } from "@core/modes/mode-utils"
 import { isToolAllowedForMode } from "../../tools/validateToolUse"
 import { getApiMetrics } from "../../task/managers/monitoring/metrics-utils"

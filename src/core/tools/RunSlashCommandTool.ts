@@ -1,7 +1,7 @@
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { getCommand, getCommandNames } from "../../services/command/commands"
-import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
+import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "./tool-config"
 

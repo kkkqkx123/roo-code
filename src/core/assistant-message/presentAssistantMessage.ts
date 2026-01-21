@@ -8,7 +8,7 @@ import { t } from "../../i18n"
 
 import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
 import type { ToolParamName, ToolResponse, ToolUse, McpToolUse } from "@core/tools/tool-config"
-import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
+import { experiments, EXPERIMENT_IDS } from "../experiments/experiment-utils"
 
 import { AskIgnoredError } from "../task/AskIgnoredError"
 import { Task } from "../task/Task"

@@ -1,4 +1,4 @@
-import { EXPERIMENT_IDS } from "../../../shared/experiments"
+import { EXPERIMENT_IDS } from "../../../core/experiments/experiment-utils"
 import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
 
 // Mock vscode

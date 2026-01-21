@@ -8,7 +8,7 @@ import {
 } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { Anthropic } from "@anthropic-ai/sdk"
-import { scaleCoordinate } from "../../shared/browserUtils"
+import { scaleCoordinate } from "../webview/browser-utils"
 
 export async function browserActionTool(
 	cline: Task,

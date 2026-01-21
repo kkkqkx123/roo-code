@@ -1,6 +1,6 @@
 // Test coordinate scaling functionality in browser actions
 import { describe, it, expect } from "vitest"
-import { scaleCoordinate } from "../../../shared/browserUtils"
+import { scaleCoordinate } from "../../../core/webview/browser-utils"
 
 describe("Browser Action Coordinate Scaling", () => {
 	describe("Coordinate format validation", () => {

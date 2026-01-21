@@ -2,7 +2,7 @@ import { memo, useMemo, useEffect, useRef } from "react"
 import { ClineMessage } from "@shared/types"
 import { ClineSayBrowserAction } from "@shared/ExtensionMessage"
 import { vscode } from "@src/utils/vscode"
-import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@shared/browserUtils"
+import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@core/webview/browser-utils"
 import {
 	MousePointer as MousePointerIcon,
 	Keyboard,

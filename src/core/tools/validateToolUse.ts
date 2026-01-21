@@ -2,7 +2,7 @@ import type { ToolName, ModeConfig, ExperimentId, GroupOptions, GroupEntry } fro
 import { toolNames as validToolNames } from "@shared/types"
 
 import { type Mode, FileRestrictionError, getModeBySlug, getGroupName } from "@core/modes/mode-utils"
-import { EXPERIMENT_IDS } from "../../shared/experiments"
+import { EXPERIMENT_IDS } from "../experiments/experiment-utils"
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "./tool-config"
 
 /**

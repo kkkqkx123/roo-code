@@ -44,7 +44,7 @@ import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
 import { defaultModeSlug } from "@core/modes/mode-utils"
 import { DiffStrategy, type ToolResponse } from "@core/tools/tool-config"
-import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
+import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
 
 // services
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"

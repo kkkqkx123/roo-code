@@ -15,7 +15,7 @@ import {
 
 import type { ApiHandlerOptions } from "../api-utils"
 
-import { calculateApiCostOpenAI } from "../../shared/cost"
+import { calculateApiCostOpenAI } from "../cost-utils"
 
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"

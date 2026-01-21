@@ -2,7 +2,7 @@
 
 import type { ModelInfo } from "@shared/types"
 
-import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../shared/cost"
+import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../api/cost-utils"
 
 describe("Cost Utility", () => {
 	describe("calculateApiCostAnthropic", () => {

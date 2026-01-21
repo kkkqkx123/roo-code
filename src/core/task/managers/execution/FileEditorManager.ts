@@ -2,7 +2,7 @@ import { DiffViewProvider } from "../../../../integrations/editor/DiffViewProvid
 import type { DiffStrategy } from "@core/tools/tool-config"
 import { MultiSearchReplaceDiffStrategy } from "../../../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../../../diff/strategies/multi-file-search-replace"
-import { EXPERIMENT_IDS, experiments } from "../../../../shared/experiments"
+import { EXPERIMENT_IDS, experiments } from "../../../experiments/experiment-utils"
 
 export interface FileEditorManagerOptions {
 	cwd: string

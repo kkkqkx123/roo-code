@@ -15,7 +15,7 @@ import { ContextProxy } from "../../config/ContextProxy"
 import { processUserContentMentions } from "../../mentions/processUserContentMentions"
 import { MultiSearchReplaceDiffStrategy } from "../../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../../diff/strategies/multi-file-search-replace"
-import { EXPERIMENT_IDS } from "../../../shared/experiments"
+import { EXPERIMENT_IDS } from "../../../core/experiments/experiment-utils"
 
 // Mock delay before any imports that might use it
 vi.mock("delay", () => ({

@@ -2,7 +2,7 @@
 
 import type { ExperimentId } from "@shared/types"
 
-import { EXPERIMENT_IDS, experimentConfigsMap, experiments as Experiments } from "../experiments"
+import { EXPERIMENT_IDS, experimentConfigsMap, experiments as Experiments } from "../../core/experiments/experiment-utils"
 
 describe("experiments", () => {
 	describe("POWER_STEERING", () => {

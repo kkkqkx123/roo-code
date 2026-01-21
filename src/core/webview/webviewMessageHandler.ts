@@ -33,7 +33,7 @@ import {
 	checkoutRestorePayloadSchema,
 } from "../../shared/WebviewMessage"
 import { checkExistKey } from "@core/providers/config-utils"
-import { experimentDefault } from "../../shared/experiments"
+import { experimentDefault } from "../experiments/experiment-utils"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile } from "../../integrations/misc/open-file"
 import { openImage, saveImage } from "../../integrations/misc/image-handler"

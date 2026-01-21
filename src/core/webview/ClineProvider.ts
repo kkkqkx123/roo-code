@@ -1193,7 +1193,7 @@ export class ClineProvider
 			return
 		}
 
-		const { supportPrompt } = require("../../shared/support-prompt")
+		const { supportPrompt } = require("../prompts/support-prompt")
 		const { customSupportPrompts } = await visibleProvider.stateCoordinator.getState()
 
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
@@ -1230,7 +1230,7 @@ export class ClineProvider
 			return
 		}
 
-		const { supportPrompt } = require("../../shared/support-prompt")
+		const { supportPrompt } = require("../prompts/support-prompt")
 		const { customSupportPrompts } = await visibleProvider.stateCoordinator.getState()
 
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)

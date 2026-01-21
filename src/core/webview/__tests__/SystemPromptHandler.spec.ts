@@ -4,7 +4,7 @@ import { ClineProvider } from "../ClineProvider"
 import { Task } from "../../task/Task"
 import { ContextProxy } from "../../config/ContextProxy"
 import { defaultModeSlug } from "@core/modes/mode-utils"
-import { experimentDefault } from "../../../shared/experiments"
+import { experimentDefault } from "../../../core/experiments/experiment-utils"
 import { buildApiHandler } from "../../../api"
 import { generateSystemPrompt } from "../generateSystemPrompt"
 

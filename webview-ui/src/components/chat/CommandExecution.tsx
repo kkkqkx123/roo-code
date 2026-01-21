@@ -9,7 +9,7 @@ import { ExtensionMessage } from "@shared/ExtensionMessage"
 import { safeJsonParse } from "@shared/safeJsonParse"
 
 import { COMMAND_OUTPUT_STRING } from "@core/task/managers/messaging/message-utils"
-import { parseCommand } from "@shared/parse-command"
+import { parseCommand } from "@core/tools/command-parser"
 
 import { vscode } from "@src/utils/vscode"
 import { extractPatternsFromCommand } from "@src/utils/command-parser"

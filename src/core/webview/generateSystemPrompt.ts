@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 import { WebviewMessage } from "../../shared/WebviewMessage"
 import { defaultModeSlug, getModeBySlug, getGroupName } from "@core/modes/mode-utils"
 import { buildApiHandler } from "../../api"
-import { experiments as experimentsModule, EXPERIMENT_IDS } from "../../shared/experiments"
+import { experiments as experimentsModule, EXPERIMENT_IDS } from "../experiments/experiment-utils"
 
 import { SYSTEM_PROMPT } from "../prompts/system"
 import { MultiSearchReplaceDiffStrategy } from "../diff/strategies/multi-search-replace"
