@@ -48,7 +48,7 @@ export interface TaskProviderLike {
 		options?: CreateTaskOptions,
 		configuration?: RooCodeSettings,
 	): Promise<TaskLike>
-	cancelTask(): Promise<void>
+	cancelTask(): Promise<{ success: boolean; error?: string }>
 	clearTask(): Promise<void>
 	resumeTask(taskId: string): void
 
@@ -121,7 +121,7 @@ export interface CreateTaskOptions {
 	experiments?: Record<string, boolean>
 	initialTodos?: TodoItem[]
 	/** Initial status for the task's history item (e.g., "active" for child tasks) */
-	initialStatus?: "active" | "delegated" | "completed"
+	initialStatus?: "active" | "delegated" | "completed" | "aborted"
 }
 
 export enum TaskStatus {

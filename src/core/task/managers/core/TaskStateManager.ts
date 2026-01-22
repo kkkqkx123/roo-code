@@ -4,6 +4,7 @@ import { resolveToolProtocol } from "../../../../utils/resolveToolProtocol"
 import { defaultModeSlug } from "@core/modes/mode-utils"
 import type { ClineProvider } from "../../../webview/ClineProvider"
 import type { ProviderSettings } from "@shared/types"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface TaskStateOptions {
 	taskId: string
@@ -16,7 +17,7 @@ export interface TaskStateOptions {
 	apiConfiguration: ProviderSettings
 	historyItem?: any
 	initialTodos?: TodoItem[]
-	initialStatus?: "active" | "delegated" | "completed"
+	initialStatus?: "active" | "delegated" | "completed" | "aborted"
 	modelInfo?: ModelInfo
 }
 
@@ -36,6 +37,7 @@ export class TaskStateManager extends EventEmitter {
 	private _taskToolProtocol: ToolProtocol | undefined
 	private taskModeReady: Promise<void>
 	private initializationError: Error | null = null
+	private errorHandler: ErrorHandler
 
 	providerRef: WeakRef<ClineProvider>
 	abort: boolean = false
@@ -51,7 +53,7 @@ export class TaskStateManager extends EventEmitter {
 
 	todoList?: TodoItem[]
 
-	private readonly initialStatus?: "active" | "delegated" | "completed"
+	private readonly initialStatus?: "active" | "delegated" | "completed" | "aborted"
 
 	constructor(options: TaskStateOptions) {
 		super()
@@ -69,6 +71,7 @@ export class TaskStateManager extends EventEmitter {
 
 		this.providerRef = new WeakRef(options.provider)
 		this.initialStatus = options.initialStatus
+		this.errorHandler = new ErrorHandler()
 
 		if (options.initialTodos && options.initialTodos.length > 0) {
 			this.todoList = options.initialTodos
@@ -80,7 +83,6 @@ export class TaskStateManager extends EventEmitter {
 			this._taskToolProtocol = options.historyItem.toolProtocol
 		} else {
 			this._taskMode = undefined
-			// 异步初始化任务模式，但不阻塞构造函数
 			this.taskModeReady = this.initializeTaskMode(options.provider).catch((error) => {
 				console.error("[TaskStateManager] Failed to initialize task mode:", error)
 				this.initializationError = error instanceof Error ? error : new Error(String(error))
@@ -97,6 +99,14 @@ export class TaskStateManager extends EventEmitter {
 			this._taskMode = state.mode || defaultModeSlug
 		} catch (error) {
 			console.error("[TaskStateManager] Failed to initialize task mode:", error)
+			await this.errorHandler.handleError(
+				error instanceof Error ? error : new Error(String(error)),
+				{
+					operation: "initializeTaskMode",
+					taskId: this.taskId,
+					timestamp: Date.now()
+				}
+			)
 			this._taskMode = defaultModeSlug
 		}
 	}
@@ -114,8 +124,6 @@ export class TaskStateManager extends EventEmitter {
 	}
 
 	get taskMode(): string {
-		// 如果尚未初始化，返回默认值
-		// 注意：如果需要确保获取初始化后的值，应使用 getTaskMode() 方法
 		if (this.initializationError) {
 			console.warn("[TaskStateManager] Using taskMode getter while initialization failed:", this.initializationError)
 		}
@@ -134,13 +142,11 @@ export class TaskStateManager extends EventEmitter {
 		this._taskToolProtocol = protocol
 	}
 
-	// setTaskToolProtocol 是 taskToolProtocol setter 的别名，保持向后兼容
 	setTaskToolProtocol(protocol: ToolProtocol | undefined): void {
 		this._taskToolProtocol = protocol
 	}
 
 	setSystemPrompt(systemPrompt: string): void {
-		// 系统提示的恢复由Task类处理，这里只是占位方法
 		console.log("[TaskStateManager] System prompt restoration should be handled by Task class")
 	}
 
@@ -183,25 +189,47 @@ export class TaskStateManager extends EventEmitter {
 		this.emit(eventName, ...args)
 	}
 
+	validateState(): boolean {
+		try {
+			if (!this.taskId) {
+				console.warn("[TaskStateManager] Validation failed: taskId is missing")
+				return false
+			}
+
+			if (!this.workspacePath) {
+				console.warn("[TaskStateManager] Validation failed: workspacePath is missing")
+				return false
+			}
+
+			if (this.initializationError) {
+				console.warn("[TaskStateManager] Validation warning: initialization failed with error:", this.initializationError)
+			}
+
+			return true
+		} catch (error) {
+			console.error("[TaskStateManager] State validation error:", error)
+			return false
+		}
+	}
+
 	dispose(
 		providerRef: WeakRef<ClineProvider>,
 		messageQueueStateChangedHandler?: (() => void) | undefined,
 		providerProfileChangeListener?: (config: { name: string; provider?: string }) => void,
 	): void {
 		try {
-			// 移除所有事件监听器
+			if (!this.validateState()) {
+				console.warn("[TaskStateManager] State validation failed during dispose")
+			}
+
 			this.removeAllListeners()
 			
-			// 取消当前请求
 			this.cancelCurrentRequest()
 			
-			// 清理引用 - 使用传入的 providerRef 而不是创建空引用
 			this.providerRef = providerRef
 			
-			// 清理待办列表
 			this.todoList = undefined
 			
-			// 清理状态标志
 			this.abort = false
 			this.isPaused = false
 			this.didFinishAbortingStream = false
@@ -217,9 +245,6 @@ export class TaskStateManager extends EventEmitter {
 	}
 
 	updateApiConfiguration(newApiConfiguration: ProviderSettings): void {
-		// 配置更新由 Task 类处理
-		// 此方法保留用于接口兼容性
-		// 如果需要在此处处理配置更新，可以添加相应的逻辑
 		console.log("[TaskStateManager] API configuration update received (handled by Task class)")
 	}
 }

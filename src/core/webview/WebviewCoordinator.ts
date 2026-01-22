@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 import fs from "fs/promises"
+import crypto from "crypto"
 
 import { type ExtensionMessage } from "../../shared/ExtensionMessage"
 import { WebviewMessage } from "../../shared/WebviewMessage"
@@ -10,6 +11,13 @@ import { ClineProvider } from "./ClineProvider"
 import { createLogger } from "../../utils/logger"
 import { t } from "../../i18n"
 
+interface QueuedMessage {
+	message: ExtensionMessage
+	retryCount: number
+	timestamp: number
+	messageId: string
+}
+
 export class WebviewCoordinator {
 	private view?: vscode.WebviewView | vscode.WebviewPanel
 	private webviewDisposables: vscode.Disposable[] = []
@@ -18,6 +26,11 @@ export class WebviewCoordinator {
 	private outputChannel: vscode.OutputChannel
 	private provider: ClineProvider
 	private logger: ReturnType<typeof createLogger>
+
+	private messageQueue: Map<string, QueuedMessage> = new Map()
+	private messageRetryCount = 3
+	private messageRetryDelay = 1000
+	private maxQueueAge = 60000
 
 	constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel, provider: ClineProvider) {
 		this.context = context
@@ -66,24 +79,112 @@ export class WebviewCoordinator {
 
 		this.isViewLaunched = true
 		this.logger.info("Webview view resolved successfully")
+
+		this.logger.info("Processing queued messages after webview resolution")
+		await this.processQueuedMessages()
 	}
 
 	/**
-	 * Posts a message to the webview
+	 * Posts a message to the webview with retry mechanism
 	 */
-	public async postMessageToWebview(message: ExtensionMessage): Promise<void> {
+	public async postMessageToWebview(message: ExtensionMessage): Promise<boolean> {
+		const messageId = this.generateMessageId()
+
 		if (!this.view) {
-			this.logger.warn(`[postMessageToWebview] Webview view not available, message dropped: ${message.type}`)
+			this.logger.warn(`[postMessageToWebview] Webview view not available, queuing message: ${message.type}`)
+			this.queueMessage(messageId, message)
+			return false
+		}
+
+		return await this.sendMessageWithRetry(messageId, message)
+	}
+
+	/**
+	 * Sends a message with retry mechanism
+	 */
+	private async sendMessageWithRetry(messageId: string, message: ExtensionMessage): Promise<boolean> {
+		if (!this.view) {
+			return false
+		}
+
+		for (let attempt = 0; attempt < this.messageRetryCount; attempt++) {
+			try {
+				this.logger.debug(`[postMessageToWebview] Sending message to webview (attempt ${attempt + 1}): ${JSON.stringify(message).substring(0, 200)}`)
+				await this.view.webview.postMessage(message)
+				this.logger.debug(`[postMessageToWebview] Message sent successfully: ${message.type}`)
+				return true
+			} catch (error) {
+				this.logger.error(`[postMessageToWebview] Failed to send message (attempt ${attempt + 1}): ${message.type}`, error)
+				if (attempt < this.messageRetryCount - 1) {
+					const delay = this.messageRetryDelay * Math.pow(2, attempt)
+					this.logger.debug(`[postMessageToWebview] Retrying after ${delay}ms`)
+					await this.delay(delay)
+				}
+			}
+		}
+
+		this.logger.error(`[postMessageToWebview] Failed to send message after ${this.messageRetryCount} attempts: ${message.type}`)
+		return false
+	}
+
+	/**
+	 * Queues a message for later delivery
+	 */
+	private queueMessage(messageId: string, message: ExtensionMessage): void {
+		this.messageQueue.set(messageId, {
+			message,
+			retryCount: 0,
+			timestamp: Date.now(),
+			messageId
+		})
+		this.logger.debug(`[postMessageToWebview] Message queued: ${message.type}, queue size: ${this.messageQueue.size}`)
+	}
+
+	/**
+	 * Processes queued messages
+	 */
+	public async processQueuedMessages(): Promise<void> {
+		if (!this.view || this.messageQueue.size === 0) {
 			return
 		}
 
-		this.logger.debug(`[postMessageToWebview] Sending message to webview: ${JSON.stringify(message).substring(0, 200)}`)
-		try {
-			await this.view.webview.postMessage(message)
-			this.logger.debug(`[postMessageToWebview] Message sent successfully: ${message.type}`)
-		} catch (error) {
-			this.logger.error(`[postMessageToWebview] Failed to send message: ${message.type}`, error)
+		this.logger.info(`[processQueuedMessages] Processing ${this.messageQueue.size} queued messages`)
+
+		const now = Date.now()
+		const processedMessages: string[] = []
+
+		for (const [messageId, queuedMessage] of this.messageQueue) {
+			if (now - queuedMessage.timestamp > this.maxQueueAge) {
+				this.logger.warn(`[processQueuedMessages] Removing expired message: ${queuedMessage.message.type}`)
+				processedMessages.push(messageId)
+				continue
+			}
+
+			const success = await this.sendMessageWithRetry(messageId, queuedMessage.message)
+			if (success) {
+				processedMessages.push(messageId)
+			}
 		}
+
+		for (const messageId of processedMessages) {
+			this.messageQueue.delete(messageId)
+		}
+
+		this.logger.debug(`[processQueuedMessages] Processed ${processedMessages.length} messages, remaining: ${this.messageQueue.size}`)
+	}
+
+	/**
+	 * Generates a unique message ID
+	 */
+	private generateMessageId(): string {
+		return `${Date.now()}-${crypto.randomBytes(8).toString('hex')}`
+	}
+
+	/**
+	 * Delays execution for specified milliseconds
+	 */
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 
 	/**
@@ -276,6 +377,7 @@ export class WebviewCoordinator {
 	 */
 	public dispose(): void {
 		this.clearWebviewResources()
+		this.messageQueue.clear()
 		
 		if (this.view && "dispose" in this.view) {
 			this.view.dispose()

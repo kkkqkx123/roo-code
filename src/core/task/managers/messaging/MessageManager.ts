@@ -8,6 +8,7 @@ import type { ClineProvider } from "../../../webview/ClineProvider"
 import { RooCodeEventName } from "@shared/types"
 import type { IndexManager } from "../core/IndexManager"
 import { ConversationIndexStrategy } from "./ConversationIndexStrategy"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface MessageManagerOptions {
 	stateManager: TaskStateManager
@@ -26,6 +27,7 @@ export class MessageManager {
 	private eventBus?: any // Store event bus reference
 	private indexManager: IndexManager // Index manager reference
 	private conversationIndexStrategy: ConversationIndexStrategy // Conversation index strategy
+	private errorHandler: ErrorHandler // Error handler
 	private initialized: boolean = false // 初始化状态标志
 
 	apiConversationHistory: ApiMessage[] = []
@@ -39,6 +41,7 @@ export class MessageManager {
 		this.eventBus = options.eventBus
 		this.indexManager = options.indexManager
 		this.conversationIndexStrategy = new ConversationIndexStrategy(options.indexManager)
+		this.errorHandler = new ErrorHandler()
 	}
 
 	/**
@@ -202,21 +205,45 @@ export class MessageManager {
 	}
 
 	async saveApiConversationHistory(): Promise<void> {
-		// 使用策略模式为没有索引的消息分配索引
-		const messagesWithIndex = this.conversationIndexStrategy.assignIndexesToMessages(this.apiConversationHistory)
-		
-		await saveApiMessages({ messages: messagesWithIndex, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+		try {
+			await this.executeWithRetry(
+				async () => {
+					const messagesWithIndex = this.conversationIndexStrategy.assignIndexesToMessages(this.apiConversationHistory)
+					await saveApiMessages({ messages: messagesWithIndex, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+				},
+				"saveApiConversationHistory",
+				3
+			)
+		} catch (error) {
+			console.error(`[MessageManager#saveApiConversationHistory] Failed to save API conversation history:`, error)
+			throw error
+		}
 	}
 
 	async saveClineMessages(messages?: ClineMessage[]): Promise<void> {
-		if (messages) {
-			this.clineMessages = messages
+		try {
+			await this.executeWithRetry(
+				async () => {
+					if (messages) {
+						this.clineMessages = messages
+					}
+					await saveTaskMessages({ messages: this.clineMessages, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+				},
+				"saveClineMessages",
+				3
+			)
+		} catch (error) {
+			console.error(`[MessageManager#saveClineMessages] Failed to save Cline messages:`, error)
+			throw error
 		}
-		await saveTaskMessages({ messages: this.clineMessages, taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 		
 		// Notify the task to update token usage
 		if (this.task && typeof this.task.saveClineMessages === 'function') {
-			await this.task.saveClineMessages()
+			try {
+				await this.task.saveClineMessages()
+			} catch (error) {
+				console.error(`[MessageManager#saveClineMessages] Failed to notify task of message save:`, error)
+			}
 		}
 	}
 
@@ -281,5 +308,47 @@ export class MessageManager {
 		this.task = undefined
 		this.indexManager.dispose()
 		this.initialized = false
+	}
+
+	private async executeWithRetry<T>(
+		operation: () => Promise<T>,
+		operationName: string,
+		maxRetries: number = 3
+	): Promise<T> {
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				const provider = this.stateManager.getProvider()
+				provider?.log(`[MessageManager#${operationName}] Attempt ${attempt + 1}/${maxRetries}`)
+				const result = await operation()
+				provider?.log(`[MessageManager#${operationName}] Operation completed successfully`)
+				return result
+			} catch (error) {
+				const provider = this.stateManager.getProvider()
+				provider?.log(`[MessageManager#${operationName}] Error on attempt ${attempt + 1}: ${error}`)
+				
+				const result = await this.errorHandler.handleError(
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						operation: operationName,
+						taskId: this.taskId,
+						timestamp: Date.now()
+					}
+				)
+
+				if (attempt === maxRetries - 1 || !result.shouldRetry) {
+					provider?.log(`[MessageManager#${operationName}] Max retries reached or no retry allowed, throwing error`)
+					throw error
+				}
+
+				const delay = 1000 * (attempt + 1)
+				provider?.log(`[MessageManager#${operationName}] Retrying after ${delay}ms`)
+				await this.delay(delay)
+			}
+		}
+		throw new Error(`Operation ${operationName} failed after ${maxRetries} attempts`)
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 }

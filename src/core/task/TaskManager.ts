@@ -224,22 +224,69 @@ export class TaskManager extends EventEmitter<TaskProviderEvents> {
 	}
 
 	/**
-	 * Cancels the current task
+	 * Cancels the current task with UI state confirmation
 	 */
-	public async cancelTask(): Promise<void> {
+	public async cancelTask(): Promise<{ success: boolean; error?: string }> {
 		const currentTask = this.getCurrentTask()
 		if (!currentTask) {
-			return
+			return { success: false, error: "No current task to cancel" }
 		}
 
-		// Cancel the task
-		await currentTask.abortTask()
-		
-		// Update UI state to reflect task cancellation
-		await this.provider?.postStateToWebview()
-		
-		// Remove from stack
-		await this.removeClineFromStack()
+		try {
+			console.log(`[TaskManager#cancelTask] Cancelling task: ${currentTask.taskId}`)
+
+			await currentTask.abortTask()
+			console.log(`[TaskManager#cancelTask] Task aborted: ${currentTask.taskId}`)
+
+			const uiUpdateConfirmed = await this.waitForUIStateUpdate(5000)
+
+			if (!uiUpdateConfirmed) {
+				console.warn("[TaskManager#cancelTask] UI state update confirmation timeout")
+			} else {
+				console.log("[TaskManager#cancelTask] UI state update confirmed")
+			}
+
+			await this.removeClineFromStack()
+			console.log("[TaskManager#cancelTask] Task removed from stack")
+
+			return { success: true }
+		} catch (error) {
+			console.error("[TaskManager#cancelTask] Failed to cancel task:", error)
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : String(error)
+			}
+		}
+	}
+
+	/**
+	 * Waits for UI state update confirmation
+	 */
+	private async waitForUIStateUpdate(timeoutMs: number): Promise<boolean> {
+		const startTime = Date.now()
+		console.log(`[TaskManager#waitForUIStateUpdate] Waiting for UI state update, timeout: ${timeoutMs}ms`)
+
+		while (Date.now() - startTime < timeoutMs) {
+			await this.delay(100)
+
+			const state = await this.getState()
+			const currentTask = this.getCurrentTask()
+
+			if (!currentTask && !state.currentTaskItem) {
+				console.log("[TaskManager#waitForUIStateUpdate] UI state updated successfully")
+				return true
+			}
+		}
+
+		console.warn("[TaskManager#waitForUIStateUpdate] UI state update timeout")
+		return false
+	}
+
+	/**
+	 * Delays execution for specified milliseconds
+	 */
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 
 	/**

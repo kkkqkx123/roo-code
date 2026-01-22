@@ -1,6 +1,7 @@
 import type { ModelInfo } from "@shared/types"
 import { type AssistantMessageContent } from "@shared/types"
 import { NativeToolCallParser } from "../../../assistant-message/NativeToolCallParser"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface StreamingState {
 	isStreaming: boolean
@@ -21,6 +22,7 @@ export class StreamingManager {
 
 	private onStreamingStateChange?: (state: StreamingState) => void
 	private onStreamingContentUpdate?: (content: AssistantMessageContent[]) => void
+	private errorHandler: ErrorHandler
 
 	private _isStreaming = false
 	private _isWaitingForFirstChunk = false
@@ -43,6 +45,7 @@ export class StreamingManager {
 		this.taskId = options.taskId
 		this.onStreamingStateChange = options.onStreamingStateChange
 		this.onStreamingContentUpdate = options.onStreamingContentUpdate
+		this.errorHandler = new ErrorHandler()
 	}
 
 	public resetStreamingState(): void {
@@ -282,5 +285,74 @@ export class StreamingManager {
 		this.onStreamingStateChange = undefined
 		this.onStreamingContentUpdate = undefined
 		this.resetStreamingState()
+	}
+
+	public async handleStreamingInterruption(): Promise<void> {
+		try {
+			console.log(`[StreamingManager#${this.taskId}] Handling streaming interruption`)
+			
+			if (this._isStreaming) {
+				this.stopStreaming()
+				
+				if (this._didCompleteReadingStream) {
+					console.log(`[StreamingManager#${this.taskId}] Stream completed, no recovery needed`)
+					return
+				}
+				
+				await this.recoverStreamingState()
+			}
+		} catch (error) {
+			console.error(`[StreamingManager#${this.taskId}] Error handling streaming interruption:`, error)
+			await this.errorHandler.handleError(
+				error instanceof Error ? error : new Error(String(error)),
+				{
+					operation: "handleStreamingInterruption",
+					taskId: this.taskId,
+					timestamp: Date.now()
+				}
+			)
+			
+			this.resetStreamingState()
+		}
+	}
+
+	private async recoverStreamingState(): Promise<void> {
+		console.log(`[StreamingManager#${this.taskId}] Attempting to recover streaming state`)
+		
+		const lastContent = this._assistantMessageContent
+		if (lastContent.length > 0) {
+			console.log(`[StreamingManager#${this.taskId}] Recovering ${lastContent.length} content blocks`)
+			
+			this._assistantMessageContent = []
+			this._currentStreamingContentIndex = 0
+			this._presentAssistantMessageLocked = false
+			this._presentAssistantMessageHasPendingUpdates = false
+			
+			this.notifyContentUpdate()
+			this.notifyStateChange()
+		}
+		
+		this._didCompleteReadingStream = true
+		this._isStreaming = false
+		this._isWaitingForFirstChunk = false
+		
+		this.notifyStateChange()
+	}
+
+	public validateStreamingState(): boolean {
+		if (!this._isStreaming) {
+			return true
+		}
+		
+		if (this._didCompleteReadingStream) {
+			return true
+		}
+		
+		if (this._isWaitingForFirstChunk && Date.now() - this._currentStreamingContentIndex > 30000) {
+			console.warn(`[StreamingManager#${this.taskId}] Streaming timeout detected`)
+			return false
+		}
+		
+		return true
 	}
 }

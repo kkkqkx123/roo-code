@@ -29,7 +29,7 @@ export const historyItemSchema = z.object({
 	 * This ensures task resumption works correctly even when NTC settings change.
 	 */
 	toolProtocol: z.enum(["xml", "native"]).optional(),
-	status: z.enum(["active", "completed", "delegated"]).optional(),
+	status: z.enum(["active", "completed", "delegated", "aborted"]).optional(),
 	delegatedToId: z.string().optional(), // Last child this parent delegated to
 	childIds: z.array(z.string()).optional(), // All children spawned by this task
 	awaitingChildId: z.string().optional(), // Child currently awaited (set when delegated)

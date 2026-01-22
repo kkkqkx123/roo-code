@@ -1,4 +1,5 @@
 import * as vscode from "vscode"
+import crypto from "crypto"
 
 import {
 	type GlobalState,
@@ -29,6 +30,11 @@ export class StateCoordinator {
 	private currentWorkspacePath: string | undefined
 	private mcpHub: McpHub | undefined
 	private taskManager: TaskManager | undefined
+
+	private stateVersion = 0
+	private lastStateHash = ""
+	private stateHistory: Map<number, string> = new Map()
+	private maxStateHistorySize = 10
 
 	constructor(contextProxy: ContextProxy, mcpHub?: McpHub, taskManager?: TaskManager) {
 		this.contextProxy = contextProxy
@@ -116,9 +122,39 @@ export class StateCoordinator {
 	}
 
 	/**
-	 * Gets the current state to post to webview
+	 * Gets the current state to post to webview with validation
 	 */
 	public async getStateToPostToWebview(): Promise<ExtensionState> {
+		try {
+			const state = await this.buildState()
+
+			if (!this.validateState(state)) {
+				console.error("[StateCoordinator] State validation failed, using fallback state")
+				return await this.getFallbackState()
+			}
+
+			const stateHash = this.calculateStateHash(state)
+
+			if (stateHash === this.lastStateHash) {
+				console.debug("[StateCoordinator] State unchanged, skipping version increment")
+			} else {
+				this.lastStateHash = stateHash
+				this.stateVersion++
+				this.addToStateHistory(this.stateVersion, stateHash)
+				console.log(`[StateCoordinator] State updated to version ${this.stateVersion}, hash: ${stateHash.substring(0, 8)}`)
+			}
+
+			return state
+		} catch (error) {
+			console.error("[StateCoordinator] Error building state, using fallback:", error)
+			return await this.getFallbackState()
+		}
+	}
+
+	/**
+	 * Builds the state object
+	 */
+	private async buildState(): Promise<ExtensionState> {
 		const stateValues = this.contextProxy.getValues()
 
 		const apiConfiguration = this.contextProxy.getProviderSettings()
@@ -249,6 +285,181 @@ export class StateCoordinator {
 			featureRoomoteControlEnabled: false,
 			claudeCodeIsAuthenticated: undefined,
 			debug: vscode.workspace.getConfiguration("coder").get<boolean>("debug", false),
+		}
+	}
+
+	/**
+	 * Validates the state object
+	 */
+	private validateState(state: ExtensionState): boolean {
+		try {
+			if (!state.apiConfiguration) {
+				console.warn("[StateCoordinator] Validation failed: apiConfiguration is missing")
+				return false
+			}
+
+			if (!state.cwd) {
+				console.warn("[StateCoordinator] Validation failed: cwd is missing")
+				return false
+			}
+
+			const currentTask = this.taskManager?.getCurrentTask()
+			if (currentTask && !state.currentTaskItem) {
+				console.warn("[StateCoordinator] Validation warning: Task exists but currentTaskItem is missing")
+			}
+
+			if (!state.currentTaskItem && currentTask) {
+				console.warn("[StateCoordinator] Validation warning: currentTaskItem exists but no current task")
+			}
+
+			return true
+		} catch (error) {
+			console.error("[StateCoordinator] Validation error:", error)
+			return false
+		}
+	}
+
+	/**
+	 * Calculates a hash of the state for change detection
+	 */
+	private calculateStateHash(state: ExtensionState): string {
+		const relevantFields = {
+			apiConfiguration: state.apiConfiguration,
+			currentTaskItem: state.currentTaskItem,
+			mode: state.mode,
+			isBrowserSessionActive: state.isBrowserSessionActive,
+			clineMessages: state.clineMessages?.length ?? 0,
+		}
+		return crypto.createHash('sha256').update(JSON.stringify(relevantFields)).digest('hex')
+	}
+
+	/**
+	 * Adds state hash to history
+	 */
+	private addToStateHistory(version: number, hash: string): void {
+		this.stateHistory.set(version, hash)
+
+		if (this.stateHistory.size > this.maxStateHistorySize) {
+			const oldestVersion = Math.min(...this.stateHistory.keys())
+			this.stateHistory.delete(oldestVersion)
+		}
+	}
+
+	/**
+	 * Gets a fallback state when validation fails
+	 */
+	private async getFallbackState(): Promise<ExtensionState> {
+		console.warn("[StateCoordinator] Using fallback state")
+		const stateValues = this.contextProxy.getValues()
+		return {
+			version: "",
+			apiConfiguration: this.contextProxy.getProviderSettings(),
+			cwd: this.currentWorkspacePath || getWorkspacePath(),
+			mode: defaultModeSlug,
+			language: formatLanguage(vscode.env.language),
+			clineMessages: [],
+			currentTaskItem: undefined,
+			isBrowserSessionActive: false,
+			debug: false,
+			currentApiConfigName: stateValues.currentApiConfigName ?? "default",
+			listApiConfigMeta: stateValues.listApiConfigMeta ?? [],
+			pinnedApiConfigs: stateValues.pinnedApiConfigs ?? {},
+			customInstructions: stateValues.customInstructions ?? "",
+			dismissedUpsells: stateValues.dismissedUpsells ?? [],
+			autoApprovalEnabled: stateValues.autoApprovalEnabled ?? false,
+			alwaysAllowReadOnly: stateValues.alwaysAllowReadOnly ?? false,
+			alwaysAllowReadOnlyOutsideWorkspace: stateValues.alwaysAllowReadOnlyOutsideWorkspace ?? false,
+			alwaysAllowWrite: stateValues.alwaysAllowWrite ?? false,
+			alwaysAllowWriteOutsideWorkspace: stateValues.alwaysAllowWriteOutsideWorkspace ?? false,
+			alwaysAllowWriteProtected: stateValues.alwaysAllowWriteProtected ?? false,
+			alwaysAllowBrowser: stateValues.alwaysAllowBrowser ?? false,
+			alwaysAllowMcp: stateValues.alwaysAllowMcp ?? false,
+			alwaysAllowModeSwitch: stateValues.alwaysAllowModeSwitch ?? false,
+			alwaysAllowSubtasks: stateValues.alwaysAllowSubtasks ?? false,
+			alwaysAllowFollowupQuestions: stateValues.alwaysAllowFollowupQuestions ?? false,
+			alwaysAllowExecute: stateValues.alwaysAllowExecute ?? false,
+			followupAutoApproveTimeoutMs: stateValues.followupAutoApproveTimeoutMs ?? 30000,
+			allowedCommands: stateValues.allowedCommands,
+			deniedCommands: stateValues.deniedCommands,
+			allowedMaxRequests: stateValues.allowedMaxRequests,
+			allowedMaxCost: stateValues.allowedMaxCost,
+			browserToolEnabled: stateValues.browserToolEnabled ?? true,
+			browserViewportSize: stateValues.browserViewportSize ?? "900x600",
+			screenshotQuality: stateValues.screenshotQuality ?? 75,
+			remoteBrowserEnabled: stateValues.remoteBrowserEnabled ?? false,
+			cachedChromeHostUrl: stateValues.cachedChromeHostUrl as string | undefined,
+			remoteBrowserHost: stateValues.remoteBrowserHost,
+			ttsEnabled: stateValues.ttsEnabled ?? false,
+			ttsSpeed: stateValues.ttsSpeed ?? 1.0,
+			soundEnabled: stateValues.soundEnabled ?? false,
+			soundVolume: stateValues.soundVolume ?? 0.5,
+			maxConcurrentFileReads: stateValues.maxConcurrentFileReads ?? 5,
+			terminalOutputLineLimit: stateValues.terminalOutputLineLimit ?? 500,
+			terminalOutputCharacterLimit:
+				stateValues.terminalOutputCharacterLimit ?? DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
+			terminalShellIntegrationTimeout:
+				stateValues.terminalShellIntegrationTimeout ?? Terminal.defaultShellIntegrationTimeout,
+			terminalShellIntegrationDisabled: stateValues.terminalShellIntegrationDisabled ?? true,
+			terminalCommandDelay: stateValues.terminalCommandDelay ?? 0,
+			terminalPowershellCounter: stateValues.terminalPowershellCounter ?? false,
+			terminalZshClearEolMark: stateValues.terminalZshClearEolMark ?? true,
+			terminalZshOhMy: stateValues.terminalZshOhMy ?? false,
+			terminalZshP10k: stateValues.terminalZshP10k ?? false,
+			terminalZdotdir: stateValues.terminalZdotdir ?? false,
+			terminalCompressProgressBar: stateValues.terminalCompressProgressBar ?? true,
+			diagnosticsEnabled: stateValues.diagnosticsEnabled ?? false,
+			diffEnabled: stateValues.diffEnabled ?? true,
+			fuzzyMatchThreshold: stateValues.fuzzyMatchThreshold ?? 1.0,
+			modeApiConfigs: stateValues.modeApiConfigs ?? ({} as Record<Mode, string>),
+			customModePrompts: stateValues.customModePrompts ?? {},
+			customSupportPrompts: stateValues.customSupportPrompts ?? {},
+			enhancementApiConfigId: stateValues.enhancementApiConfigId,
+			condensingApiConfigId: stateValues.condensingApiConfigId,
+			customCondensingPrompt: stateValues.customCondensingPrompt,
+			codebaseIndexConfig: stateValues.codebaseIndexConfig,
+			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
+			profileThresholds: stateValues.profileThresholds ?? {},
+			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,
+			maxDiagnosticMessages: stateValues.maxDiagnosticMessages ?? 50,
+			includeTaskHistoryInEnhance: stateValues.includeTaskHistoryInEnhance ?? true,
+			reasoningBlockCollapsed: stateValues.reasoningBlockCollapsed ?? true,
+			enterBehavior: stateValues.enterBehavior ?? "send",
+			includeCurrentTime: stateValues.includeCurrentTime ?? true,
+			includeCurrentCost: stateValues.includeCurrentCost ?? true,
+			maxGitStatusFiles: stateValues.maxGitStatusFiles ?? 0,
+			requestDelaySeconds: stateValues.requestDelaySeconds,
+			uriScheme: undefined,
+			shouldShowAnnouncement: false,
+			taskHistory: stateValues.taskHistory ?? [],
+			writeDelayMs: stateValues.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS,
+			enableCheckpoints: stateValues.enableCheckpoints ?? true,
+			checkpointTimeout: stateValues.checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+			checkpointBeforeHighRiskCommands: stateValues.checkpointBeforeHighRiskCommands ?? false,
+			checkpointAfterHighRiskCommands: stateValues.checkpointAfterHighRiskCommands ?? false,
+			checkpointOnCommandError: stateValues.checkpointOnCommandError ?? true,
+			checkpointCommands: stateValues.checkpointCommands ?? [],
+			noCheckpointCommands: stateValues.noCheckpointCommands ?? [],
+			checkpointShellSpecific: stateValues.checkpointShellSpecific ?? {},
+			maxOpenTabsContext: stateValues.maxOpenTabsContext ?? 20,
+			maxWorkspaceFiles: stateValues.maxWorkspaceFiles ?? 200,
+			showRooIgnoredFiles: stateValues.showRooIgnoredFiles ?? false,
+			maxReadFileLine: stateValues.maxReadFileLine ?? -1,
+			maxImageFileSize: stateValues.maxImageFileSize ?? 5,
+			maxTotalImageSize: stateValues.maxTotalImageSize ?? 20,
+			experiments: stateValues.experiments ?? experimentDefault,
+			mcpEnabled: stateValues.mcpEnabled ?? true,
+			enableMcpServerCreation: stateValues.enableMcpServerCreation ?? true,
+			customModes: stateValues.customModes ?? [],
+			hasOpenedModeSelector: stateValues.hasOpenedModeSelector ?? false,
+			lastShownAnnouncementId: stateValues.lastShownAnnouncementId,
+			hasSystemPromptOverride: undefined,
+			remoteControlEnabled: false,
+			taskSyncEnabled: false,
+			featureRoomoteControlEnabled: false,
+			claudeCodeIsAuthenticated: undefined,
+			renderContext: "sidebar",
+			autoCondenseContext: stateValues.autoCondenseContext ?? true,
+			autoCondenseContextPercent: stateValues.autoCondenseContextPercent ?? 100,
 		}
 	}
 

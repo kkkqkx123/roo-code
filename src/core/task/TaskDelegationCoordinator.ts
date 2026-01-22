@@ -2,6 +2,7 @@ import EventEmitter from "events"
 import type { TodoItem, HistoryItem, TaskProviderEvents } from "@shared/types"
 import { RooCodeEventName } from "@shared/types"
 import { readApiMessages, saveApiMessages, readTaskMessages, saveTaskMessages } from "../task-persistence"
+import { ErrorHandler } from "../error/ErrorHandler"
 
 export interface DelegationDependencies {
 	getCurrentTask: () => any
@@ -23,10 +24,12 @@ export interface DelegationDependencies {
 
 export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> {
 	private dependencies: DelegationDependencies
+	private errorHandler: ErrorHandler
 
 	constructor(dependencies: DelegationDependencies) {
 		super()
 		this.dependencies = dependencies
+		this.errorHandler = new ErrorHandler()
 	}
 
 	async delegateParentAndOpenChild(params: {
@@ -48,7 +51,11 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 		}
 
 		try {
-			await parent.flushPendingToolResultsToHistory()
+			await this.executeWithRetry(
+				async () => await parent.flushPendingToolResultsToHistory(),
+				"flushPendingToolResultsToHistory",
+				3
+			)
 		} catch (error) {
 			this.dependencies.log(
 				`[delegateParentAndOpenChild] Error flushing pending tool results (non-fatal): ${
@@ -58,7 +65,11 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 		}
 
 		try {
-			await this.dependencies.removeClineFromStack()
+			await this.executeWithRetry(
+				async () => await this.dependencies.removeClineFromStack(),
+				"removeClineFromStack",
+				3
+			)
 		} catch (error) {
 			this.dependencies.log(
 				`[delegateParentAndOpenChild] Error during parent disposal (non-fatal): ${
@@ -68,7 +79,11 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 		}
 
 		try {
-			await this.dependencies.handleModeSwitch(mode as any)
+			await this.executeWithRetry(
+				async () => await this.dependencies.handleModeSwitch(mode as any),
+				"handleModeSwitch",
+				3
+			)
 		} catch (e) {
 			this.dependencies.log(
 				`[delegateParentAndOpenChild] handleModeSwitch failed for mode '${mode}': ${
@@ -83,16 +98,22 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 		})
 
 		try {
-			const { historyItem } = await this.dependencies.getTaskWithId(parentTaskId)
-			const childIds = Array.from(new Set([...(historyItem.childIds ?? []), child.taskId]))
-			const updatedHistory: typeof historyItem = {
-				...historyItem,
-				status: "delegated",
-				delegatedToId: child.taskId,
-				awaitingChildId: child.taskId,
-				childIds,
-			}
-			await this.dependencies.updateTaskHistory(updatedHistory)
+			await this.executeWithRetry(
+				async () => {
+					const { historyItem } = await this.dependencies.getTaskWithId(parentTaskId)
+					const childIds = Array.from(new Set([...(historyItem.childIds ?? []), child.taskId]))
+					const updatedHistory: typeof historyItem = {
+						...historyItem,
+						status: "delegated",
+						delegatedToId: child.taskId,
+						awaitingChildId: child.taskId,
+						childIds,
+					}
+					await this.dependencies.updateTaskHistory(updatedHistory)
+				},
+				"updateTaskHistory",
+				3
+			)
 		} catch (err) {
 			this.dependencies.log(
 				`[delegateParentAndOpenChild] Failed to persist parent metadata for ${parentTaskId} -> ${child.taskId}: ${
@@ -105,6 +126,8 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 			this.dependencies.emit(RooCodeEventName.TaskDelegated, parentTaskId, child.taskId)
 		} catch {
 		}
+
+		await this.waitForUIStateUpdate(5000)
 
 		return child
 	}
@@ -121,20 +144,28 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 
 		let parentClineMessages: any[] = []
 		try {
-			parentClineMessages = await readTaskMessages({
-				taskId: parentTaskId,
-				globalStoragePath,
-			})
+			parentClineMessages = await this.executeWithRetry(
+				async () => await readTaskMessages({
+					taskId: parentTaskId,
+					globalStoragePath,
+				}),
+				"readTaskMessages",
+				3
+			)
 		} catch {
 			parentClineMessages = []
 		}
 
 		let parentApiMessages: any[] = []
 		try {
-			parentApiMessages = (await readApiMessages({
-				taskId: parentTaskId,
-				globalStoragePath,
-			})) as any[]
+			parentApiMessages = await this.executeWithRetry(
+				async () => (await readApiMessages({
+					taskId: parentTaskId,
+					globalStoragePath,
+				})) as any[],
+				"readApiMessages",
+				3
+			)
 		} catch {
 			parentApiMessages = []
 		}
@@ -151,7 +182,11 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 			ts,
 		}
 		parentClineMessages.push(subtaskUiMessage)
-		await saveTaskMessages({ messages: parentClineMessages, taskId: parentTaskId, globalStoragePath })
+		await this.executeWithRetry(
+			async () => await saveTaskMessages({ messages: parentClineMessages, taskId: parentTaskId, globalStoragePath }),
+			"saveTaskMessages",
+			3
+		)
 
 		let toolUseId: string | undefined
 		for (let i = parentApiMessages.length - 1; i >= 0; i--) {
@@ -206,7 +241,11 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 			})
 		}
 
-		await saveApiMessages({ messages: parentApiMessages as any, taskId: parentTaskId, globalStoragePath })
+		await this.executeWithRetry(
+			async () => await saveApiMessages({ messages: parentApiMessages as any, taskId: parentTaskId, globalStoragePath }),
+			"saveApiMessages",
+			3
+		)
 
 		try {
 			const { historyItem: childHistory } = await this.dependencies.getTaskWithId(childTaskId)
@@ -262,5 +301,75 @@ export class TaskDelegationCoordinator extends EventEmitter<TaskProviderEvents> 
 			this.dependencies.emit(RooCodeEventName.TaskDelegationResumed, parentTaskId, childTaskId)
 		} catch {
 		}
+
+		await this.waitForUIStateUpdate(5000)
+	}
+
+	private async executeWithRetry<T>(
+		operation: () => Promise<T>,
+		operationName: string,
+		maxRetries: number = 3
+	): Promise<T> {
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				this.dependencies.log(`[TaskDelegationCoordinator#${operationName}] Attempt ${attempt + 1}/${maxRetries}`)
+				const result = await operation()
+				this.dependencies.log(`[TaskDelegationCoordinator#${operationName}] Operation completed successfully`)
+				return result
+			} catch (error) {
+				this.dependencies.log(`[TaskDelegationCoordinator#${operationName}] Error on attempt ${attempt + 1}: ${error}`)
+				
+				const result = await this.errorHandler.handleError(
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						operation: operationName,
+						taskId: this.dependencies.getCurrentTask()?.taskId,
+						timestamp: Date.now()
+					}
+				)
+
+				if (attempt === maxRetries - 1 || !result.shouldRetry) {
+					this.dependencies.log(`[TaskDelegationCoordinator#${operationName}] Max retries reached or no retry allowed, throwing error`)
+					throw error
+				}
+
+				const delay = 1000 * (attempt + 1)
+				this.dependencies.log(`[TaskDelegationCoordinator#${operationName}] Retrying after ${delay}ms`)
+				await this.delay(delay)
+			}
+		}
+		throw new Error(`Operation ${operationName} failed after ${maxRetries} attempts`)
+	}
+
+	private async waitForUIStateUpdate(timeoutMs: number = 5000): Promise<boolean> {
+		const startTime = Date.now()
+		const checkInterval = 100
+		
+		while (Date.now() - startTime < timeoutMs) {
+			const currentTask = this.dependencies.getCurrentTask()
+			if (!currentTask) {
+				await this.delay(checkInterval)
+				continue
+			}
+
+			try {
+				const provider = currentTask.getProvider?.()
+				if (provider) {
+					await this.delay(checkInterval)
+					return true
+				}
+			} catch (error) {
+				this.dependencies.log(`[TaskDelegationCoordinator#waitForUIStateUpdate] Error checking UI state: ${error}`)
+			}
+
+			await this.delay(checkInterval)
+		}
+
+		this.dependencies.log(`[TaskDelegationCoordinator#waitForUIStateUpdate] UI state update confirmation timeout after ${timeoutMs}ms`)
+		return false
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 }

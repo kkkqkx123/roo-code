@@ -218,62 +218,128 @@ export class ApiRequestManager {
 				throw new Error(`Task ${this.stateManager.taskId} aborted`)
 			}
 
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Sending api_req_started message`)
-			await this.userInteractionManager.say(
-				"api_req_started",
-				JSON.stringify({
-					apiProtocol: getApiProtocol(
-						this.apiConfiguration.apiProvider,
-						getModelId(this.apiConfiguration),
-					),
-				}),
-			)
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] api_req_started message sent`)
+			try {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Starting request processing`)
 
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Posting state to webview after api_req_started`)
-			await provider?.postStateToWebview()
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] State posted to webview`)
+				const results = await Promise.allSettled([
+					this.sendApiReqStartedMessage(),
+					this.postStateToWebview(),
+					this.processUserContent(currentUserContent, currentIncludeFileDetails),
+					this.getEnvironmentDetailsWithRetry(currentIncludeFileDetails)
+				])
 
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process user content`)
-			const parsedUserContent = await this.processUserContent(currentUserContent, currentIncludeFileDetails)
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User content processed`)
+				const failedStep = results.find(r => r.status === 'rejected')
+				if (failedStep && failedStep.status === 'rejected') {
+					throw failedStep.reason
+				}
 
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to get environment details`)
+				const environmentDetails = results[3].status === 'fulfilled' ? results[3].value : ""
+				const parsedUserContent = results[2].status === 'fulfilled' ? results[2].value : []
 
-			// 获取当前任务实例
-			const currentTaskProvider = this.stateManager.getProvider()
-			const currentTask = currentTaskProvider?.getCurrentTask()
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] All preliminary steps completed successfully`)
 
-			if (!currentTask) {
-				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] No current task found, skipping environment details`)
-				throw new Error("No current task available for environment details")
+				const finalUserContent = [...parsedUserContent, { type: "text", text: environmentDetails }]
+
+				const shouldAddUserMessage =
+					((currentItem.retryAttempt ?? 0) === 0 && currentUserContent.length > 0) ||
+					currentItem.userMessageWasRemoved
+
+				if (shouldAddUserMessage) {
+					provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Adding user message to history`)
+					await this.messageManager.addToApiConversationHistory({
+						role: "user",
+						content: finalUserContent,
+					})
+					provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User message added to history`)
+				}
+
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process stream`)
+				await this.processStream(currentItem, stack)
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Stream processed`)
+			} catch (error) {
+				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Error in request processing: ${error}`)
+				await this.handleRequestError(error, currentItem, stack)
 			}
-
-			const environmentDetails = await getEnvironmentDetails(currentTask, currentIncludeFileDetails)
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Environment details retrieved`)
-
-			const finalUserContent = [...parsedUserContent, { type: "text", text: environmentDetails }]
-
-			const shouldAddUserMessage =
-				((currentItem.retryAttempt ?? 0) === 0 && currentUserContent.length > 0) ||
-				currentItem.userMessageWasRemoved
-
-			if (shouldAddUserMessage) {
-				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Adding user message to history`)
-				await this.messageManager.addToApiConversationHistory({
-					role: "user",
-					content: finalUserContent,
-				})
-				provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] User message added to history`)
-			}
-
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] About to process stream`)
-			await this.processStream(currentItem, stack)
-			provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Stream processed`)
 		}
 
 		provider?.log(`[ApiRequestManager#recursivelyMakeClineRequests] Request loop completed`)
 		return false
+	}
+
+	private async sendApiReqStartedMessage(): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#sendApiReqStartedMessage] Sending api_req_started message`)
+		await this.userInteractionManager.say(
+			"api_req_started",
+			JSON.stringify({
+				apiProtocol: getApiProtocol(
+					this.apiConfiguration.apiProvider,
+					getModelId(this.apiConfiguration),
+				),
+			}),
+		)
+		provider?.log(`[ApiRequestManager#sendApiReqStartedMessage] api_req_started message sent`)
+	}
+
+	private async postStateToWebview(): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#postStateToWebview] Posting state to webview`)
+		await provider?.postStateToWebview()
+		provider?.log(`[ApiRequestManager#postStateToWebview] State posted to webview`)
+	}
+
+	private async getEnvironmentDetailsWithRetry(includeFileDetails: boolean): Promise<string> {
+		const maxRetries = 3
+		const provider = this.stateManager.getProvider()
+
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				provider?.log(`[ApiRequestManager#getEnvironmentDetailsWithRetry] Attempt ${attempt + 1}/${maxRetries}`)
+
+				const currentTaskProvider = this.stateManager.getProvider()
+				const currentTask = currentTaskProvider?.getCurrentTask()
+
+				if (!currentTask) {
+					throw new Error("No current task available for environment details")
+				}
+
+				const environmentDetails = await getEnvironmentDetails(currentTask, includeFileDetails)
+				provider?.log(`[ApiRequestManager#getEnvironmentDetailsWithRetry] Environment details retrieved successfully`)
+				return environmentDetails
+			} catch (error) {
+				provider?.log(`[ApiRequestManager#getEnvironmentDetailsWithRetry] Error on attempt ${attempt + 1}: ${error}`)
+				if (attempt === maxRetries - 1) {
+					provider?.log(`[ApiRequestManager#getEnvironmentDetailsWithRetry] Max retries reached, throwing error`)
+					throw error
+				}
+				const delay = 1000 * (attempt + 1)
+				provider?.log(`[ApiRequestManager#getEnvironmentDetailsWithRetry] Retrying after ${delay}ms`)
+				await this.delay(delay)
+			}
+		}
+		throw new Error("Failed to get environment details")
+	}
+
+	private async handleRequestError(error: any, currentItem: any, stack: any[]): Promise<void> {
+		const provider = this.stateManager.getProvider()
+		provider?.log(`[ApiRequestManager#handleRequestError] Handling error: ${error}`)
+
+		if (this.stateManager.abort) {
+			throw new Error(`Task ${this.stateManager.taskId} aborted`)
+		}
+
+		if (checkContextWindowExceededError(error)) {
+			provider?.log(`[ApiRequestManager#handleRequestError] Context window exceeded error`)
+			await this.handleContextWindowExceededError(error, currentItem.retryAttempt ?? 0)
+			stack.push(currentItem)
+		} else {
+			provider?.log(`[ApiRequestManager#handleRequestError] Non-recoverable error, throwing`)
+			throw error
+		}
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 
 	private async processUserContent(userContent: any[], includeFileDetails: boolean): Promise<any[]> {

@@ -8,6 +8,7 @@ import { getCheckpointService } from "../../../checkpoints"
 import { formatResponse } from "../../../prompts/responses"
 import { ClineApiReqInfo } from "../../../../shared/ExtensionMessage"
 import { TerminalRegistry } from "../../../../integrations/terminal/TerminalRegistry"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface TaskLifecycleManagerOptions {
 	task: Task
@@ -29,6 +30,7 @@ export class TaskLifecycleManager {
 	private apiConfiguration: ProviderSettings
 	private metadata: any
 	private enableCheckpoints: boolean
+	private errorHandler: ErrorHandler
 
 	constructor(options: TaskLifecycleManagerOptions) {
 		this.task = options.task
@@ -39,6 +41,7 @@ export class TaskLifecycleManager {
 		this.apiConfiguration = options.apiConfiguration
 		this.metadata = options.metadata
 		this.enableCheckpoints = options.enableCheckpoints
+		this.errorHandler = new ErrorHandler()
 	}
 
 	async startTask(task?: string, images?: string[]): Promise<void> {
@@ -278,20 +281,38 @@ export class TaskLifecycleManager {
 
 		this.task.abort = true
 
-		// 取消当前正在进行的请求
-		if (this.task.currentRequestAbortController) {
-			this.task.currentRequestAbortController.abort()
+		try {
+			if (this.task.currentRequestAbortController) {
+				this.task.currentRequestAbortController.abort()
+			}
+		} catch (error) {
+			provider?.log(`[TaskLifecycleManager#abortTask] Error aborting current request: ${error}`)
+			await this.errorHandler.handleError(
+				error instanceof Error ? error : new Error(String(error)),
+				{
+					operation: "abortTask",
+					taskId: this.taskId,
+					timestamp: Date.now()
+				}
+			)
 		}
 
-		// 清理自动批准超时
-		if (this.task['autoApprovalTimeoutRef']) {
-			clearTimeout(this.task['autoApprovalTimeoutRef'])
-			this.task['autoApprovalTimeoutRef'] = undefined
+		try {
+			if (this.task['autoApprovalTimeoutRef']) {
+				clearTimeout(this.task['autoApprovalTimeoutRef'])
+				this.task['autoApprovalTimeoutRef'] = undefined
+			}
+		} catch (error) {
+			provider?.log(`[TaskLifecycleManager#abortTask] Error clearing auto approval timeout: ${error}`)
 		}
 
 		this.task.emit(RooCodeEventName.TaskAborted)
 		
-		// 更新UI状态以反映任务已取消
+		const uiUpdateConfirmed = await this.waitForUIStateUpdate(5000)
+		if (!uiUpdateConfirmed) {
+			provider?.log(`[TaskLifecycleManager#abortTask] UI state update confirmation timeout`)
+		}
+		
 		await provider?.postStateToWebview()
 		provider?.log(`[TaskLifecycleManager#abortTask] UI state updated after abort`)
 	}
@@ -300,48 +321,98 @@ export class TaskLifecycleManager {
 		try {
 			this.task.abort = true
 
-			// 取消当前请求
-			if (this.task.currentRequestAbortController) {
-				this.task.currentRequestAbortController.abort()
-				this.task.currentRequestAbortController = undefined
+			try {
+				if (this.task.currentRequestAbortController) {
+					this.task.currentRequestAbortController.abort()
+					this.task.currentRequestAbortController = undefined
+				}
+			} catch (error) {
+				console.error("[TaskLifecycleManager] Error aborting current request during dispose:", error)
 			}
 
-			// 清理自动批准超时
-			if (this.task['autoApprovalTimeoutRef']) {
-				clearTimeout(this.task['autoApprovalTimeoutRef'])
-				this.task['autoApprovalTimeoutRef'] = undefined
+			try {
+				if (this.task['autoApprovalTimeoutRef']) {
+					clearTimeout(this.task['autoApprovalTimeoutRef'])
+					this.task['autoApprovalTimeoutRef'] = undefined
+				}
+			} catch (error) {
+				console.error("[TaskLifecycleManager] Error clearing auto approval timeout during dispose:", error)
 			}
 
 			const provider = this.providerRef.deref()
 
 			if (provider) {
-				// 清理忽略控制器
-				if (this.task.rooIgnoreController) {
-					this.task.rooIgnoreController.dispose()
-					this.task.rooIgnoreController = undefined
+				try {
+					if (this.task.rooIgnoreController) {
+						this.task.rooIgnoreController.dispose()
+						this.task.rooIgnoreController = undefined
+					}
+				} catch (error) {
+					console.error("[TaskLifecycleManager] Error disposing RooIgnoreController:", error)
 				}
-				// 清理保护控制器
-				if (this.task.rooProtectedController) {
-					this.task.rooProtectedController.dispose()
-					this.task.rooProtectedController = undefined
+				
+				try {
+					if (this.task.rooProtectedController) {
+						this.task.rooProtectedController.dispose()
+						this.task.rooProtectedController = undefined
+					}
+				} catch (error) {
+					console.error("[TaskLifecycleManager] Error disposing RooProtectedController:", error)
 				}
-				// 如果正在流式传输且正在编辑，回滚更改
-				if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
-					this.task.diffViewProvider.revertChanges()
+				
+				try {
+					if (this.task.getStreamingState().isStreaming && this.task.diffViewProvider.isEditing) {
+						this.task.diffViewProvider.revertChanges()
+					}
+				} catch (error) {
+					console.error("[TaskLifecycleManager] Error reverting diff changes during dispose:", error)
 				}
-				// 清理浏览器会话管理器
-				if (this.task['_browserSessionManager']) {
-					this.task['_browserSessionManager'].dispose()
-					this.task['_browserSessionManager'] = undefined
+				
+				try {
+					if (this.task['_browserSessionManager']) {
+						this.task['_browserSessionManager'].dispose()
+						this.task['_browserSessionManager'] = undefined
+					}
+				} catch (error) {
+					console.error("[TaskLifecycleManager] Error disposing browser session manager:", error)
 				}
 			}
 
-			// 释放终端资源
 			TerminalRegistry.releaseTerminalsForTask(this.taskId)
 
 			console.log(`[TaskLifecycleManager] Disposed for task ${this.taskId}`)
 		} catch (error) {
 			console.error("[TaskLifecycleManager] Dispose failed:", error)
 		}
+	}
+
+	private async waitForUIStateUpdate(timeoutMs: number = 5000): Promise<boolean> {
+		const startTime = Date.now()
+		const checkInterval = 100
+		
+		while (Date.now() - startTime < timeoutMs) {
+			const provider = this.providerRef.deref()
+			if (!provider) {
+				await this.delay(checkInterval)
+				continue
+			}
+
+			try {
+				const state = await provider.getState()
+				if (state && state.currentTaskItem?.id === this.taskId && state.currentTaskItem?.status === 'aborted') {
+					return true
+				}
+			} catch (error) {
+				console.error(`[TaskLifecycleManager#waitForUIStateUpdate] Error checking UI state: ${error}`)
+			}
+
+			await this.delay(checkInterval)
+		}
+
+		return false
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 }

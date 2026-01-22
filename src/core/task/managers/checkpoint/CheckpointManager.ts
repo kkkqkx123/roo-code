@@ -10,6 +10,7 @@ import type { MessageManager } from "../messaging/MessageManager"
 import type { CheckpointRestoreOptionsExtended } from "../../../checkpoints/types"
 import { IndexManager } from "../core/IndexManager"
 import { ContextRestoreService } from "../core/ContextRestoreService"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface CheckpointManagerOptions {
 	stateManager: TaskStateManager
@@ -32,6 +33,7 @@ export class CheckpointManager {
 	checkpointServiceInitializing = false
 	private indexManager: IndexManager
 	private contextRestoreService: ContextRestoreService
+	private errorHandler: ErrorHandler
 
 	constructor(options: CheckpointManagerOptions) {
 		this.stateManager = options.stateManager
@@ -42,6 +44,7 @@ export class CheckpointManager {
 		this.checkpointTimeout = options.checkpointTimeout
 		this.indexManager = options.indexManager
 		this.contextRestoreService = new ContextRestoreService()
+		this.errorHandler = new ErrorHandler()
 	}
 
 	/**
@@ -53,15 +56,20 @@ export class CheckpointManager {
 		}
 
 		try {
-			const service = this.getService()
-			if (!service) {
-				return undefined
-			}
+			const result = await this.executeWithRetry(
+				async () => {
+					const service = this.getService()
+					if (!service) {
+						throw new Error("Checkpoint service not available")
+					}
 
-			// 保存检查点
-			const result = await service.saveCheckpoint(
-				`Task: ${this.taskId}`,
-				{ allowEmpty: force, suppressMessage }
+					return await service.saveCheckpoint(
+						`Task: ${this.taskId}`,
+						{ allowEmpty: force, suppressMessage }
+					)
+				},
+				"checkpointSave",
+				3
 			)
 
 			if (result?.commit) {
@@ -71,7 +79,7 @@ export class CheckpointManager {
 			return undefined
 		} catch (error) {
 			console.error("[CheckpointManager] Failed to save checkpoint:", error)
-			return undefined
+			throw error
 		}
 	}
 
@@ -81,9 +89,13 @@ export class CheckpointManager {
 		}
 
 		try {
-			await checkpointRestore(
-				this.stateManager as any,
-				options,
+			await this.executeWithRetry(
+				async () => await checkpointRestore(
+					this.stateManager as any,
+					options,
+				),
+				"checkpointRestore",
+				3
 			)
 		} catch (error) {
 			console.error("[CheckpointManager] Failed to restore checkpoint:", error)
@@ -97,9 +109,13 @@ export class CheckpointManager {
 		}
 
 		try {
-			await checkpointDiff(
-				this.stateManager as any,
-				options,
+			await this.executeWithRetry(
+				async () => await checkpointDiff(
+					this.stateManager as any,
+					options,
+				),
+				"checkpointDiff",
+				3
 			)
 		} catch (error) {
 			console.error("[CheckpointManager] Failed to diff checkpoint:", error)
@@ -187,41 +203,82 @@ export class CheckpointManager {
 		}
 
 		try {
-			// 首先执行标准的检查点恢复（文件系统）
-			await checkpointRestore(
-				this.stateManager as any,
-				{
-					ts: options.ts,
-					commitHash: options.commitHash,
-					mode: options.mode,
-					operation: options.operation,
-				},
-			)
+			await this.executeWithRetry(
+				async () => {
+					await checkpointRestore(
+						this.stateManager as any,
+						{
+							ts: options.ts,
+							commitHash: options.commitHash,
+							mode: options.mode,
+							operation: options.operation,
+						},
+					)
 
-			// 如果需要恢复API上下文
-			if (options.restoreApiContext) {
-				// 从检查点获取请求索引
-				const requestIndex = this.getCheckpointRequestIndex(options.commitHash)
-				
-				if (requestIndex !== undefined) {
-					// 基于请求索引恢复上下文
-					const success = await this.restoreContextFromPersistedDataByRequestIndex(requestIndex)
-					if (!success) {
-						console.warn(`[CheckpointManager] Context restoration failed for request index ${requestIndex}, but file restoration succeeded`)
+					if (options.restoreApiContext) {
+						const requestIndex = this.getCheckpointRequestIndex(options.commitHash)
+						
+						if (requestIndex !== undefined) {
+							const success = await this.restoreContextFromPersistedDataByRequestIndex(requestIndex)
+							if (!success) {
+								console.warn(`[CheckpointManager] Context restoration failed for request index ${requestIndex}, but file restoration succeeded`)
+							}
+						} else if (options.conversationIndex !== undefined) {
+							const success = await this.restoreContextFromPersistedDataByIndex(options.conversationIndex)
+							if (!success) {
+								console.warn(`[CheckpointManager] Context restoration failed for conversation index ${options.conversationIndex}, but file restoration succeeded`)
+							}
+						} else {
+							console.warn(`[CheckpointManager] No request index found for checkpoint ${options.commitHash}, skipping context restoration`)
+						}
 					}
-				} else if (options.conversationIndex !== undefined) {
-					// 回退到旧的对话索引（向后兼容）
-					const success = await this.restoreContextFromPersistedDataByIndex(options.conversationIndex)
-					if (!success) {
-						console.warn(`[CheckpointManager] Context restoration failed for conversation index ${options.conversationIndex}, but file restoration succeeded`)
-					}
-				} else {
-					console.warn(`[CheckpointManager] No request index found for checkpoint ${options.commitHash}, skipping context restoration`)
-				}
-			}
+				},
+				"checkpointRestoreExtended",
+				3
+			)
 		} catch (error) {
 			console.error("[CheckpointManager] Failed to restore checkpoint with context:", error)
 			throw error
 		}
+	}
+
+	private async executeWithRetry<T>(
+		operation: () => Promise<T>,
+		operationName: string,
+		maxRetries: number = 3
+	): Promise<T> {
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				console.log(`[CheckpointManager#${operationName}] Attempt ${attempt + 1}/${maxRetries}`)
+				const result = await operation()
+				console.log(`[CheckpointManager#${operationName}] Operation completed successfully`)
+				return result
+			} catch (error) {
+				console.error(`[CheckpointManager#${operationName}] Error on attempt ${attempt + 1}: ${error}`)
+				
+				const result = await this.errorHandler.handleError(
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						operation: operationName,
+						taskId: this.taskId,
+						timestamp: Date.now()
+					}
+				)
+
+				if (attempt === maxRetries - 1 || !result.shouldRetry) {
+					console.log(`[CheckpointManager#${operationName}] Max retries reached or no retry allowed, throwing error`)
+					throw error
+				}
+
+				const delay = 1000 * (attempt + 1)
+				console.log(`[CheckpointManager#${operationName}] Retrying after ${delay}ms`)
+				await this.delay(delay)
+			}
+		}
+		throw new Error(`Operation ${operationName} failed after ${maxRetries} attempts`)
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 }

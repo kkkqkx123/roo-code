@@ -759,7 +759,10 @@ export const webviewMessageHandler = async (
 				
 				// 根据恢复类型决定是否取消任务
 				if (restoreType === "files_and_context" || !restoreType) {
-					await provider.cancelTask()
+					const cancelResult = await provider.cancelTask()
+					if (!cancelResult.success) {
+						console.error(`[webviewMessageHandler] Failed to cancel task during checkpoint restore: ${cancelResult.error}`)
+					}
 
 					try {
 						await pWaitFor(() => provider.getCurrentTask()?.isInitialized === true, { timeout: 3_000 })
@@ -797,7 +800,12 @@ export const webviewMessageHandler = async (
 			break
 		}
 		case "cancelTask":
-			await provider.cancelTask()
+			{
+				const result = await provider.cancelTask()
+				if (!result.success) {
+					console.error(`[webviewMessageHandler] Failed to cancel task: ${result.error}`)
+				}
+			}
 			break
 		case "cancelAutoApproval":
 			// Cancel any pending auto-approval timeout for the current task

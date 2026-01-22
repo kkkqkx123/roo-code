@@ -9,14 +9,17 @@ import {
 
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { ContextProxy } from "../config/ContextProxy"
+import { ErrorHandler } from "../error/ErrorHandler"
 
 export class ProviderCoordinator {
 	private providerSettingsManager: ProviderSettingsManager
 	private contextProxy: ContextProxy
+	private errorHandler: ErrorHandler
 
 	constructor(context: vscode.ExtensionContext, contextProxy: ContextProxy) {
 		this.contextProxy = contextProxy
 		this.providerSettingsManager = new ProviderSettingsManager(context)
+		this.errorHandler = new ErrorHandler()
 	}
 
 	/**
@@ -35,35 +38,62 @@ export class ProviderCoordinator {
 		providerSettings: ProviderSettings,
 		activate: boolean = true,
 	): Promise<string | undefined> {
-		const id = await this.providerSettingsManager.saveConfig(name, providerSettings)
+		try {
+			const id = await this.executeWithRetry(
+				async () => await this.providerSettingsManager.saveConfig(name, providerSettings),
+				"upsertProviderProfile",
+				3
+			)
 
-		if (activate) {
-			await this.activateProviderProfile({ name })
+			if (activate) {
+				await this.activateProviderProfile({ name })
+			}
+
+			return id
+		} catch (error) {
+			console.error("[ProviderCoordinator] Failed to upsert provider profile:", error)
+			throw error
 		}
-
-		return id
 	}
 
 	/**
 	 * Deletes a provider profile
 	 */
 	public async deleteProviderProfile(profileToDelete: ProviderSettingsEntry): Promise<void> {
-		await this.providerSettingsManager.deleteConfig(profileToDelete.name)
+		try {
+			await this.executeWithRetry(
+				async () => await this.providerSettingsManager.deleteConfig(profileToDelete.name),
+				"deleteProviderProfile",
+				3
+			)
+		} catch (error) {
+			console.error("[ProviderCoordinator] Failed to delete provider profile:", error)
+			throw error
+		}
 	}
 
 	/**
 	 * Activates a provider profile
 	 */
 	public async activateProviderProfile(args: { name: string } | { id: string }): Promise<{ name: string; id?: string; providerSettings: ProviderSettings }> {
-		const { name, id, ...providerSettings } = await this.providerSettingsManager.activateProfile(args)
+		try {
+			const { name, id, ...providerSettings } = await this.executeWithRetry(
+				async () => await this.providerSettingsManager.activateProfile(args),
+				"activateProviderProfile",
+				3
+			)
 
-		await Promise.all([
-			this.contextProxy.setValue("listApiConfigMeta", await this.providerSettingsManager.listConfig()),
-			this.contextProxy.setValue("currentApiConfigName", name),
-			this.contextProxy.setProviderSettings(providerSettings),
-		])
+			await Promise.all([
+				this.contextProxy.setValue("listApiConfigMeta", await this.providerSettingsManager.listConfig()),
+				this.contextProxy.setValue("currentApiConfigName", name),
+				this.contextProxy.setProviderSettings(providerSettings),
+			])
 
-		return { name, id, providerSettings }
+			return { name, id, providerSettings }
+		} catch (error) {
+			console.error("[ProviderCoordinator] Failed to activate provider profile:", error)
+			throw error
+		}
 	}
 
 	/**
@@ -109,11 +139,42 @@ export class ProviderCoordinator {
 		return this.providerSettingsManager
 	}
 
-	/**
-	 * Disposes the provider coordinator
-	 */
-	public dispose(): void {
-		// ProviderSettingsManager doesn't have a dispose method
-		// Nothing to clean up currently
+	private async executeWithRetry<T>(
+		operation: () => Promise<T>,
+		operationName: string,
+		maxRetries: number = 3
+	): Promise<T> {
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				console.log(`[ProviderCoordinator#${operationName}] Attempt ${attempt + 1}/${maxRetries}`)
+				const result = await operation()
+				console.log(`[ProviderCoordinator#${operationName}] Operation completed successfully`)
+				return result
+			} catch (error) {
+				console.error(`[ProviderCoordinator#${operationName}] Error on attempt ${attempt + 1}: ${error}`)
+				
+				const result = await this.errorHandler.handleError(
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						operation: operationName,
+						timestamp: Date.now()
+					}
+				)
+
+				if (attempt === maxRetries - 1 || !result.shouldRetry) {
+					console.log(`[ProviderCoordinator#${operationName}] Max retries reached or no retry allowed, throwing error`)
+					throw error
+				}
+
+				const delay = 1000 * (attempt + 1)
+				console.log(`[ProviderCoordinator#${operationName}] Retrying after ${delay}ms`)
+				await this.delay(delay)
+			}
+		}
+		throw new Error(`Operation ${operationName} failed after ${maxRetries} attempts`)
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 }

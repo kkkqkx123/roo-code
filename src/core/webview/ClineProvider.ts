@@ -432,8 +432,16 @@ export class ClineProvider
 	/**
 	 * Cancels the current task
 	 */
-	public async cancelTask(): Promise<void> {
-		await this.taskManager.cancelTask()
+	public async cancelTask(): Promise<{ success: boolean; error?: string }> {
+		const result = await this.taskManager.cancelTask()
+		
+		if (!result.success) {
+			this.logger.error(`[ClineProvider#cancelTask] Failed to cancel task: ${result.error}`)
+		} else {
+			this.logger.info(`[ClineProvider#cancelTask] Task cancelled successfully`)
+		}
+		
+		return result
 	}
 
 	/**
@@ -1278,9 +1286,6 @@ export class ClineProvider
 
 			this.webviewCoordinator.dispose()
 			this.logger.debug("WebviewCoordinator disposed")
-
-			this.providerCoordinator.dispose()
-			this.logger.debug("ProviderCoordinator disposed")
 
 			this.stateCoordinator.dispose()
 			this.logger.debug("StateCoordinator disposed")

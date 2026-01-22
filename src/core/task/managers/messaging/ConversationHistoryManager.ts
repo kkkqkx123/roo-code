@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk"
 import type { ApiMessage } from "../../../task-persistence"
+import { ErrorHandler } from "../../../error/ErrorHandler"
 
 export interface ConversationHistoryManagerOptions {
 	taskId: string
@@ -38,9 +39,11 @@ function isExtendedMessageParam(msg: any): msg is ExtendedMessageParam {
 
 export class ConversationHistoryManager {
 	readonly taskId: string
+	private errorHandler: ErrorHandler
 
 	constructor(options: ConversationHistoryManagerOptions) {
 		this.taskId = options.taskId
+		this.errorHandler = new ErrorHandler()
 	}
 
 	public buildCleanConversationHistory(
@@ -230,12 +233,59 @@ export class ConversationHistoryManager {
 	}
 
 	public convertToApiMessages(messages: ApiMessage[]): Anthropic.Messages.MessageParam[] {
-		const cleanHistory = this.buildCleanConversationHistory(messages)
-		return cleanHistory.filter(
-			(msg): msg is Anthropic.Messages.MessageParam => {
-				const reasoningMsg = msg as ReasoningMessageParam
-				return reasoningMsg.type !== "reasoning"
-			},
-		)
+		try {
+			const cleanHistory = this.buildCleanConversationHistory(messages)
+			return cleanHistory.filter(
+				(msg): msg is Anthropic.Messages.MessageParam => {
+					const reasoningMsg = msg as ReasoningMessageParam
+					return reasoningMsg.type !== "reasoning"
+				},
+			)
+		} catch (error) {
+			console.error("[ConversationHistoryManager] Failed to convert API messages:", error)
+			throw error
+		}
+	}
+
+	private async executeWithRetry<T>(
+		operation: () => T,
+		operationName: string,
+		maxRetries: number = 3
+	): Promise<T> {
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				console.log(`[ConversationHistoryManager#${operationName}] Attempt ${attempt + 1}/${maxRetries}`)
+				const result = operation()
+				console.log(`[ConversationHistoryManager#${operationName}] Operation completed successfully`)
+				return result
+			} catch (error) {
+				console.error(`[ConversationHistoryManager#${operationName}] Error on attempt ${attempt + 1}: ${error}`)
+				
+				const result = await this.errorHandler.handleError(
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						operation: operationName,
+						taskId: this.taskId,
+						timestamp: Date.now()
+					}
+				)
+
+				if (attempt === maxRetries - 1 || !result.shouldRetry) {
+					console.log(`[ConversationHistoryManager#${operationName}] Max retries reached or no retry allowed, throwing error`)
+					throw error
+				}
+
+				const delay = 1000 * (attempt + 1)
+				console.log(`[ConversationHistoryManager#${operationName}] Retrying after ${delay}ms`)
+				this.delay(delay)
+			}
+		}
+		throw new Error(`Operation ${operationName} failed after ${maxRetries} attempts`)
+	}
+
+	private delay(ms: number): void {
+		const start = Date.now()
+		while (Date.now() - start < ms) {
+		}
 	}
 }
