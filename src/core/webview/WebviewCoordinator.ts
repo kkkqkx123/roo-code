@@ -10,6 +10,9 @@ import { webviewMessageHandler } from "./webviewMessageHandler"
 import { ClineProvider } from "./ClineProvider"
 import { createLogger } from "../../utils/logger"
 import { t } from "../../i18n"
+import { MessageBusServer } from "../messagebus/MessageBusServer"
+import { MessageBusIntegration } from "../messagebus/MessageBusIntegration"
+import { MessageHandlerRegistry } from "../messagebus/MessageHandlerRegistry"
 
 interface QueuedMessage {
 	message: ExtensionMessage
@@ -31,6 +34,10 @@ export class WebviewCoordinator {
 	private messageRetryCount = 3
 	private messageRetryDelay = 1000
 	private maxQueueAge = 60000
+
+	private messageBusServer?: MessageBusServer
+	private messageBusIntegration?: MessageBusIntegration
+	private messageHandlerRegistry?: MessageHandlerRegistry
 
 	constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel, provider: ClineProvider) {
 		this.context = context
@@ -74,8 +81,8 @@ export class WebviewCoordinator {
 			throw error
 		}
 
-		this.setWebviewMessageListener(webviewView.webview)
-		this.logger.debug("Message listener set up")
+		this.initializeMessageBus(webviewView)
+		this.logger.debug("Message bus initialized")
 
 		this.isViewLaunched = true
 		this.logger.info("Webview view resolved successfully")
@@ -336,11 +343,16 @@ export class WebviewCoordinator {
 	}
 
 	/**
-	 * Sets up the webview message listener
+	 * Sets up webview message listener using message bus
 	 */
 	private setWebviewMessageListener(webview: vscode.Webview): void {
-		const onReceiveMessage = async (message: WebviewMessage) =>
-			webviewMessageHandler(this.provider, message)
+		const onReceiveMessage = async (message: WebviewMessage) => {
+			if (this.messageBusIntegration) {
+				await this.messageBusIntegration.handleMessage(message)
+			} else {
+				await webviewMessageHandler(this.provider, message)
+			}
+		}
 
 		const messageDisposable = webview.onDidReceiveMessage(onReceiveMessage)
 		this.webviewDisposables.push(messageDisposable)
@@ -379,6 +391,10 @@ export class WebviewCoordinator {
 		this.clearWebviewResources()
 		this.messageQueue.clear()
 		
+		if (this.messageBusIntegration) {
+			this.messageBusIntegration.dispose()
+		}
+		
 		if (this.view && "dispose" in this.view) {
 			this.view.dispose()
 		}
@@ -396,5 +412,18 @@ export class WebviewCoordinator {
 	 */
 	public getIsViewLaunched(): boolean {
 		return this.isViewLaunched
+	}
+
+	/**
+	 * Initializes the message bus
+	 */
+	private initializeMessageBus(webview: vscode.WebviewView | vscode.WebviewPanel): void {
+		this.messageBusServer = new MessageBusServer(this.outputChannel, { webview })
+		this.messageHandlerRegistry = new MessageHandlerRegistry(this.messageBusServer, this.provider, this.outputChannel)
+		this.messageBusIntegration = new MessageBusIntegration(this.messageBusServer, this.provider, this.outputChannel)
+		this.messageHandlerRegistry.registerAll()
+		
+		this.setWebviewMessageListener(webview.webview)
+		this.logger.info("Message bus initialized")
 	}
 }
