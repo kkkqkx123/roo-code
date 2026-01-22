@@ -8,17 +8,20 @@ import { SettingsHandlers } from "./handlers/SettingsHandlers"
 import { MCPHandlers } from "./handlers/MCPHandlers"
 import { BrowserHandlers } from "./handlers/BrowserHandlers"
 import { CheckpointHandlers } from "./handlers/CheckpointHandlers"
+import { createLogger } from "../../utils/logger"
 
 export class MessageHandlerRegistry {
   private messageBus: MessageBusServer
   private adapter: WebviewMessageHandlerAdapter
   private provider: ClineProvider
   private outputChannel: vscode.OutputChannel
+  private logger: ReturnType<typeof createLogger>
 
   constructor(messageBus: MessageBusServer, provider: ClineProvider, outputChannel: vscode.OutputChannel) {
     this.messageBus = messageBus
     this.provider = provider
     this.outputChannel = outputChannel
+    this.logger = createLogger(outputChannel, "MessageHandlerRegistry")
     this.adapter = new WebviewMessageHandlerAdapter(provider, outputChannel)
 
     new TaskHandlers(messageBus, provider)
@@ -29,7 +32,7 @@ export class MessageHandlerRegistry {
   }
 
   registerAll(): void {
-    console.info("[MessageHandlerRegistry] Registering all message handlers...")
+    this.logger.info("Registering all message handlers...")
 
     this.registerCommandHandlers()
     this.registerFileHandlers()
@@ -578,5 +581,10 @@ export class MessageHandlerRegistry {
       console.debug("[MessageHandlerRegistry] Downloading error diagnostics")
       return { type: "debug.errorDiagnosticsDownloaded", path: "" }
     })
+  }
+
+  dispose(): void {
+    console.debug("[MessageHandlerRegistry] Disposing")
+    this.messageBus.dispose()
   }
 }

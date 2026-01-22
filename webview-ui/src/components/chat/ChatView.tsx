@@ -25,6 +25,7 @@ import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
+import { useMessageBus } from "@src/hooks/useMessageBus"
 import RooHero from "@src/components/welcome/RooHero"
 import RooTips from "@src/components/welcome/RooTips"
 import { StandardTooltip, Button } from "@src/components/ui"
@@ -67,6 +68,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	})
 
 	const { t } = useAppTranslation()
+	const messageBus = useMessageBus()
 	const modeShortcutText = `${isMac ? "⌘" : "Ctrl"} + . ${t("chat:forNextMode")}, ${isMac ? "⌘" : "Ctrl"} + Shift + . ${t("chat:forPreviousMode")}`
 
 	const {
@@ -224,7 +226,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	)
 
 	function playTts(text: string) {
-		vscode.postMessage({ type: "playTts", text })
+		messageBus.send({ type: "audio.playTTS", text }, { expectResponse: false })
 	}
 
 	useDeepCompareEffect(() => {
@@ -575,12 +577,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						case "resume_task":
 						case "resume_completed_task":
 						case "mistake_limit_reached":
-							vscode.postMessage({
-								type: "askResponse",
-								askResponse: "messageResponse",
-								text,
-								images,
-							})
+							messageBus.send(
+								{
+									type: "task.askResponse",
+									askResponse: "messageResponse",
+									text,
+									images,
+								},
+								{ expectResponse: false }
+							)
 							break
 					}
 
@@ -595,7 +600,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				if (sendingDisabled || isStreaming || messageQueue.length > 0) {
 					try {
 						console.log("queueMessage", text, images)
-						vscode.postMessage({ type: "queueMessage", text, images })
+						messageBus.send(
+							{
+								type: "messageQueue.queueMessage",
+								text,
+								images,
+							},
+							{ expectResponse: false }
+						)
 						setInputValue("")
 						setSelectedImages([])
 					} catch (error) {
@@ -611,15 +623,30 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				userRespondedRef.current = true
 
 				if (messagesRef.current.length === 0) {
-					vscode.postMessage({ type: "newTask", text, images })
+					messageBus.send(
+						{
+							type: "task.create",
+							text,
+							images,
+						},
+						{ expectResponse: false }
+					)
 				} else {
-					vscode.postMessage({ type: "askResponse", askResponse: "messageResponse", text, images })
+					messageBus.send(
+						{
+							type: "task.askResponse",
+							askResponse: "messageResponse",
+							text,
+							images,
+						},
+						{ expectResponse: false }
+					)
 				}
 
 				handleChatReset()
 			}
 		},
-		[handleChatReset, markFollowUpAsAnswered, sendingDisabled, isStreaming, messageQueue.length], // messagesRef and clineAskRef are stable
+		[handleChatReset, markFollowUpAsAnswered, sendingDisabled, isStreaming, messageQueue.length, messageBus], // messagesRef and clineAskRef are stable
 	)
 
 	const handleSetChatBoxMessage = useCallback(
@@ -637,7 +664,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		[inputValue, selectedImages],
 	)
 
-	const startNewTask = useCallback(() => vscode.postMessage({ type: "clearTask" }), [])
+	const startNewTask = useCallback(() => messageBus.send({ type: "task.clear" }, { expectResponse: false }), [messageBus])
 
 	// This logic depends on the useEffect[messages] above to set clineAsk,
 	// after which buttons are shown and we then send an askResponse to the
@@ -658,17 +685,26 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "mistake_limit_reached":
 					// Only send text/images if they exist
 					if (trimmedInput || (images && images.length > 0)) {
-						vscode.postMessage({
-							type: "askResponse",
-							askResponse: "yesButtonClicked",
-							text: trimmedInput,
-							images: images,
-						})
+						messageBus.send(
+							{
+								type: "task.askResponse",
+								askResponse: "yesButtonClicked",
+								text: trimmedInput,
+								images: images,
+							},
+							{ expectResponse: false }
+						)
 						// Clear input state after sending
 						setInputValue("")
 						setSelectedImages([])
 					} else {
-						vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+						messageBus.send(
+							{
+								type: "task.askResponse",
+								askResponse: "yesButtonClicked",
+							},
+							{ expectResponse: false }
+						)
 					}
 					break
 				case "resume_task":
@@ -684,17 +720,26 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					} else {
 						// Only send text/images if they exist
 						if (trimmedInput || (images && images.length > 0)) {
-							vscode.postMessage({
-								type: "askResponse",
-								askResponse: "yesButtonClicked",
-								text: trimmedInput,
-								images: images,
-							})
+							messageBus.send(
+								{
+									type: "task.askResponse",
+									askResponse: "yesButtonClicked",
+									text: trimmedInput,
+									images: images,
+								},
+								{ expectResponse: false }
+							)
 							// Clear input state after sending
 							setInputValue("")
 							setSelectedImages([])
 						} else {
-							vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+							messageBus.send(
+								{
+									type: "task.askResponse",
+									askResponse: "yesButtonClicked",
+								},
+								{ expectResponse: false }
+							)
 						}
 					}
 					break
@@ -704,7 +749,13 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					startNewTask()
 					break
 				case "command_output":
-					vscode.postMessage({ type: "terminalOperation", terminalOperation: "continue" })
+					messageBus.send(
+						{
+							type: "terminal.operation",
+							terminalOperation: "continue",
+						},
+						{ expectResponse: false }
+					)
 					break
 			}
 
@@ -712,7 +763,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			setClineAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask, currentTaskItem?.parentTaskId],
+		[clineAsk, startNewTask, currentTaskItem?.parentTaskId, messageBus],
 	)
 
 	const handleSecondaryButtonClick = useCallback(
@@ -740,34 +791,49 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "use_mcp_server":
 					// Only send text/images if they exist
 					if (trimmedInput || (images && images.length > 0)) {
-						vscode.postMessage({
-							type: "askResponse",
-							askResponse: "noButtonClicked",
-							text: trimmedInput,
-							images: images,
-						})
+						messageBus.send(
+							{
+								type: "task.askResponse",
+								askResponse: "noButtonClicked",
+								text: trimmedInput,
+								images: images,
+							},
+							{ expectResponse: false }
+						)
 						// Clear input state after sending
 						setInputValue("")
 						setSelectedImages([])
 					} else {
 						// Responds to the API with a "This operation failed" and lets it try again
-						vscode.postMessage({ type: "askResponse", askResponse: "noButtonClicked" })
+						messageBus.send(
+							{
+								type: "task.askResponse",
+								askResponse: "noButtonClicked",
+							},
+							{ expectResponse: false }
+						)
 					}
 					break
 				case "command_output":
-					vscode.postMessage({ type: "terminalOperation", terminalOperation: "abort" })
+					messageBus.send(
+						{
+							type: "terminal.operation",
+							terminalOperation: "abort",
+						},
+						{ expectResponse: false }
+					)
 					break
 			}
 			setSendingDisabled(true)
 			setClineAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask, isStreaming],
+		[clineAsk, startNewTask, isStreaming, messageBus],
 	)
 
 	const { info: model } = useSelectedModel(apiConfiguration)
 
-	const selectImages = useCallback(() => vscode.postMessage({ type: "selectImages" }), [])
+	const selectImages = useCallback(() => messageBus.send({ type: "file.selectImages" }, { expectResponse: false }), [messageBus])
 
 	const shouldDisableImages = !model?.supportsImages || selectedImages.length >= MAX_IMAGES_PER_MESSAGE
 
@@ -1167,9 +1233,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			setMode(modeSlug)
 
 			// Send the mode switch message.
-			vscode.postMessage({ type: "mode", text: modeSlug })
+			messageBus.send(
+				{
+					type: "settings.updateMode",
+					mode: modeSlug,
+				},
+				{ expectResponse: false }
+			)
 		},
-		[setMode],
+		[setMode, messageBus],
 	)
 
 	const handleSuggestionClickInRow = useCallback(
@@ -1213,8 +1285,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const handleBatchFileResponse = useCallback((response: { [key: string]: boolean }) => {
 		// Handle batch file response, e.g., for file uploads
-		vscode.postMessage({ type: "askResponse", askResponse: "objectResponse", text: JSON.stringify(response) })
-	}, [])
+		messageBus.send(
+			{
+				type: "task.askResponse",
+				askResponse: "objectResponse",
+				text: JSON.stringify(response),
+			},
+			{ expectResponse: false }
+		)
+	}, [messageBus])
 
 	const itemContent = useCallback(
 		(index: number, messageOrGroup: ClineMessage) => {
