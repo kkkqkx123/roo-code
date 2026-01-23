@@ -1,0 +1,28 @@
+{
+  "name": "@roo-code/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./types/index.ts",
+    "./types/*": "./types/*.ts",
+    "./schemas": "./schemas/index.ts",
+    "./schemas/*": "./schemas/*.ts",
+    "./utils": "./utils/index.ts",
+    "./utils/*": "./utils/*.ts",
+    "./constants": "./constants/index.ts",
+    "./constants/*": "./constants/*.ts",
+    "./config": "./config/index.ts",
+    "./config/*": "./config/*.ts",
+    "./i18n": "./i18n/index.ts",
+    "./i18n/*": "./i18n/*.ts"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -12,7 +12,7 @@ import { DEFAULT_MODES } from "@core/modes/default-modes"
 
 import { addCustomInstructions } from "../prompts/sections/custom-instructions"
 
-import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "@core/tools/tool-config"
+import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "@shared/constants/tool-config"
 
 export type Mode = string
 

@@ -1,6 +1,6 @@
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 
-import { McpTool } from "@services/mcp/mcp-types"
+import { McpTool } from "@shared/types/mcp-types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { vscode } from "@src/utils/vscode"

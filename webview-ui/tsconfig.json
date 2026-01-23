@@ -33,31 +33,49 @@
 				"./src/*"
 			],
 			"@shared/*": [
-				"../src/shared/*"
+				"../shared/*"
 			],
 			"@shared/types": [
-				"../src/shared/types"
+				"../shared/types"
 			],
 			"@shared/types/*": [
-				"../src/shared/types/*"
+				"../shared/types/*"
 			],
-			"@core/*": [
-				"../src/core/*"
+			"@shared/schemas": [
+				"../shared/schemas"
 			],
-			"@api/*": [
-				"../src/api/*"
+			"@shared/schemas/*": [
+				"../shared/schemas/*"
 			],
-			"@services/*": [
-				"../src/services/*"
+			"@shared/utils": [
+				"../shared/utils"
 			],
-			"@utils/*": [
-				"../src/utils/*"
+			"@shared/utils/*": [
+				"../shared/utils/*"
+			],
+			"@shared/constants": [
+				"../shared/constants"
+			],
+			"@shared/constants/*": [
+				"../shared/constants/*"
+			],
+			"@shared/config": [
+				"../shared/config"
+			],
+			"@shared/config/*": [
+				"../shared/config/*"
+			],
+			"@shared/i18n": [
+				"../shared/i18n"
+			],
+			"@shared/i18n/*": [
+				"../shared/i18n/*"
 			]
 		}
 	},
 	"include": [
 		"src",
-		"../src/shared",
+		"../shared",
 		"vitest.setup.ts"
 	]
 }

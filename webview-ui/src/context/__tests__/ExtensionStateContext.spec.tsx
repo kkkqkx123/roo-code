@@ -1,7 +1,7 @@
 import { render, screen, act } from "@/utils/test-utils"
 
 import { ProviderSettings, ExperimentId } from "@shared/types"
-import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
+import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@shared/constants/default-values"
 
 import { ExtensionState } from "@shared/ExtensionMessage"
 

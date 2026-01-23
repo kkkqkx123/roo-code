@@ -3,7 +3,7 @@ import { useEvent } from "react-use"
 import DynamicTextArea from "react-textarea-autosize"
 import { VolumeX, Image, WandSparkles, SendHorizontal, MessageSquareX } from "lucide-react"
 
-import { mentionRegex, mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "@utils/context-mentions"
+import { mentionRegex, mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "@shared/utils/context-mentions"
 import { Mode, getAllModes } from "@core/modes/mode-utils"
 import { ExtensionMessage } from "@shared/ExtensionMessage"
 

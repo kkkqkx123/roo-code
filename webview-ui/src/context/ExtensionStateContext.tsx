@@ -8,15 +8,15 @@ import {
 	type ExperimentId,
 	type TodoItem,
 } from "@shared/types"
-import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@core/constants/default-values"
+import { DEFAULT_CHECKPOINT_TIMEOUT_SECONDS } from "@shared/constants/default-values"
 
 import { ExtensionMessage, ExtensionState, Command } from "@shared/ExtensionMessage"
 import { findLastIndex } from "@shared/array"
-import { McpServer } from "@services/mcp/mcp-types"
-import { checkExistKey } from "@core/providers/config-utils"
+import { McpServer } from "@shared/types/mcp-types"
+import { checkExistKey } from "@shared/utils/config-utils"
 import { Mode, defaultModeSlug, defaultPrompts } from "@core/modes/mode-utils"
 import { CustomSupportPrompts } from "@core/prompts/support-prompt"
-import { experimentDefault } from "@core/experiments/experiment-utils"
+import { experimentDefault } from "@shared/config/experiment-config"
 
 import { vscode } from "@src/utils/vscode"
 import { convertTextMateToHljs } from "@src/utils/textMateToHljs"

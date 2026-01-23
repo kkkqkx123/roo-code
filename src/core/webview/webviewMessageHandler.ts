@@ -32,8 +32,8 @@ import {
 	checkoutDiffPayloadSchema,
 	checkoutRestorePayloadSchema,
 } from "../../shared/WebviewMessage"
-import { checkExistKey } from "@core/providers/config-utils"
-import { experimentDefault } from "../experiments/experiment-utils"
+import { checkExistKey } from "@shared/utils/config-utils"
+import { experimentDefault } from "@shared/config/experiment-config"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile } from "../../integrations/misc/open-file"
 import { openImage, saveImage } from "../../integrations/misc/image-handler"

@@ -12,7 +12,7 @@ import {
 	type ProviderName,
 	isProviderName,
 } from "@shared/types"
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@shared/constants/default-values"
 
 import { Mode, modes } from "@core/modes/mode-utils"
 import { buildApiHandler } from "../../api"

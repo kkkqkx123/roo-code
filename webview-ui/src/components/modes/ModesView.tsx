@@ -22,7 +22,7 @@ import {
 	findModeBySlug as findCustomModeBySlug,
 	defaultModeSlug,
 } from "@core/modes/mode-utils"
-import { TOOL_GROUPS } from "@core/tools/tool-config"
+import { TOOL_GROUPS } from "@shared/constants/tool-config"
 
 import { vscode } from "@src/utils/vscode"
 import { buildDocLink } from "@src/utils/docLinks"

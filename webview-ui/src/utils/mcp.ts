@@ -1,4 +1,4 @@
-import { McpResource, McpResourceTemplate } from "@services/mcp/mcp-types"
+import { McpResource, McpResourceTemplate } from "@shared/types/mcp-types"
 
 /**
  * Matches a URI against an array of URI templates and returns the matching template

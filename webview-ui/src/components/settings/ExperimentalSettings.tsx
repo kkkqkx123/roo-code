@@ -3,7 +3,7 @@ import { FlaskConical } from "lucide-react"
 
 import type { Experiments } from "@shared/types"
 
-import { EXPERIMENT_IDS, experimentConfigsMap } from "@core/experiments/experiment-utils"
+import { EXPERIMENT_IDS, experimentConfigsMap } from "@shared/config/experiment-config"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { cn } from "@src/lib/utils"

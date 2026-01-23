@@ -32,8 +32,8 @@ import {
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
-} from "@core/constants/default-values"
-import { isNativeProtocol } from "@core/tools/tool-utils"
+} from "@shared/constants/default-values"
+import { isNativeProtocol } from "@shared/utils/tool-utils"
 
 // api
 import { ApiHandler, buildApiHandler } from "../../api"
@@ -43,8 +43,8 @@ import { ApiStream } from "../../api/transform/stream"
 import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
 import { defaultModeSlug } from "@core/modes/mode-utils"
-import { DiffStrategy, type ToolResponse } from "@core/tools/tool-config"
-import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
+import { DiffStrategy, type ToolResponse } from "@shared/types/tool-config"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-config"
 
 // services
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"

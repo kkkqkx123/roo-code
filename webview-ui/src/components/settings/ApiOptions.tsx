@@ -13,8 +13,8 @@ import {
 	geminiDefaultModelId,
 	type ToolProtocol,
 } from "@shared/types"
-import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@core/constants/default-values"
-import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
+import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "@shared/constants/default-values"
+import { TOOL_PROTOCOL } from "@shared/utils/tool-utils"
 
 import { vscode } from "@src/utils/vscode"
 import { validateApiConfiguration } from "@src/utils/validate"
