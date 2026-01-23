@@ -2,8 +2,8 @@ import type { ClineProvider } from "../../../webview/ClineProvider"
 import type { TodoItem, ClineMessage } from "@shared/types"
 import type { Task } from "../../Task"
 import { RooCodeEventName } from "@shared/types"
-import { findLastIndex } from "../../../../shared/array"
-import { ClineApiReqInfo } from "../../../../shared/ExtensionMessage"
+import { findLastIndex } from "@shared/array"
+import { ClineApiReqInfo } from "@shared/ExtensionMessage"
 
 export interface SubtaskManagerOptions {
 	task: Task

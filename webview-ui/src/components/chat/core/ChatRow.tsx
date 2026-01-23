@@ -5,7 +5,7 @@ import deepEqual from "fast-deep-equal"
 import { VSCodeBadge } from "@vscode/webview-ui-toolkit/react"
 
 import type { ClineMessage, FollowUpData, SuggestionItem } from "@shared/types"
-import { Mode } from "@core/modes/mode-utils"
+import { Mode } from "@shared/mode-utils"
 
 import { ClineApiReqInfo, ClineAskUseMcpServer, ClineSayTool } from "@shared/ExtensionMessage"
 import { COMMAND_OUTPUT_STRING } from "@shared/utils/message-utils-messaging"

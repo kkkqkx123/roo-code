@@ -1,7 +1,7 @@
 import * as path from "path"
 import * as vscode from "vscode"
 
-import { GlobalFileNames } from "../../../shared/globalFileNames"
+import { GlobalFileNames } from "@shared/globalFileNames"
 import { getSettingsDirectoryPath } from "../../../utils/storage"
 
 export async function createModeInstructions(context: vscode.ExtensionContext | undefined): Promise<string> {

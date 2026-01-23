@@ -7,7 +7,7 @@ import { readLines } from "../../../integrations/misc/read-lines"
 import { extractTextFromFile } from "../../../integrations/misc/extract-text"
 import { parseSourceCodeDefinitionsForFile } from "../../../services/tree-sitter"
 import { isBinaryFile } from "isbinaryfile"
-import { ReadFileToolUse, ToolParamName, ToolResponse } from "../tool-config"
+import { ReadFileToolUse, ToolParamName, ToolResponse } from "@shared/types/tool-config"
 import { readFileTool } from "../ReadFileTool"
 
 // Create hoisted mocks that can be used in vi.mock factories

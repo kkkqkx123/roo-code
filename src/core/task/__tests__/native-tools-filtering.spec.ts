@@ -21,24 +21,24 @@ describe("Native Tools Filtering by Mode", () => {
 				groups: ["read", "edit", "browser", "command", "mcp"] as const,
 			}
 
-			// Import the functions we need to test
+			// Import functions we need to test
 			const { isToolAllowedForMode } = await import("../../tools/validateToolUse")
-			const { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } = await import("../../tools/tool-config")
+			const { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } = await import("@shared/constants/tool-config")
 
 			// Test architect mode - should NOT have edit tools
 			const architectAllowedTools = new Set<string>()
-			architectMode.groups.forEach((groupEntry) => {
+			architectMode.groups.forEach((groupEntry: string | [string, number]) => {
 				const groupName = typeof groupEntry === "string" ? groupEntry : groupEntry[0]
 				const toolGroup = TOOL_GROUPS[groupName]
 				if (toolGroup) {
-					toolGroup.tools.forEach((tool) => {
+					toolGroup.tools.forEach((tool: string) => {
 						if (isToolAllowedForMode(tool, "architect", [architectMode])) {
 							architectAllowedTools.add(tool)
 						}
 					})
 				}
 			})
-			ALWAYS_AVAILABLE_TOOLS.forEach((tool) => architectAllowedTools.add(tool))
+			ALWAYS_AVAILABLE_TOOLS.forEach((tool: string) => architectAllowedTools.add(tool))
 
 			// Architect should NOT have edit tools
 			expect(architectAllowedTools.has("write_to_file")).toBe(false)
@@ -54,18 +54,18 @@ describe("Native Tools Filtering by Mode", () => {
 
 			// Test code mode - SHOULD have edit tools
 			const codeAllowedTools = new Set<string>()
-			codeMode.groups.forEach((groupEntry) => {
+			codeMode.groups.forEach((groupEntry: string | [string, number]) => {
 				const groupName = typeof groupEntry === "string" ? groupEntry : groupEntry[0]
 				const toolGroup = TOOL_GROUPS[groupName]
 				if (toolGroup) {
-					toolGroup.tools.forEach((tool) => {
+					toolGroup.tools.forEach((tool: string) => {
 						if (isToolAllowedForMode(tool, "code", [codeMode])) {
 							codeAllowedTools.add(tool)
 						}
 					})
 				}
 			})
-			ALWAYS_AVAILABLE_TOOLS.forEach((tool) => codeAllowedTools.add(tool))
+			ALWAYS_AVAILABLE_TOOLS.forEach((tool: string) => codeAllowedTools.add(tool))
 
 			// Code SHOULD have edit tools
 			expect(codeAllowedTools.has("write_to_file")).toBe(true)
@@ -112,7 +112,7 @@ describe("Native Tools Filtering by Mode", () => {
 			}
 
 			const { isToolAllowedForMode } = await import("../../tools/validateToolUse")
-			const { ALWAYS_AVAILABLE_TOOLS } = await import("../../tools/tool-config")
+			const { ALWAYS_AVAILABLE_TOOLS } = await import("@shared/constants/tool-config")
 
 			// Always-available tools should work even with no groups
 			ALWAYS_AVAILABLE_TOOLS.forEach((tool) => {

@@ -162,12 +162,12 @@ export function applyModelToolCustomization(
 	const aliasRenames = new Map<string, string>()
 
 	// Apply excluded tools (remove from allowed set)
-	if (modelInfo.excludedTools && modelInfo.excludedTools.length > 0) {
-		modelInfo.excludedTools.forEach((tool) => {
-			const resolvedTool = resolveToolAlias(tool)
-			result.delete(resolvedTool)
-		})
-	}
+		if (modelInfo.excludedTools && modelInfo.excludedTools.length > 0) {
+			modelInfo.excludedTools.forEach((tool: string) => {
+				const resolvedTool = resolveToolAlias(tool)
+				result.delete(resolvedTool)
+			})
+		}
 
 	// Apply included tools (add to allowed set, but only if they belong to an allowed group)
 	if (modelInfo.includedTools && modelInfo.includedTools.length > 0) {
@@ -186,19 +186,19 @@ export function applyModelToolCustomization(
 			}
 		}
 
-		// Get the list of allowed groups for this mode
+		// Get list of allowed groups for this mode
 		const allowedGroups = new Set(
-			modeConfig.groups.map((groupEntry) => (Array.isArray(groupEntry) ? groupEntry[0] : groupEntry)),
+			modeConfig.groups.map((groupEntry: string | [string, number]) => (Array.isArray(groupEntry) ? groupEntry[0] : groupEntry)),
 		)
 
 		// Add included tools only if they belong to an allowed group
 		// If the tool was specified as an alias, track the rename
-		modelInfo.includedTools.forEach((tool) => {
+		modelInfo.includedTools.forEach((tool: string) => {
 			const resolvedTool = resolveToolAlias(tool)
 			const toolGroup = toolToGroup.get(resolvedTool)
 			if (toolGroup && allowedGroups.has(toolGroup)) {
 				result.add(resolvedTool)
-				// If the tool was specified as an alias, rename it in the API
+				// If tool was specified as an alias, rename it in the API
 				if (tool !== resolvedTool) {
 					aliasRenames.set(resolvedTool, tool)
 				}

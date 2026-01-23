@@ -1,6 +1,6 @@
 // npx vitest core/tools/__tests__/newTaskTool.spec.ts
 
-import type { AskApproval, HandleError } from "../tool-config"
+import type { AskApproval, HandleError } from "@shared/types/tool-config"
 
 // Mock vscode module
 vi.mock("vscode", () => ({
@@ -109,7 +109,7 @@ const mockCline = {
 
 // Import the class to test AFTER mocks are set up
 import { newTaskTool } from "../NewTaskTool"
-import type { ToolUse } from "../tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 import { getModeBySlug } from "@core/modes/mode-utils"
 import * as vscode from "vscode"
 
@@ -594,7 +594,7 @@ describe("newTaskTool", () => {
 			vi.mocked(vscode.workspace.getConfiguration).mockImplementation(mockGetConfiguration)
 
 			// Mutate the mocked Package.name dynamically to simulate a different build variant
-			const pkg = await import("../../../shared/package")
+			const pkg = await import("@shared/package")
 			;(pkg.Package as any).name = "roo-code-nightly"
 
 			const block: ToolUse = {

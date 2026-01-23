@@ -1,6 +1,6 @@
 import type { ClineMessage, ClineAsk } from "@shared/types"
 
-import { safeJsonParse } from "../../../../shared/safeJsonParse"
+import { safeJsonParse } from "@shared/safeJsonParse"
 
 export const COMMAND_OUTPUT_STRING = "Output:"
 

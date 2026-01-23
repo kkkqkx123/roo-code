@@ -18,7 +18,7 @@ import { combineApiRequests } from "@shared/utils/message-utils"
 import { combineCommandSequences } from "@shared/utils/message-utils-messaging"
 import { getApiMetrics } from "@shared/utils/metrics-utils"
 import { AudioType } from "@shared/schemas/MessageTypes"
-import { getAllModes } from "@core/modes/mode-utils"
+import { getAllModes } from "@shared/mode-utils"
 import { getLatestTodo } from "@shared/utils/todo-utils"
 
 import { vscode } from "@src/utils/vscode"

@@ -17,7 +17,7 @@ import { readTaskMessages } from "../task-persistence/taskMessages"
 import { saveTaskMessages } from "../task-persistence"
 import { downloadTask } from "../../integrations/misc/export-markdown"
 import { t } from "../../i18n"
-import { GlobalFileNames } from "../../shared/globalFileNames"
+import { GlobalFileNames } from "@shared/globalFileNames"
 
 interface PendingEditOperation {
 	messageTs: number

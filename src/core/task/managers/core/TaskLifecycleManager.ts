@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { detectToolProtocolFromHistory } from "../../../../utils/resolveToolProtocol"
 import { getCheckpointService } from "../../../checkpoints"
 import { formatResponse } from "../../../prompts/responses"
-import { ClineApiReqInfo } from "../../../../shared/ExtensionMessage"
+import { ClineApiReqInfo } from "@shared/ExtensionMessage"
 import { TerminalRegistry } from "../../../../integrations/terminal/TerminalRegistry"
 import { ErrorHandler } from "../../../error/ErrorHandler"
 

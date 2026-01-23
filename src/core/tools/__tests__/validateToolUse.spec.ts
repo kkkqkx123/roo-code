@@ -3,7 +3,7 @@
 import type { ModeConfig } from "@shared/types"
 
 import { modes } from "@core/modes/mode-utils"
-import { TOOL_GROUPS } from "../tool-config"
+import { TOOL_GROUPS } from "@shared/constants/tool-config"
 
 import { validateToolUse, isToolAllowedForMode } from "../validateToolUse"
 

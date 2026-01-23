@@ -6,7 +6,7 @@ import type { ClineMessage, HistoryItem, ToolProtocol } from "@shared/types"
 import { combineApiRequests } from "../task/managers/api/message-utils"
 import { combineCommandSequences } from "../task/managers/messaging/message-utils"
 import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"
-import { findLastIndex } from "../../shared/array"
+import { findLastIndex } from "@shared/array"
 import { getTaskDirectoryPath } from "../../utils/storage"
 import { t } from "../../i18n"
 
@@ -70,7 +70,7 @@ export async function taskMetadata({
 		taskMessage = messages[0] // First message is always the task say.
 
 		const lastRelevantMessage =
-			messages[findLastIndex(messages, (m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"))] ||
+			messages[findLastIndex(messages, (m: ClineMessage) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"))] ||
 			taskMessage
 
 		timestamp = lastRelevantMessage.ts

@@ -2,7 +2,7 @@
 
 import type { ToolName } from "@shared/types"
 
-import type { ToolUse } from "../tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 import { ToolRepetitionDetector } from "../ToolRepetitionDetector"
 

@@ -16,13 +16,13 @@ import {
 import { ContextProxy } from "../config/ContextProxy"
 import { getWorkspacePath } from "../../utils/path"
 import { getTheme } from "../../integrations/theme/getTheme"
-import { formatLanguage } from "../../shared/language"
-import { experimentDefault } from "@shared/config/experiment-config"
+import { formatLanguage } from "@shared/language"
+import { experimentDefault } from "@shared/config/experiment-utils"
 import { Mode, defaultModeSlug } from "@core/modes/mode-utils"
-import { EMBEDDING_MODEL_PROFILES } from "../../services/code-index/embedding-models"
+import { EMBEDDING_MODEL_PROFILES } from "@shared/config/embedding-models"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { McpHub } from "../../services/mcp/McpHub"
-import type { ExtensionState } from "../../shared/ExtensionMessage"
+import type { ExtensionState } from "@shared/ExtensionMessage"
 import type { TaskManager } from "../task/TaskManager"
 
 export class StateCoordinator {
@@ -182,6 +182,8 @@ export class StateCoordinator {
 			alwaysAllowMcp: stateValues.alwaysAllowMcp ?? false,
 			alwaysAllowModeSwitch: stateValues.alwaysAllowModeSwitch ?? false,
 			alwaysAllowSubtasks: stateValues.alwaysAllowSubtasks ?? false,
+			alwaysAllowFollowupQuestions: stateValues.alwaysAllowFollowupQuestions ?? false,
+			followupAutoApproveTimeoutMs: stateValues.followupAutoApproveTimeoutMs,
 			allowedMaxRequests: stateValues.allowedMaxRequests,
 			allowedMaxCost: stateValues.allowedMaxCost,
 			autoCondenseContext: stateValues.autoCondenseContext ?? true,
@@ -216,6 +218,7 @@ export class StateCoordinator {
 			terminalZshP10k: stateValues.terminalZshP10k ?? false,
 			terminalZdotdir: stateValues.terminalZdotdir ?? false,
 			terminalCompressProgressBar: stateValues.terminalCompressProgressBar ?? true,
+			diagnosticsEnabled: stateValues.diagnosticsEnabled ?? false,
 			mode: stateValues.mode ?? defaultModeSlug,
 			language: stateValues.language ?? formatLanguage(vscode.env.language),
 			mcpEnabled: stateValues.mcpEnabled ?? true,
@@ -285,6 +288,8 @@ export class StateCoordinator {
 			featureRoomoteControlEnabled: false,
 			claudeCodeIsAuthenticated: undefined,
 			debug: vscode.workspace.getConfiguration("coder").get<boolean>("debug", false),
+			codebaseIndexConfig: stateValues.codebaseIndexConfig,
+			dismissedUpsells: stateValues.dismissedUpsells ?? [],
 		}
 	}
 

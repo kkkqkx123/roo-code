@@ -40,11 +40,11 @@ import { ApiHandler, buildApiHandler } from "../../api"
 import { ApiStream } from "../../api/transform/stream"
 
 // shared
-import { ClineApiReqCancelReason } from "../../shared/ExtensionMessage"
-import { ClineAskResponse } from "../../shared/WebviewMessage"
+import { ClineApiReqCancelReason } from "@shared/ExtensionMessage"
+import { ClineAskResponse } from "@shared/WebviewMessage"
 import { defaultModeSlug } from "@core/modes/mode-utils"
 import { DiffStrategy, type ToolResponse } from "@shared/types/tool-config"
-import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-config"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-utils"
 
 // services
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"

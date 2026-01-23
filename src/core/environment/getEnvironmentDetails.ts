@@ -10,8 +10,8 @@ import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@shared/constants/defau
 
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 import { EXPERIMENT_IDS, experiments as Experiments } from "@shared/config/experiment-config"
-import { formatLanguage } from "../../shared/language"
-import { defaultModeSlug, getFullModeDetails } from "@core/modes/mode-utils"
+import { formatLanguage } from "@shared/i18n"
+import { defaultModeSlug, getFullModeDetails } from "@shared/mode-utils"
 import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"
 import { listFiles } from "../../services/glob/list-files"
 import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"

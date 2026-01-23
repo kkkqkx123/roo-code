@@ -5,7 +5,7 @@ import * as vscode from "vscode"
 
 import { Task } from "../../task/Task"
 import { formatResponse } from "../../prompts/responses"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../tool-config"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "@shared/types/tool-config"
 import { unescapeHtmlEntities } from "../../../utils/text-normalization"
 
 // Mock dependencies

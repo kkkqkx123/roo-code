@@ -1,5 +1,5 @@
 import { applyDiffTool } from "../MultiApplyDiffTool"
-import { EXPERIMENT_IDS } from "../../../core/experiments/experiment-utils"
+import { EXPERIMENT_IDS } from "@shared/config/experiment-utils"
 import * as fs from "fs/promises"
 import * as fileUtils from "../../../utils/fs"
 import * as pathUtils from "../../../utils/path"

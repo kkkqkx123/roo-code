@@ -1,6 +1,6 @@
 import { ApiHandler } from "../../api"
 import { ApiMessage } from "../task-persistence"
-import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "../../shared/types"
+import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
 import { summarizeConversation } from "./summarization"
 import { truncateConversation } from "./truncation"
 import { estimateTokenCount } from "./token-utils"

@@ -1,6 +1,6 @@
 import { ClineProvider } from "../webview/ClineProvider"
 import { webviewMessageHandler } from "../webview/webviewMessageHandler"
-import type { WebviewMessage } from "../../shared/WebviewMessage"
+import type { WebviewMessage } from "@shared/WebviewMessage"
 import * as vscode from "vscode"
 
 export class WebviewMessageHandlerAdapter {

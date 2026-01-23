@@ -60,7 +60,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 
 	// Check if the current mode includes the browser tool group
 	const modeConfig = getModeBySlug(mode, customModes)
-	const modeSupportsBrowser = modeConfig?.groups.some((group) => getGroupName(group) === "browser") ?? false
+	const modeSupportsBrowser = modeConfig?.groups.some((group: string) => getGroupName(group) === "browser") ?? false
 
 	// Check if model supports browser capability (images)
 	const modelSupportsBrowser = modelInfo && (modelInfo as any)?.supportsImages === true

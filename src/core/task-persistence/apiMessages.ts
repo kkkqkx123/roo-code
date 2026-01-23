@@ -4,7 +4,7 @@ import * as fs from "fs/promises"
 
 import { fileExistsAtPath } from "../../utils/fs"
 
-import { GlobalFileNames } from "../../shared/globalFileNames"
+import { GlobalFileNames } from "@shared/globalFileNames"
 import { getTaskDirectoryPath } from "../../utils/storage"
 
 // 导入类型定义

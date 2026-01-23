@@ -3,7 +3,7 @@ import { runSlashCommandTool } from "../RunSlashCommandTool"
 import { Task } from "../../task/Task"
 import { formatResponse } from "../../prompts/responses"
 import { getCommand, getCommandNames } from "../../../services/command/commands"
-import type { ToolUse } from "../tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 // Mock dependencies
 vi.mock("../../../services/command/commands", () => ({

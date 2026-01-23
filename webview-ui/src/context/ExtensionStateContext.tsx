@@ -14,8 +14,8 @@ import { ExtensionMessage, ExtensionState, Command } from "@shared/ExtensionMess
 import { findLastIndex } from "@shared/array"
 import { McpServer } from "@shared/types/mcp-types"
 import { checkExistKey } from "@shared/utils/config-utils"
-import { Mode, defaultModeSlug, defaultPrompts } from "@core/modes/mode-utils"
-import { CustomSupportPrompts } from "@core/prompts/support-prompt"
+import { Mode, defaultModeSlug, defaultPrompts } from "@shared/mode-utils"
+import { supportPrompt } from "@shared/utils/support-prompt"
 import { experimentDefault } from "@shared/config/experiment-config"
 
 import { vscode } from "@src/utils/vscode"

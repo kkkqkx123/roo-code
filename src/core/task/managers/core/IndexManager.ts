@@ -1,5 +1,5 @@
 import { safeWriteJson } from "../../../../utils/safeWriteJson"
-import { GlobalFileNames } from "../../../../shared/globalFileNames"
+import { GlobalFileNames } from "@shared/globalFileNames"
 import { getTaskDirectoryPath } from "../../../../utils/storage"
 import { fileExistsAtPath } from "../../../../utils/fs"
 import * as path from "path"

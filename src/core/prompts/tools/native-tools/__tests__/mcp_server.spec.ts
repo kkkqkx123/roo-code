@@ -1,7 +1,7 @@
 import type OpenAI from "openai"
 import { getMcpServerTools } from "../mcp_server"
 import type { McpHub } from "../../../../../services/mcp/McpHub"
-import type { McpServer, McpTool } from "@services/mcp/mcp-types"
+import type { McpServer, McpTool } from "@shared/types/mcp-types"
 
 // Helper type to access function tools
 type FunctionTool = OpenAI.Chat.ChatCompletionTool & { type: "function" }

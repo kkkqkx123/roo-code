@@ -1,4 +1,4 @@
-import { defaultModeSlug } from "@core/modes/mode-utils"
+import { defaultModeSlug } from "@shared/mode-utils"
 
 import { render, fireEvent, screen } from "@src/utils/test-utils"
 import { useExtensionState } from "@src/context/ExtensionStateContext"

@@ -7,7 +7,7 @@ import type { SystemPromptSettings } from "./types"
 
 import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelection } from "@core/modes/mode-utils"
 import { DiffStrategy } from "@shared/types/tool-config"
-import { formatLanguage } from "../../shared/language"
+import { formatLanguage } from "@shared/language"
 import { isEmpty } from "../../utils/object"
 
 import { McpHub } from "../../services/mcp/McpHub"

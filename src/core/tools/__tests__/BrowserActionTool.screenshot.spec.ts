@@ -1,6 +1,6 @@
 // Test screenshot action functionality in browser actions
 import { describe, it, expect } from "vitest"
-import { browserActions } from "../../../shared/ExtensionMessage"
+import { browserActions } from "@shared/ExtensionMessage"
 
 describe("Browser Action Screenshot", () => {
 	describe("browserActions array", () => {

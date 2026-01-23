@@ -5,7 +5,7 @@ import { formatResponse } from "../../../prompts/responses"
 import { t } from "../../../../i18n"
 import type { TaskStateManager } from "../core/TaskStateManager"
 import type { MessageManager } from "./MessageManager"
-import type { ClineAskResponse } from "../../../../shared/WebviewMessage"
+import type { ClineAskResponse } from "@shared/WebviewMessage"
 
 export interface UserInteractionManagerOptions {
 	stateManager: TaskStateManager

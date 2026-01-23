@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 
 import type { ModeConfig } from "@shared/types"
 
-import type { Mode } from "@core/modes/mode-utils"
+import type { Mode } from "@shared/mode-utils"
 
 import { ModeSelector } from "../config/ModeSelector"
 

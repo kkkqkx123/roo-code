@@ -800,7 +800,7 @@ export class ClineProvider
 
 			try {
 				const history = this.contextProxy.getValues().taskHistory ?? []
-				const taskHistoryItem = history.find((item) => item.id === task.taskId)
+				const taskHistoryItem = history.find((item: HistoryItem) => item.id === task.taskId)
 
 				if (taskHistoryItem) {
 					taskHistoryItem.mode = newMode

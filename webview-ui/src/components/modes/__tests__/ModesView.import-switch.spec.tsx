@@ -4,7 +4,7 @@ import { render, waitFor } from "@/utils/test-utils"
 import ModesView from "../ModesView"
 import { ExtensionStateContext } from "@src/context/ExtensionStateContext"
 import { vscode } from "@src/utils/vscode"
-import { defaultModeSlug } from "@core/modes/mode-utils"
+import { defaultModeSlug } from "@shared/mode-utils"
 
 // Mock vscode API
 vitest.mock("@src/utils/vscode", () => ({

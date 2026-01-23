@@ -1,7 +1,7 @@
 import type { ClineMessage } from "@shared/types"
 import type { ApiMessage } from "../../../task-persistence"
 import { readApiMessages, saveApiMessages, readTaskMessages, saveTaskMessages } from "../../../task-persistence"
-import { findLastIndex } from "../../../../shared/array"
+import { findLastIndex } from "@shared/array"
 import { restoreTodoListForTask } from "../../../tools/UpdateTodoListTool"
 import type { TaskStateManager } from "../core/TaskStateManager"
 import type { ClineProvider } from "../../../webview/ClineProvider"

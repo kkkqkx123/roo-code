@@ -12,7 +12,7 @@ import {
 	getProviderDefaultModelId,
 } from "@shared/types"
 
-import type { ModelRecord } from "@api/api-utils"
+import type { ModelRecord } from "@shared/utils/api-utils"
 import { useMemo } from "react"
 
 /**

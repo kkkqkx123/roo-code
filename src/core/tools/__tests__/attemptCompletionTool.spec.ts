@@ -1,6 +1,6 @@
 import { TodoItem } from "@shared/types"
 
-import { AttemptCompletionToolUse } from "../tool-config"
+import { AttemptCompletionToolUse } from "@shared/types/tool-config"
 
 // Mock the formatResponse module before importing the tool
 vi.mock("../../prompts/responses", () => ({

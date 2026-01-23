@@ -21,7 +21,7 @@ import {
 	getAllModes,
 	findModeBySlug as findCustomModeBySlug,
 	defaultModeSlug,
-} from "@core/modes/mode-utils"
+} from "@shared/mode-utils"
 import { TOOL_GROUPS } from "@shared/constants/tool-config"
 
 import { vscode } from "@src/utils/vscode"

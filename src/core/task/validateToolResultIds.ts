@@ -1,5 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk"
-import { findLastIndex } from "../../shared/array"
+import { findLastIndex } from "@shared/array"
 
 /**
  * Custom error class for tool result ID mismatches.
