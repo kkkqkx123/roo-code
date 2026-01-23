@@ -504,6 +504,7 @@ export const webviewMessageHandler = async (
 				)
 			}
 			break
+
 		case "customInstructions":
 			await provider.updateCustomInstructions(message.text)
 			break
@@ -515,7 +516,7 @@ export const webviewMessageHandler = async (
 		case "updateSettings":
 			if (message.updatedSettings) {
 				for (const [key, value] of Object.entries(message.updatedSettings)) {
-					let newValue = value
+					let newValue: any = value
 
 					if (key === "language") {
 						newValue = value ?? "en"

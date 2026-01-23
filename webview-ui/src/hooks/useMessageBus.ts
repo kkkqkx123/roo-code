@@ -1,5 +1,5 @@
-import { messageBusClient } from "@src/utils/MessageBusClient"
+import { typedMessageBusClient } from "@src/utils/TypedMessageBusClient"
 
 export function useMessageBus() {
-	return messageBusClient
+	return typedMessageBusClient
 }

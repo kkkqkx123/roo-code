@@ -1,14 +1,12 @@
 import type { WebviewApi } from "vscode-webview"
 
-import { WebviewMessage } from "@shared/WebviewMessage"
-
 /**
- * A utility wrapper around the acquireVsCodeApi() function, which enables
- * message passing and state management between the webview and extension
+ * A utility wrapper around acquireVsCodeApi() function, which enables
+ * message passing and state management between webview and extension
  * contexts.
  *
  * This utility also enables webview code to be run in a web browser-based
- * dev server by using native web browser features that mock the functionality
+ * dev server by using native web browser features that mock to functionality
  * enabled by acquireVsCodeApi.
  */
 class VSCodeAPIWrapper {
@@ -23,14 +21,14 @@ class VSCodeAPIWrapper {
 	}
 
 	/**
-	 * Post a message (i.e. send arbitrary data) to the owner of the webview.
+	 * Post a message (i.e. send arbitrary data) to owner of webview.
 	 *
 	 * @remarks When running webview code inside a web browser, postMessage will instead
-	 * log the given message to the console.
+	 * log given message to the console.
 	 *
-	 * @param message Arbitrary data (must be JSON serializable) to send to the extension context.
+	 * @param message Arbitrary data (must be JSON serializable) to send to extension context.
 	 */
-	public postMessage(message: WebviewMessage) {
+	public postMessage(message: any) {
 		if (this.vsCodeApi) {
 			this.vsCodeApi.postMessage(message)
 		} else {

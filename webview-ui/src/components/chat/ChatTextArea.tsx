@@ -4,7 +4,6 @@ import DynamicTextArea from "react-textarea-autosize"
 import { VolumeX, Image, WandSparkles, SendHorizontal, MessageSquareX } from "lucide-react"
 
 import { mentionRegex, mentionRegexGlobal, commandRegexGlobal, unescapeSpaces } from "@utils/context-mentions"
-import { WebviewMessage } from "@shared/WebviewMessage"
 import { Mode, getAllModes } from "@core/modes/mode-utils"
 import { ExtensionMessage } from "@shared/ExtensionMessage"
 
@@ -31,6 +30,7 @@ import { MAX_IMAGES_PER_MESSAGE } from "./ChatView"
 import ContextMenu from "./ContextMenu"
 import { IndexingStatusBadge } from "./IndexingStatusBadge"
 import { usePromptHistory } from "./hooks/usePromptHistory"
+import { MessageBuilder } from "@src/utils/MessageBuilder"
 
 interface ChatTextAreaProps {
 	inputValue: string
@@ -230,11 +230,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		// Fetch git commits when Git is selected or when typing a hash.
 		useEffect(() => {
 			if (selectedType === ContextMenuOptionType.Git || /^[a-f0-9]+$/i.test(searchQuery)) {
-				const message: WebviewMessage = {
-					type: "searchCommits",
-					query: searchQuery || "",
-				} as const
-				vscode.postMessage(message)
+				vscode.postMessage(MessageBuilder.searchCommits(searchQuery || ""))
 			}
 		}, [selectedType, searchQuery])
 
@@ -243,7 +239,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 			if (trimmedInput) {
 				setIsEnhancingPrompt(true)
-				vscode.postMessage({ type: "enhancePrompt" as const, text: trimmedInput })
+				vscode.postMessage(MessageBuilder.enhancePrompt(trimmedInput))
 			} else {
 				setInputValue(t("chat:enhancePromptDescription"))
 			}

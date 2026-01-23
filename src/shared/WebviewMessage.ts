@@ -1,3 +1,15 @@
+/**
+ * @deprecated 此文件已弃用，请使用 @shared/schemas/MessageTypes 中的类型安全消息定义
+ * 
+ * 为了获得完整的编译时类型安全和运行时验证，请迁移到新的消息系统：
+ * - 使用 @shared/schemas/MessageTypes 中的消息类型
+ * - 使用 @shared/schemas/MessageSchemas 中的 Zod Schema
+ * - 使用 @shared/schemas/SchemaRegistry 进行消息验证
+ * - 使用 webview-ui/src/utils/MessageBuilder 构建类型安全的消息
+ * - 使用 webview-ui/src/utils/TypedMessageBusClient 发送消息
+ * 
+ * 此文件保留仅用于向后兼容，将在未来版本中移除。
+ */
 import { z } from "zod"
 
 import {

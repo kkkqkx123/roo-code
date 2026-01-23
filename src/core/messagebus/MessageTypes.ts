@@ -22,6 +22,57 @@ export namespace TaskMessages {
     text?: string
     images?: string[]
   }
+
+  export interface DeleteMessageConfirm {
+    type: "task.deleteMessageConfirm"
+    messageTs: number
+    restoreCheckpoint?: boolean
+  }
+
+  export interface EditMessageConfirm {
+    type: "task.editMessageConfirm"
+    messageTs: number
+    text: string
+    restoreCheckpoint?: boolean
+    images?: string[]
+  }
+
+  export interface HumanRelayResponse {
+    type: "task.humanRelayResponse"
+    requestId: string
+    text: string
+  }
+
+  export interface HumanRelayCancel {
+    type: "task.humanRelayCancel"
+    requestId: string
+  }
+
+  // Zod schemas
+  export const deleteMessageConfirmSchema = z.object({
+    type: z.literal("task.deleteMessageConfirm"),
+    messageTs: z.number(),
+    restoreCheckpoint: z.boolean().optional()
+  })
+
+  export const editMessageConfirmSchema = z.object({
+    type: z.literal("task.editMessageConfirm"),
+    messageTs: z.number(),
+    text: z.string(),
+    restoreCheckpoint: z.boolean().optional(),
+    images: z.array(z.string()).optional()
+  })
+
+  export const humanRelayResponseSchema = z.object({
+    type: z.literal("task.humanRelayResponse"),
+    requestId: z.string(),
+    text: z.string()
+  })
+
+  export const humanRelayCancelSchema = z.object({
+    type: z.literal("task.humanRelayCancel"),
+    requestId: z.string()
+  })
 }
 
 export namespace SettingsMessages {
@@ -572,6 +623,10 @@ export type WebviewRequestMessage =
   | TaskMessages.Cancel
   | TaskMessages.Clear
   | TaskMessages.AskResponse
+  | TaskMessages.DeleteMessageConfirm
+  | TaskMessages.EditMessageConfirm
+  | TaskMessages.HumanRelayResponse
+  | TaskMessages.HumanRelayCancel
   | SettingsMessages.Get
   | SettingsMessages.Update
   | SettingsMessages.UpdateCustomInstructions

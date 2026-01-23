@@ -8,6 +8,7 @@ import { SettingsHandlers } from "./handlers/SettingsHandlers"
 import { MCPHandlers } from "./handlers/MCPHandlers"
 import { BrowserHandlers } from "./handlers/BrowserHandlers"
 import { CheckpointHandlers } from "./handlers/CheckpointHandlers"
+import { TaskMessages } from "./MessageTypes"
 import { createLogger } from "../../utils/logger"
 
 export class MessageHandlerRegistry {
@@ -55,6 +56,7 @@ export class MessageHandlerRegistry {
     this.registerTabHandlers()
     this.registerRemoteControlHandlers()
     this.registerDebugHandlers()
+    this.registerTaskMessageHandlers()
 
     console.info("[MessageHandlerRegistry] All message handlers registered successfully")
   }
@@ -580,6 +582,34 @@ export class MessageHandlerRegistry {
     this.messageBus.register("debug.downloadErrorDiagnostics", async () => {
       console.debug("[MessageHandlerRegistry] Downloading error diagnostics")
       return { type: "debug.errorDiagnosticsDownloaded", path: "" }
+    })
+  }
+
+  private registerTaskMessageHandlers(): void {
+    console.debug("[MessageHandlerRegistry] Registering task message handlers")
+
+    this.messageBus.register("task.deleteMessageConfirm", async (message) => {
+      const validatedMessage = TaskMessages.deleteMessageConfirmSchema.parse(message)
+      console.debug(`[MessageHandlerRegistry] Deleting message: ${validatedMessage.messageTs}`)
+      return await this.adapter.handle({ type: "deleteMessageConfirm", messageTs: validatedMessage.messageTs, restoreCheckpoint: validatedMessage.restoreCheckpoint })
+    })
+
+    this.messageBus.register("task.editMessageConfirm", async (message) => {
+      const validatedMessage = TaskMessages.editMessageConfirmSchema.parse(message)
+      console.debug(`[MessageHandlerRegistry] Editing message: ${validatedMessage.messageTs}`)
+      return await this.adapter.handle({ type: "editMessageConfirm", messageTs: validatedMessage.messageTs, text: validatedMessage.text, restoreCheckpoint: validatedMessage.restoreCheckpoint, images: validatedMessage.images })
+    })
+
+    this.messageBus.register("task.humanRelayResponse", async (message) => {
+      const validatedMessage = TaskMessages.humanRelayResponseSchema.parse(message)
+      console.debug(`[MessageHandlerRegistry] Human relay response: ${validatedMessage.requestId}`)
+      return await this.adapter.handle({ type: "humanRelayResponse", requestId: validatedMessage.requestId, text: validatedMessage.text })
+    })
+
+    this.messageBus.register("task.humanRelayCancel", async (message) => {
+      const validatedMessage = TaskMessages.humanRelayCancelSchema.parse(message)
+      console.debug(`[MessageHandlerRegistry] Human relay cancel: ${validatedMessage.requestId}`)
+      return await this.adapter.handle({ type: "humanRelayCancel", requestId: validatedMessage.requestId })
     })
   }
 

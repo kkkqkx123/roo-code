@@ -1,5 +1,6 @@
 import { createLogger } from "../../utils/logger"
 import type { ExtensionResponseMessage } from "./MessageTypes"
+import { schemaRegistry } from "../../shared/schemas/SchemaRegistry"
 
 export interface PendingMessage {
   message: ExtensionResponseMessage
@@ -72,6 +73,15 @@ export class MessageBus {
 
   async handle<T>(message: T): Promise<any> {
     const messageType = (message as any).type
+
+    try {
+      schemaRegistry.validate(messageType, message)
+      this.logger.debug(`Message validated: ${messageType}`)
+    } catch (error) {
+      this.logger.error(`Message validation failed for type ${messageType}:`, error)
+      throw new Error(`Invalid message format for type ${messageType}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+
     const handlers = this.handlers.get(messageType)
 
     if (!handlers || handlers.size === 0) {

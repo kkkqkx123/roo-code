@@ -17,7 +17,7 @@ import { SuggestionItem } from "@shared/types"
 import { combineApiRequests } from "@core/task/managers/api/message-utils"
 import { combineCommandSequences } from "@core/task/managers/messaging/message-utils"
 import { getApiMetrics } from "@core/task/managers/monitoring/metrics-utils"
-import { AudioType } from "@shared/WebviewMessage"
+import { AudioType } from "@shared/schemas/MessageTypes"
 import { getAllModes } from "@core/modes/mode-utils"
 import { getLatestTodo } from "@core/task/managers/todo-utils"
 
@@ -26,6 +26,7 @@ import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
 import { useMessageBus } from "@src/hooks/useMessageBus"
+import { MessageBuilder } from "@src/utils/MessageBuilder"
 import RooHero from "@src/components/welcome/RooHero"
 import RooTips from "@src/components/welcome/RooTips"
 import { StandardTooltip, Button } from "@src/components/ui"
@@ -179,7 +180,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		// Only send cancel if there's actual input (user is typing)
 		// and we have a pending follow-up question
 		if (isFollowUpAutoApprovalPaused) {
-			vscode.postMessage({ type: "cancelAutoApproval" })
+			vscode.postMessage(MessageBuilder.cancelAutoApproval())
 		}
 	}, [isFollowUpAutoApprovalPaused])
 
@@ -226,7 +227,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	)
 
 	function playTts(text: string) {
-		messageBus.send({ type: "audio.playTTS", text }, { expectResponse: false })
+		messageBus.send(MessageBuilder.playTTS(text), { expectResponse: false })
 	}
 
 	useDeepCompareEffect(() => {
@@ -577,15 +578,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						case "resume_task":
 						case "resume_completed_task":
 						case "mistake_limit_reached":
-							messageBus.send(
-								{
-									type: "task.askResponse",
-									askResponse: "messageResponse",
-									text,
-									images,
-								},
-								{ expectResponse: false }
-							)
+							messageBus.send(MessageBuilder.askResponse("messageResponse", text, images), { expectResponse: false })
 							break
 					}
 
@@ -600,14 +593,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				if (sendingDisabled || isStreaming || messageQueue.length > 0) {
 					try {
 						console.log("queueMessage", text, images)
-						messageBus.send(
-							{
-								type: "messageQueue.queueMessage",
-								text,
-								images,
-							},
-							{ expectResponse: false }
-						)
+						messageBus.send(MessageBuilder.queueMessage(text, images), { expectResponse: false })
 						setInputValue("")
 						setSelectedImages([])
 					} catch (error) {
@@ -623,24 +609,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				userRespondedRef.current = true
 
 				if (messagesRef.current.length === 0) {
-					messageBus.send(
-						{
-							type: "task.create",
-							text,
-							images,
-						},
-						{ expectResponse: false }
-					)
+					messageBus.send(MessageBuilder.createTask(text, images), { expectResponse: false })
 				} else {
-					messageBus.send(
-						{
-							type: "task.askResponse",
-							askResponse: "messageResponse",
-							text,
-							images,
-						},
-						{ expectResponse: false }
-					)
+					messageBus.send(MessageBuilder.askResponse("messageResponse", text, images), { expectResponse: false })
 				}
 
 				handleChatReset()
@@ -664,7 +635,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		[inputValue, selectedImages],
 	)
 
-	const startNewTask = useCallback(() => messageBus.send({ type: "task.clear" }, { expectResponse: false }), [messageBus])
+	const startNewTask = useCallback(() => messageBus.send(MessageBuilder.clearTask(), { expectResponse: false }), [messageBus])
 
 	// This logic depends on the useEffect[messages] above to set clineAsk,
 	// after which buttons are shown and we then send an askResponse to the
@@ -685,26 +656,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "mistake_limit_reached":
 					// Only send text/images if they exist
 					if (trimmedInput || (images && images.length > 0)) {
-						messageBus.send(
-							{
-								type: "task.askResponse",
-								askResponse: "yesButtonClicked",
-								text: trimmedInput,
-								images: images,
-							},
-							{ expectResponse: false }
-						)
+						messageBus.send(MessageBuilder.askResponse("yesButtonClicked", trimmedInput, images), { expectResponse: false })
 						// Clear input state after sending
 						setInputValue("")
 						setSelectedImages([])
 					} else {
-						messageBus.send(
-							{
-								type: "task.askResponse",
-								askResponse: "yesButtonClicked",
-							},
-							{ expectResponse: false }
-						)
+						messageBus.send(MessageBuilder.askResponse("yesButtonClicked"), { expectResponse: false })
 					}
 					break
 				case "resume_task":
@@ -720,26 +677,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					} else {
 						// Only send text/images if they exist
 						if (trimmedInput || (images && images.length > 0)) {
-							messageBus.send(
-								{
-									type: "task.askResponse",
-									askResponse: "yesButtonClicked",
-									text: trimmedInput,
-									images: images,
-								},
-								{ expectResponse: false }
-							)
+							messageBus.send(MessageBuilder.askResponse("yesButtonClicked", trimmedInput, images), { expectResponse: false })
 							// Clear input state after sending
 							setInputValue("")
 							setSelectedImages([])
 						} else {
-							messageBus.send(
-								{
-									type: "task.askResponse",
-									askResponse: "yesButtonClicked",
-								},
-								{ expectResponse: false }
-							)
+							messageBus.send(MessageBuilder.askResponse("yesButtonClicked"), { expectResponse: false })
 						}
 					}
 					break
@@ -749,13 +692,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					startNewTask()
 					break
 				case "command_output":
-					messageBus.send(
-						{
-							type: "terminal.operation",
-							terminalOperation: "continue",
-						},
-						{ expectResponse: false }
-					)
+					messageBus.send(MessageBuilder.terminalOperation("continue"), { expectResponse: false })
 					break
 			}
 
@@ -774,7 +711,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			const trimmedInput = text?.trim()
 
 			if (isStreaming) {
-				vscode.postMessage({ type: "cancelTask" })
+				vscode.postMessage(MessageBuilder.cancelTask(""))
 				setDidClickCancel(true)
 				return
 			}
@@ -791,39 +728,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "use_mcp_server":
 					// Only send text/images if they exist
 					if (trimmedInput || (images && images.length > 0)) {
-						messageBus.send(
-							{
-								type: "task.askResponse",
-								askResponse: "noButtonClicked",
-								text: trimmedInput,
-								images: images,
-							},
-							{ expectResponse: false }
-						)
+						messageBus.send(MessageBuilder.askResponse("noButtonClicked", trimmedInput, images), { expectResponse: false })
 						// Clear input state after sending
 						setInputValue("")
 						setSelectedImages([])
 					} else {
 						// Responds to the API with a "This operation failed" and lets it try again
-						messageBus.send(
-							{
-								type: "task.askResponse",
-								askResponse: "noButtonClicked",
-							},
-							{ expectResponse: false }
-						)
+						messageBus.send(MessageBuilder.askResponse("noButtonClicked"), { expectResponse: false })
 					}
 					break
-				case "command_output":
-					messageBus.send(
-						{
-							type: "terminal.operation",
-							terminalOperation: "abort",
-						},
-						{ expectResponse: false }
-					)
-					break
 			}
+
 			setSendingDisabled(true)
 			setClineAsk(undefined)
 			setEnableButtons(false)
@@ -833,7 +748,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const { info: model } = useSelectedModel(apiConfiguration)
 
-	const selectImages = useCallback(() => messageBus.send({ type: "file.selectImages" }, { expectResponse: false }), [messageBus])
+	const selectImages = useCallback(() => messageBus.send(MessageBuilder.selectImages(), { expectResponse: false }), [messageBus])
 
 	const shouldDisableImages = !model?.supportsImages || selectedImages.length >= MAX_IMAGES_PER_MESSAGE
 
@@ -1233,13 +1148,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			setMode(modeSlug)
 
 			// Send the mode switch message.
-			messageBus.send(
-				{
-					type: "settings.updateMode",
-					mode: modeSlug,
-				},
-				{ expectResponse: false }
-			)
+			messageBus.send(MessageBuilder.updateMode(modeSlug), { expectResponse: false })
 		},
 		[setMode, messageBus],
 	)
@@ -1285,14 +1194,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const handleBatchFileResponse = useCallback((response: { [key: string]: boolean }) => {
 		// Handle batch file response, e.g., for file uploads
-		messageBus.send(
-			{
-				type: "task.askResponse",
-				askResponse: "objectResponse",
-				text: JSON.stringify(response),
-			},
-			{ expectResponse: false }
-		)
+		messageBus.send(MessageBuilder.askResponse("objectResponse", JSON.stringify(response)), { expectResponse: false })
 	}, [messageBus])
 
 	const itemContent = useCallback(
@@ -1439,7 +1341,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		}
 		setIsCondensing(true)
 		setSendingDisabled(true)
-		vscode.postMessage({ type: "condenseTaskContextRequest", text: taskId })
+		vscode.postMessage(MessageBuilder.condenseTaskContextRequest(taskId))
 	}
 
 	const areButtonsVisible = showScrollToBottom || primaryButtonText || secondaryButtonText || isStreaming
@@ -1616,15 +1518,16 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				queue={messageQueue}
 				onRemove={(index) => {
 					if (messageQueue[index]) {
-						vscode.postMessage({ type: "removeQueuedMessage", text: messageQueue[index].id })
+						vscode.postMessage(MessageBuilder.removeQueuedMessage(messageQueue[index].id))
 					}
 				}}
 				onUpdate={(index, newText) => {
 					if (messageQueue[index]) {
-						vscode.postMessage({
-							type: "editQueuedMessage",
-							payload: { id: messageQueue[index].id, text: newText, images: messageQueue[index].images },
-						})
+						vscode.postMessage(MessageBuilder.editQueuedMessage({
+							id: messageQueue[index].id,
+							text: newText,
+							images: messageQueue[index].images,
+						}))
 					}
 				}}
 			/>

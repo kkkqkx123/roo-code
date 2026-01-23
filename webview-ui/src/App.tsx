@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ExtensionMessage } from "@shared/ExtensionMessage"
 import TranslationProvider from "./i18n/TranslationContext"
 
-import { vscode } from "./utils/vscode"
+import { typedMessageBusClient } from "./utils/TypedMessageBusClient"
+import { MessageBuilder } from "./utils/MessageBuilder"
 import { initializeSourceMaps, exposeSourceMapsForDebugging } from "./utils/sourceMapInitializer"
 import { ExtensionStateContextProvider, useExtensionState } from "./context/ExtensionStateContext"
 import ChatView, { ChatViewRef } from "./components/chat/ChatView"
@@ -162,12 +163,12 @@ const App = () => {
 	useEffect(() => {
 		if (shouldShowAnnouncement && tab === "chat") {
 			setShowAnnouncement(true)
-			vscode.postMessage({ type: "didShowAnnouncement" })
+			void typedMessageBusClient.send(MessageBuilder.didShowAnnouncement(), { expectResponse: false })
 		}
 	}, [shouldShowAnnouncement, tab])
 
 	// Tell the extension that we are ready to receive messages.
-	useEffect(() => vscode.postMessage({ type: "webviewDidLaunch" }), [])
+	useEffect(() => void typedMessageBusClient.send(MessageBuilder.webviewDidLaunch(), { expectResponse: false }), [])
 
 	// Initialize source map support for better error reporting
 	useEffect(() => {
@@ -188,7 +189,7 @@ const App = () => {
 		useCallback(() => {
 			// Only send focus request if we're in editor (tab) mode, not sidebar
 			if (renderContext === "editor") {
-				vscode.postMessage({ type: "focusPanelRequest" })
+				void typedMessageBusClient.send(MessageBuilder.focusPanelRequest(), { expectResponse: false })
 			}
 		}, [renderContext]),
 	)
@@ -218,8 +219,8 @@ const App = () => {
 				requestId={humanRelayDialogState.requestId}
 				promptText={humanRelayDialogState.promptText}
 				onClose={() => setHumanRelayDialogState((prev) => ({ ...prev, isOpen: false }))}
-				onSubmit={(requestId, text) => vscode.postMessage({ type: "humanRelayResponse", requestId, text })}
-				onCancel={(requestId) => vscode.postMessage({ type: "humanRelayCancel", requestId })}
+				onSubmit={(requestId, text) => void typedMessageBusClient.send(MessageBuilder.humanRelayResponse(requestId, text), { expectResponse: false })}
+				onCancel={(requestId) => void typedMessageBusClient.send(MessageBuilder.humanRelayCancel(requestId), { expectResponse: false })}
 			/>
 			{deleteMessageDialogState.hasCheckpoint ? (
 				<MemoizedCheckpointRestoreDialog
@@ -228,11 +229,7 @@ const App = () => {
 					hasCheckpoint={deleteMessageDialogState.hasCheckpoint}
 					onOpenChange={(open: boolean) => setDeleteMessageDialogState((prev) => ({ ...prev, isOpen: open }))}
 					onConfirm={(restoreCheckpoint: boolean) => {
-						vscode.postMessage({
-							type: "deleteMessageConfirm",
-							messageTs: deleteMessageDialogState.messageTs,
-							restoreCheckpoint,
-						})
+						void typedMessageBusClient.send(MessageBuilder.deleteMessageConfirm(deleteMessageDialogState.messageTs, restoreCheckpoint), { expectResponse: false })
 						setDeleteMessageDialogState((prev) => ({ ...prev, isOpen: false }))
 					}}
 				/>
@@ -241,10 +238,7 @@ const App = () => {
 					open={deleteMessageDialogState.isOpen}
 					onOpenChange={(open: boolean) => setDeleteMessageDialogState((prev) => ({ ...prev, isOpen: open }))}
 					onConfirm={() => {
-						vscode.postMessage({
-							type: "deleteMessageConfirm",
-							messageTs: deleteMessageDialogState.messageTs,
-						})
+						void typedMessageBusClient.send(MessageBuilder.deleteMessageConfirm(deleteMessageDialogState.messageTs), { expectResponse: false })
 						setDeleteMessageDialogState((prev) => ({ ...prev, isOpen: false }))
 					}}
 				/>
@@ -256,12 +250,7 @@ const App = () => {
 					hasCheckpoint={editMessageDialogState.hasCheckpoint}
 					onOpenChange={(open: boolean) => setEditMessageDialogState((prev) => ({ ...prev, isOpen: open }))}
 					onConfirm={(restoreCheckpoint: boolean) => {
-						vscode.postMessage({
-							type: "editMessageConfirm",
-							messageTs: editMessageDialogState.messageTs,
-							text: editMessageDialogState.text,
-							restoreCheckpoint,
-						})
+						void typedMessageBusClient.send(MessageBuilder.editMessageConfirm(editMessageDialogState.messageTs, editMessageDialogState.text, restoreCheckpoint, editMessageDialogState.images), { expectResponse: false })
 						setEditMessageDialogState((prev) => ({ ...prev, isOpen: false }))
 					}}
 				/>
@@ -270,12 +259,7 @@ const App = () => {
 					open={editMessageDialogState.isOpen}
 					onOpenChange={(open: boolean) => setEditMessageDialogState((prev) => ({ ...prev, isOpen: open }))}
 					onConfirm={() => {
-						vscode.postMessage({
-							type: "editMessageConfirm",
-							messageTs: editMessageDialogState.messageTs,
-							text: editMessageDialogState.text,
-							images: editMessageDialogState.images,
-						})
+						void typedMessageBusClient.send(MessageBuilder.editMessageConfirm(editMessageDialogState.messageTs, editMessageDialogState.text, undefined, editMessageDialogState.images), { expectResponse: false })
 						setEditMessageDialogState((prev) => ({ ...prev, isOpen: false }))
 					}}
 				/>
