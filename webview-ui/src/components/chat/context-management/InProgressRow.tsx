@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import { ProgressIndicator } from "../ProgressIndicator"
+import { ProgressIndicator } from "../ui/ProgressIndicator"
 
 interface InProgressRowProps {
 	eventType: "condense_context" | "sliding_window_truncation"

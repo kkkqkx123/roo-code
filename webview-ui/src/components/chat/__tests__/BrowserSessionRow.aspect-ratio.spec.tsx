@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react"
 import React from "react"
-import BrowserSessionRow from "../BrowserSessionRow"
+import BrowserSessionRow from "../browser/BrowserSessionRow"
 import { ExtensionStateContext } from "@src/context/ExtensionStateContext"
 import { TooltipProvider } from "@src/components/ui/tooltip"
 

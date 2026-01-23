@@ -5,7 +5,7 @@ import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { vscode } from "@src/utils/vscode"
 import * as pathMentions from "@src/utils/path-mentions"
 
-import { ChatTextArea } from "../ChatTextArea"
+import { ChatTextArea } from "../core/ChatTextArea"
 
 vi.mock("@src/utils/vscode", () => ({
 	vscode: {

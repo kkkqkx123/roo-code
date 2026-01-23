@@ -5,9 +5,9 @@ import { QueuedMessage } from "@shared/types"
 
 import { Button } from "@src/components/ui"
 
-import Thumbnails from "../common/Thumbnails"
+import Thumbnails from "../../common/Thumbnails"
 
-import { Mention } from "./Mention"
+import { Mention } from "../mcp/Mention"
 
 interface QueuedMessagesProps {
 	queue: QueuedMessage[]

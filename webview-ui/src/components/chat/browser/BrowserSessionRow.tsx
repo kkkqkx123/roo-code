@@ -9,8 +9,8 @@ import { BrowserAction, BrowserActionResult, ClineSayBrowserAction } from "@shar
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 
-import CodeBlock from "../common/CodeBlock"
-import { ProgressIndicator } from "./ProgressIndicator"
+import CodeBlock from "../../common/CodeBlock"
+import { ProgressIndicator } from "../ui/ProgressIndicator"
 import { Button, StandardTooltip } from "@src/components/ui"
 import { getViewportCoordinate as getViewportCoordinateShared, prettyKey } from "@core/webview/browser-utils"
 import {
@@ -166,7 +166,7 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 		const extensionState = useExtensionState()
 		browserViewportSize = extensionState.browserViewportSize || "900x600"
 		isBrowserSessionActive = extensionState.isBrowserSessionActive || false
-	} catch (_e) {
+	} catch {
 		// Not in ExtensionStateContext, use props
 	}
 

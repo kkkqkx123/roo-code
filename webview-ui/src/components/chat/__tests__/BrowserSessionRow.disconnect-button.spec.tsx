@@ -1,6 +1,6 @@
 import React from "react"
 import { render, screen } from "@testing-library/react"
-import BrowserSessionRow from "../BrowserSessionRow"
+import BrowserSessionRow from "../browser/BrowserSessionRow"
 import { ExtensionStateContext } from "@src/context/ExtensionStateContext"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 

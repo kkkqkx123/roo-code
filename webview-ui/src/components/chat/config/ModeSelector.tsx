@@ -13,7 +13,7 @@ import { useAppTranslation } from "@/i18n/TranslationContext"
 import { useRooPortal } from "@/components/ui/hooks/useRooPortal"
 import { Popover, PopoverContent, PopoverTrigger, StandardTooltip } from "@/components/ui"
 
-import { IconButton } from "./IconButton"
+import { IconButton } from "../ui/common/IconButton"
 
 const SEARCH_THRESHOLD = 6
 

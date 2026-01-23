@@ -4,7 +4,7 @@ import React from "react"
 import { render, screen, fireEvent } from "@/utils/test-utils"
 import { vi } from "vitest"
 
-import { CheckpointRestoreDialog } from "../CheckpointRestoreDialog"
+import { CheckpointRestoreDialog } from "../checkpoints/CheckpointRestoreDialog"
 
 // Mock the translation context
 vi.mock("@src/i18n/TranslationContext", () => ({

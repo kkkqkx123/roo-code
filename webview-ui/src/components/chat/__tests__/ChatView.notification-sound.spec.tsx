@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { ExtensionStateContextProvider } from "@src/context/ExtensionStateContext"
 
-import ChatView, { ChatViewProps } from "../ChatView"
+import ChatView, { ChatViewProps } from "../core/ChatView"
 
 // Define minimal types needed for testing
 interface ClineMessage {
@@ -72,7 +72,6 @@ vi.mock("../../common/VersionIndicator", () => ({
 
 vi.mock("../Announcement", () => ({
 	default: function MockAnnouncement({ hideAnnouncement }: { hideAnnouncement: () => void }) {
-		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		const React = require("react")
 		return React.createElement(
 			"div",
@@ -171,7 +170,6 @@ const mockInputRef = React.createRef<HTMLInputElement>()
 const mockFocus = vi.fn()
 
 vi.mock("../ChatTextArea", () => {
-	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const mockReact = require("react")
 
 	const ChatTextAreaComponent = mockReact.forwardRef(function MockChatTextArea(

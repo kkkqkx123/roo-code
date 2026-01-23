@@ -103,8 +103,7 @@ import type {
   RemoteControlSetTaskSyncEnabled,
   DebugOpenDebugApiHistory,
   DebugOpenDebugUiHistory,
-  DebugDownloadErrorDiagnostics,
-  WebviewRequestMessage
+  DebugDownloadErrorDiagnostics
 } from "@shared/schemas/MessageTypes"
 
 export class MessageBuilder {

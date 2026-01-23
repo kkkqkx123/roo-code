@@ -1,5 +1,5 @@
 import React, { memo, useState } from "react"
-import CodeAccordian from "../common/CodeAccordian"
+import CodeAccordian from "../../common/CodeAccordian"
 
 interface FileDiff {
 	path: string

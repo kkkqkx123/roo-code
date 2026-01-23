@@ -8,7 +8,7 @@ import { useAppTranslation } from "@/i18n/TranslationContext"
 import { vscode } from "@/utils/vscode"
 import { Button } from "@/components/ui"
 
-import { IconButton } from "./IconButton"
+import { IconButton } from "../ui/common/IconButton"
 
 interface ApiConfigSelectorProps {
 	value: string

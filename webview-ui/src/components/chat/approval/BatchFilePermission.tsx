@@ -1,9 +1,9 @@
 import { memo } from "react"
 
-import { ToolUseBlock, ToolUseBlockHeader } from "../common/ToolUseBlock"
+import { ToolUseBlock, ToolUseBlockHeader } from "../../common/ToolUseBlock"
 import { vscode } from "@src/utils/vscode"
 import { formatPathTooltip } from "@src/utils/formatPathTooltip"
-import { PathTooltip } from "../ui/PathTooltip"
+import { PathTooltip } from "../../ui/PathTooltip"
 
 interface FilePermissionItem {
 	path: string

@@ -31,16 +31,16 @@ import RooHero from "@src/components/welcome/RooHero"
 import RooTips from "@src/components/welcome/RooTips"
 import { StandardTooltip, Button } from "@src/components/ui"
 
-import VersionIndicator from "../common/VersionIndicator"
-import HistoryPreview from "../history/HistoryPreview"
-import Announcement from "./Announcement"
-import BrowserActionRow from "./BrowserActionRow"
-import BrowserSessionStatusRow from "./BrowserSessionStatusRow"
+import VersionIndicator from "../../common/VersionIndicator"
+import HistoryPreview from "../../history/HistoryPreview"
+import Announcement from "../ui/Announcement"
+import BrowserActionRow from "../browser/BrowserActionRow"
+import BrowserSessionStatusRow from "../browser/BrowserSessionStatusRow"
 import ChatRow from "./ChatRow"
 import { ChatTextArea } from "./ChatTextArea"
-import TaskHeader from "./TaskHeader"
-import SystemPromptWarning from "./SystemPromptWarning"
-import { CheckpointWarning } from "./CheckpointWarning"
+import TaskHeader from "../task/TaskHeader"
+import SystemPromptWarning from "../warning/SystemPromptWarning"
+import { CheckpointWarning } from "../checkpoints/CheckpointWarning"
 import { QueuedMessages } from "./QueuedMessages"
 
 export interface ChatViewProps {
@@ -226,9 +226,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		[soundEnabled, playNotification, playCelebration, playProgressLoop],
 	)
 
-	function playTts(text: string) {
+	const playTts = useCallback((text: string) => {
 		messageBus.send(MessageBuilder.playTTS(text), { expectResponse: false })
-	}
+	}, [messageBus])
 
 	useDeepCompareEffect(() => {
 		// if last message is an ask, show user ask UI
@@ -998,7 +998,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 		// Update previous value.
 		setWasStreaming(isStreaming)
-	}, [isStreaming, lastMessage, wasStreaming, messages.length])
+	}, [isStreaming, lastMessage, wasStreaming, messages.length, playTts])
 
 	// Compute current browser session messages for the top banner (not grouped into chat stream)
 	// Find the FIRST browser session from the beginning to show ALL sessions
@@ -1251,7 +1251,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							let tool: any = {}
 							try {
 								tool = JSON.parse(messageOrGroup.text || "{}")
-							} catch (_) {
+							} catch {
 								if (messageOrGroup.text?.includes("updateTodoList")) {
 									tool = { tool: "updateTodoList" }
 								}

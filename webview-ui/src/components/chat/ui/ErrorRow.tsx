@@ -5,9 +5,9 @@ import { BookOpenText, MessageCircleWarning, Copy, Check, Microscope } from "luc
 
 import { useCopyToClipboard } from "@src/utils/clipboard"
 import { vscode } from "@src/utils/vscode"
-import CodeBlock from "../common/CodeBlock"
+import CodeBlock from "../../common/CodeBlock"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@src/components/ui/dialog"
-import { Button } from "../ui"
+import { Button } from "@src/components/ui"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
 

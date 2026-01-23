@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 
 import type { Command } from "@shared/ExtensionMessage"
 
-import { SlashCommandItemSimple } from "../SlashCommandItemSimple"
+import { SlashCommandItemSimple } from "../slash/SlashCommandItemSimple"
 
 describe("SlashCommandItemSimple", () => {
 	const mockCommand: Command = {

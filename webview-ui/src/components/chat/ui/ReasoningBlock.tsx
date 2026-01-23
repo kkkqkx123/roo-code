@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 
-import MarkdownBlock from "../common/MarkdownBlock"
+import MarkdownBlock from "../../common/MarkdownBlock"
 import { Lightbulb, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 

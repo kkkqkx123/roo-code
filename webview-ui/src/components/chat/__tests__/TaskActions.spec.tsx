@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 import { vscode } from "@/utils/vscode"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 
-import { TaskActions } from "../TaskActions"
+import { TaskActions } from "../task/TaskActions"
 
 // Mock scrollIntoView for JSDOM
 Object.defineProperty(Element.prototype, "scrollIntoView", {

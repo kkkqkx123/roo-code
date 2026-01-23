@@ -1,7 +1,7 @@
 import React from "react"
 import { render, screen, fireEvent, within } from "@testing-library/react"
 
-import { CommandPatternSelector } from "../CommandPatternSelector"
+import { CommandPatternSelector } from "../command/CommandPatternSelector"
 import { TooltipProvider } from "../../../components/ui/tooltip"
 
 // Mock react-i18next

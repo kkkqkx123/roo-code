@@ -3,7 +3,7 @@
 import { render, screen, fireEvent } from "@/utils/test-utils"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-import TaskHeader from "@src/components/chat/TaskHeader"
+import TaskHeader from "@src/components/chat/task/TaskHeader"
 
 // Mock formatLargeNumber function
 vi.mock("@/utils/format", () => ({
@@ -24,8 +24,8 @@ vi.mock("@src/context/ExtensionStateContext", () => ({
 }))
 
 // Mock highlighting function to avoid JSX parsing issues in tests
-vi.mock("@src/components/chat/TaskHeader", async () => {
-	const originalModule = await vi.importActual("@src/components/chat/TaskHeader")
+vi.mock("@src/components/chat/task/TaskHeader", async () => {
+	const originalModule = await vi.importActual("@src/components/chat/task/TaskHeader")
 
 	return {
 		...originalModule,

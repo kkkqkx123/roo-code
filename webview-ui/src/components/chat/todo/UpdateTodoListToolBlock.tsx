@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
-import { ToolUseBlock, ToolUseBlockHeader } from "../common/ToolUseBlock"
-import MarkdownBlock from "../common/MarkdownBlock"
+import { ToolUseBlock, ToolUseBlockHeader } from "../../common/ToolUseBlock"
+import MarkdownBlock from "../../common/MarkdownBlock"
 
 interface TodoItem {
 	id?: string

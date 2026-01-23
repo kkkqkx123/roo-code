@@ -2,7 +2,7 @@ import React from "react"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 
-import BrowserSessionRow from "../BrowserSessionRow"
+import BrowserSessionRow from "../browser/BrowserSessionRow"
 
 // Mock ExtensionStateContext so BrowserSessionRow falls back to props
 vi.mock("@src/context/ExtensionStateContext", () => ({
@@ -23,7 +23,7 @@ vi.mock("react-i18next", () => ({
 }))
 
 // Replace ProgressIndicator with a simple test marker
-vi.mock("../ProgressIndicator", () => ({
+vi.mock("../ui/ProgressIndicator", () => ({
 	ProgressIndicator: () => <div data-testid="browser-session-spinner" />,
 }))
 

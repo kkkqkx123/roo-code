@@ -16,7 +16,7 @@ import { useRooPortal } from "@/components/ui/hooks/useRooPortal"
 
 import { Popover, PopoverContent, PopoverTrigger, StandardTooltip, ToggleSwitch, Button } from "@/components/ui"
 
-import { AutoApproveSetting, autoApproveSettingsConfig } from "../settings/AutoApproveToggle"
+import { AutoApproveSetting, autoApproveSettingsConfig } from "@src/components/settings/AutoApproveToggle"
 
 interface AutoApproveDropdownProps {
 	disabled?: boolean

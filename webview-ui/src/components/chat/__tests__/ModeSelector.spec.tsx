@@ -4,7 +4,7 @@ import type { ModeConfig } from "@shared/types"
 
 import type { Mode } from "@core/modes/mode-utils"
 
-import { ModeSelector } from "../ModeSelector"
+import { ModeSelector } from "../config/ModeSelector"
 
 vi.mock("@/utils/vscode", () => ({
 	vscode: {

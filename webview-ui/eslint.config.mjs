@@ -1,46 +1,59 @@
-import { reactConfig } from "@roo-code/config-eslint/react"
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import globals from 'globals';
 
-/** @type {import("eslint").Linter.Config} */
 export default [
-	...reactConfig,
+	eslint.configs.recommended,
+	...tseslint.configs.recommended,
 	{
+		files: ['**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}'],
+		...reactPlugin.configs.flat.recommended,
+		...reactPlugin.configs.flat['jsx-runtime'],
+		plugins: {
+			'react-hooks': reactHooksPlugin,
+		},
+		languageOptions: {
+			...reactPlugin.configs.flat.recommended.languageOptions,
+			globals: {
+				...globals.browser,
+			},
+		},
+		settings: {
+			react: {
+				version: 'detect',
+			},
+		},
 		rules: {
-			"@typescript-eslint/no-unused-vars": [
-				"error",
+			...reactHooksPlugin.configs.recommended.rules,
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unused-vars': [
+				'error',
 				{
-					args: "all",
+					argsIgnorePattern: '^_',
+					varsIgnorePattern: '^_',
 					ignoreRestSiblings: true,
-					varsIgnorePattern: "^_",
-					argsIgnorePattern: "^_",
-					caughtErrorsIgnorePattern: "^_",
 				},
 			],
-			"@typescript-eslint/no-explicit-any": "off",
-			"react/prop-types": "off",
-			"react/display-name": "off",
+			'no-case-declarations': 'off',
 		},
 	},
 	{
-		files: ["src/components/chat/ChatRow.tsx", "src/components/settings/ModelInfoView.tsx"],
+		files: ['src/components/ui/command.tsx'],
 		rules: {
-			"react/jsx-key": "off",
+			'react/no-unknown-property': 'off',
 		},
 	},
 	{
-		files: [
-			"src/components/chat/ChatRow.tsx",
-			"src/components/chat/ChatView.tsx",
-			"src/components/chat/BrowserSessionRow.tsx",
-			"src/components/history/useTaskSearch.ts",
-		],
+		files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+		languageOptions: {
+			globals: {
+				...globals.vitest,
+			},
+		},
 		rules: {
-			"no-case-declarations": "off",
+			'@typescript-eslint/no-require-imports': 'off',
 		},
 	},
-	{
-		files: ["src/__mocks__/**/*.js"],
-		rules: {
-			"no-undef": "off",
-		},
-	},
-]
+];

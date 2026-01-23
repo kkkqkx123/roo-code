@@ -23,14 +23,14 @@ import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@/components/ui/hooks/useSelectedModel"
 import { vscode } from "@src/utils/vscode"
 
-import Thumbnails from "../common/Thumbnails"
-import DismissibleUpsell from "../common/DismissibleUpsell"
+import Thumbnails from "../../common/Thumbnails"
+import DismissibleUpsell from "../../common/DismissibleUpsell"
 
 import { TaskActions } from "./TaskActions"
 import { ContextWindowProgress } from "./ContextWindowProgress"
-import { Mention } from "./Mention"
-import { TodoListDisplay } from "./TodoListDisplay"
-import { LucideIconButton } from "./LucideIconButton"
+import { Mention } from "../mcp/Mention"
+import { TodoListDisplay } from "../todo/TodoListDisplay"
+import { LucideIconButton } from "../ui/common/LucideIconButton"
 
 export interface TaskHeaderProps {
 	task: ClineMessage

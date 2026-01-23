@@ -2,7 +2,7 @@ import React from "react"
 import { render, screen } from "@/utils/test-utils"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ExtensionStateContextProvider } from "@src/context/ExtensionStateContext"
-import { ChatRowContent } from "../ChatRow"
+import { ChatRowContent } from "../core/ChatRow"
 
 // Mock i18n
 vi.mock("react-i18next", () => ({

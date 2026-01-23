@@ -10,7 +10,7 @@ import type { IndexingStatus, IndexingStatusUpdateMessage, ConfigUpgradeStatusUp
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { PopoverTrigger, StandardTooltip, Button } from "@src/components/ui"
 
-import { CodeIndexPopover } from "./CodeIndexPopover"
+import { CodeIndexPopover } from "../search/CodeIndexPopover"
 
 interface IndexingStatusBadgeProps {
 	className?: string

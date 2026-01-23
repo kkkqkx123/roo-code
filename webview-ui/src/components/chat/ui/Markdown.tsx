@@ -4,7 +4,7 @@ import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
 import { useCopyToClipboard } from "@src/utils/clipboard"
 import { StandardTooltip } from "@src/components/ui"
 
-import MarkdownBlock from "../common/MarkdownBlock"
+import MarkdownBlock from "../../common/MarkdownBlock"
 
 export const Markdown = memo(({ markdown, partial }: { markdown?: string; partial?: boolean }) => {
 	const [isHovering, setIsHovering] = useState(false)

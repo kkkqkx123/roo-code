@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { type ClineMessage } from "@shared/types"
-import BrowserSessionRow from "../chat/BrowserSessionRow"
+import BrowserSessionRow from "../chat/browser/BrowserSessionRow"
 import { TooltipProvider } from "@src/components/ui/tooltip"
 import ErrorBoundary from "../ErrorBoundary"
 import TranslationProvider from "@src/i18n/TranslationContext"

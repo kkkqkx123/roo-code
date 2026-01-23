@@ -7,9 +7,9 @@ import { vscode } from "@/utils/vscode"
 import { useCopyToClipboard } from "@/utils/clipboard"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 
-import { DeleteTaskDialog } from "../history/DeleteTaskDialog"
+import { DeleteTaskDialog } from "../../history/DeleteTaskDialog"
 import { CopyIcon, DownloadIcon, Trash2Icon, FileJsonIcon, MessageSquareCodeIcon, ShareIcon } from "lucide-react"
-import { LucideIconButton } from "./LucideIconButton"
+import { LucideIconButton } from "../ui/common/LucideIconButton"
 
 interface TaskActionsProps {
 	item?: HistoryItem
@@ -63,7 +63,7 @@ export const TaskActions = ({ item, buttonsDisabled }: TaskActionsProps) => {
 					{deleteTaskId && (
 						<DeleteTaskDialog
 							taskId={deleteTaskId}
-							onOpenChange={(open) => !open && setDeleteTaskId(null)}
+							onOpenChange={(open: boolean) => !open && setDeleteTaskId(null)}
 							open
 						/>
 					)}

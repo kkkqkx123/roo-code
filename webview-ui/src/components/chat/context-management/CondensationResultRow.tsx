@@ -5,7 +5,7 @@ import { FoldVertical } from "lucide-react"
 
 import type { ContextCondense } from "@shared/types"
 
-import { Markdown } from "../Markdown"
+import { Markdown } from "../ui/Markdown"
 
 interface CondensationResultRowProps {
 	data: ContextCondense

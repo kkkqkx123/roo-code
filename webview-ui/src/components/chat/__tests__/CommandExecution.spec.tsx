@@ -3,7 +3,7 @@
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react"
 
-import { CommandExecution } from "../CommandExecution"
+import { CommandExecution } from "../command/CommandExecution"
 import { ExtensionStateContext } from "../../../context/ExtensionStateContext"
 
 // Mock dependencies

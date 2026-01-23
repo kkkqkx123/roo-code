@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from "@/utils/test-utils"
 
 import { vscode } from "@src/utils/vscode"
 
-import { IndexingStatusBadge } from "../IndexingStatusBadge"
+import { IndexingStatusBadge } from "../ui/IndexingStatusBadge"
 
 vi.mock("@/i18n/setup", () => ({
 	__esModule: true,

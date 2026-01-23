@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 
 import { TranslationProvider } from "@/i18n/__mocks__/TranslationContext"
 
-import { BatchFilePermission } from "../BatchFilePermission"
+import { BatchFilePermission } from "../approval/BatchFilePermission"
 
 const mockVscodePostMessage = vi.fn()
 

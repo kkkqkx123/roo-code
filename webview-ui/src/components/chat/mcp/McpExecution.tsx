@@ -4,13 +4,13 @@ import { useEvent } from "react-use"
 import { useTranslation } from "react-i18next"
 
 import { McpExecutionStatus, mcpExecutionStatusSchema } from "@shared/types"
-import { ExtensionMessage, ClineAskUseMcpServer } from "../../../../src/shared/ExtensionMessage"
-import { safeJsonParse } from "../../../../src/shared/safeJsonParse"
+import { ExtensionMessage, ClineAskUseMcpServer } from "@shared/ExtensionMessage"
+import { safeJsonParse } from "@shared/safeJsonParse"
 import { cn } from "@src/lib/utils"
 import { Button } from "@src/components/ui"
-import CodeBlock from "../common/CodeBlock"
-import McpToolRow from "../mcp/McpToolRow"
-import { Markdown } from "./Markdown"
+import CodeBlock from "../../common/CodeBlock"
+import McpToolRow from "../../mcp/McpToolRow"
+import { Markdown } from "../ui/Markdown"
 
 interface McpExecutionProps {
 	executionId: string

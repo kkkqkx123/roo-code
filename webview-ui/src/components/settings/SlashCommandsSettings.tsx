@@ -22,7 +22,7 @@ import { buildDocLink } from "@/utils/docLinks"
 
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
-import { SlashCommandItem } from "../chat/SlashCommandItem"
+import { SlashCommandItem } from "../chat/slash/SlashCommandItem"
 
 export const SlashCommandsSettings: React.FC = () => {
 	const { t } = useAppTranslation()
