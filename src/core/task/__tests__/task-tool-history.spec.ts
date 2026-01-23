@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { Anthropic } from "@anthropic-ai/sdk"
-import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
+import { TOOL_PROTOCOL } from "@shared/utils/tool-utils"
 import { resolveToolProtocol } from "../../../utils/resolveToolProtocol"
 
 describe("Task Tool History Handling", () => {

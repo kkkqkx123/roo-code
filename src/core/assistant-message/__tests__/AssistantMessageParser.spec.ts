@@ -2,7 +2,7 @@
 
 import { type AssistantMessageContent, type TextContent } from "@shared/types"
 import { AssistantMessageParser } from "../AssistantMessageParser"
-import { ToolUse } from "@core/tools/tool-config"
+import { ToolUse } from "@shared/types/tool-config"
 
 /**
  * Helper to filter out empty text content blocks.

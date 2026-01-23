@@ -7,7 +7,7 @@ import PCR from "puppeteer-chromium-resolver"
 import pWaitFor from "p-wait-for"
 import delay from "delay"
 import { fileExistsAtPath } from "../../utils/fs"
-import { BrowserActionResult } from "../../shared/ExtensionMessage"
+import { BrowserActionResult } from "@shared/ExtensionMessage"
 import { discoverChromeHostUrl, tryChromeHostUrl } from "./browserDiscovery"
 
 // Timeout constants

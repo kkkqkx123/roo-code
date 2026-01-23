@@ -1,5 +1,5 @@
-import { EXPERIMENT_IDS } from "../../../core/experiments/experiment-utils"
-import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
+import { EXPERIMENT_IDS } from "@shared/config/experiment-config"
+import { TOOL_PROTOCOL } from "@shared/utils/tool-utils"
 
 // Mock vscode
 vi.mock("vscode", () => ({

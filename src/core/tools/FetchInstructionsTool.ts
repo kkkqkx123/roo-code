@@ -1,9 +1,9 @@
 import { Task } from "../task/Task"
 import { fetchInstructions } from "../prompts/instructions/instructions"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface FetchInstructionsParams {
 	task: string

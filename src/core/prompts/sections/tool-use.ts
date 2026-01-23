@@ -1,5 +1,5 @@
 import { ToolProtocol } from "@shared/types"
-import { TOOL_PROTOCOL, isNativeProtocol } from "@core/tools/tool-utils"
+import { TOOL_PROTOCOL, isNativeProtocol } from "@shared/utils/tool-utils"
 
 export function getSharedToolUseSection(protocol: ToolProtocol = TOOL_PROTOCOL.XML): string {
 	if (isNativeProtocol(protocol)) {

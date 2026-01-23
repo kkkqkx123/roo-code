@@ -20,7 +20,7 @@ import { z } from "zod"
 import { t } from "../../i18n"
 
 import type { TaskProviderLike } from "@shared/types"
-import { GlobalFileNames } from "../../shared/globalFileNames"
+import { GlobalFileNames } from "@shared/globalFileNames"
 
 /**
  * Extended interface for ClineProvider-like objects with MCP-specific methods
@@ -40,7 +40,7 @@ import {
 	McpServer,
 	McpTool,
 	McpToolCallResponse,
-} from "@services/mcp/mcp-types"
+} from "@shared/types/mcp-types"
 import { fileExistsAtPath } from "../../utils/fs"
 import { arePathsEqual, getWorkspacePath } from "../../utils/path"
 import { injectVariables } from "../../utils/config"

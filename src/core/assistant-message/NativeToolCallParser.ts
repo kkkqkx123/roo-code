@@ -5,7 +5,7 @@ import {
 	type ToolParamName,
 	toolParamNames,
 	type NativeToolArgs,
-} from "@core/tools/tool-config"
+} from "@shared/types/tool-config"
 import { resolveToolAlias } from "../prompts/tools/filter-tools-for-mode"
 import { parseJSON } from "partial-json"
 import type {

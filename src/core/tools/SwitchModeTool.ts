@@ -4,7 +4,7 @@ import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface SwitchModeParams {
 	mode_slug: string

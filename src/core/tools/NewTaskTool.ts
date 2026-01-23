@@ -7,9 +7,9 @@ import { getModeBySlug } from "@core/modes/mode-utils"
 import { formatResponse } from "../prompts/responses"
 import { t } from "../../i18n"
 import { parseMarkdownChecklist } from "./UpdateTodoListTool"
-import { Package } from "../../shared/package"
+import { Package } from "@shared/package"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface NewTaskParams {
 	mode: string

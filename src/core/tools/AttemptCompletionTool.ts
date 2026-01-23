@@ -4,9 +4,9 @@ import { RooCodeEventName, type HistoryItem } from "@shared/types"
 
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
-import { Package } from "../../shared/package"
+import { Package } from "@shared/package"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 import { t } from "../../i18n"
 
 interface AttemptCompletionParams {

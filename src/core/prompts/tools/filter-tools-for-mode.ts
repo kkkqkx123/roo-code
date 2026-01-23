@@ -1,7 +1,7 @@
 import type OpenAI from "openai"
 import type { ModeConfig, ToolName, ToolGroup, ModelInfo } from "@shared/types"
 import { getModeBySlug, getToolsForMode } from "@core/modes/mode-utils"
-import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, TOOL_ALIASES } from "@core/tools/tool-config"
+import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, TOOL_ALIASES } from "@shared/constants/tool-config"
 import { defaultModeSlug } from "@core/modes/mode-utils"
 import type { CodeIndexManager } from "../../../services/code-index/manager"
 import type { McpHub } from "../../../services/mcp/McpHub"

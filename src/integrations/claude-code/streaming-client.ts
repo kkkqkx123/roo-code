@@ -1,6 +1,6 @@
 import type { Anthropic } from "@anthropic-ai/sdk"
 import type { ClaudeCodeRateLimitInfo } from "@shared/types"
-import { Package } from "../../shared/package"
+import { Package } from "@shared/package"
 
 /**
  * Set of content block types that are valid for Anthropic API.

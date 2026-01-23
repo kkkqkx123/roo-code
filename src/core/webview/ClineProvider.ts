@@ -23,12 +23,12 @@ import {
 	getModelId,
 } from "@shared/types"
 
-import { Package } from "../../shared/package"
-import type { ExtensionMessage, ExtensionState } from "../../shared/ExtensionMessage"
-import { EMBEDDING_MODEL_PROFILES } from "../../services/code-index/embedding-models"
+import { Package } from "@shared/package"
+import type { ExtensionMessage, ExtensionState } from "@shared/ExtensionMessage"
+import { EMBEDDING_MODEL_PROFILES } from "@shared/config/embedding-models"
 import { defaultModeSlug, getModeBySlug } from "@core/modes/mode-utils"
 import { t } from "../../i18n"
-import { findLast } from "../../shared/array"
+import { findLast } from "@shared/array"
 import { getWorkspaceGitInfo } from "../../utils/git"
 import os from "os"
 

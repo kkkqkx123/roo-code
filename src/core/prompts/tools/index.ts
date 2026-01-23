@@ -1,7 +1,7 @@
 import type { ToolName, ModeConfig } from "@shared/types"
 import { shouldUseSingleFileRead } from "@shared/types"
 
-import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, DiffStrategy } from "@core/tools/tool-config"
+import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, DiffStrategy } from "@shared/constants/tool-config"
 import { Mode, getModeConfig, getGroupName } from "@core/modes/mode-utils"
 
 import { isToolAllowedForMode } from "../../tools/validateToolUse"

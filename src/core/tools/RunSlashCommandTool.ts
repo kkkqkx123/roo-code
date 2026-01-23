@@ -1,9 +1,9 @@
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { getCommand, getCommandNames } from "../../services/command/commands"
-import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-utils"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface RunSlashCommandParams {
 	command: string

@@ -17,7 +17,7 @@ import {
 	isSecretStateKey,
 } from "@shared/types"
 
-import { Package } from "../shared/package"
+import { Package } from "@shared/package"
 import { ClineProvider } from "../core/webview/ClineProvider"
 import { openClineInNewTab } from "../activate/registerCommands"
 

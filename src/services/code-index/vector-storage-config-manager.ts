@@ -4,7 +4,7 @@ import { CollectionSizeEstimator } from "./vector-store/collection-size-estimato
 import type { SizeEstimationResult } from "./token-based-size-estimator"
 import type { QdrantClient } from "@qdrant/js-client-rest"
 import { CollectionConfigUpgradeService } from "./vector-store/collection-config-upgrade-service"
-import { VECTOR_STORAGE_PRESETS } from "./vector-storage-presets"
+import { VECTOR_STORAGE_PRESETS } from "@shared/config/vector-storage-presets"
 
 const DEFAULT_VECTOR_STORAGE_CONFIG: VectorStorageConfig = {
 	mode: "auto",

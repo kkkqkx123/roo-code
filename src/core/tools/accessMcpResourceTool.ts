@@ -1,5 +1,5 @@
-import { ClineAskUseMcpServer } from "../../shared/ExtensionMessage"
-import type { ToolUse } from "./tool-config"
+import { ClineAskUseMcpServer } from "@shared/ExtensionMessage"
+import type { ToolUse } from "@shared/types/tool-config"
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { BaseTool, ToolCallbacks } from "./BaseTool"

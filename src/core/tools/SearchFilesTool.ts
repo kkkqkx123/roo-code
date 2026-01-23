@@ -1,12 +1,12 @@
 import path from "path"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { regexSearchFiles } from "../../services/ripgrep"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface SearchFilesParams {
 	path: string

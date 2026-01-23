@@ -1,5 +1,5 @@
 import { truncateOutput, applyRunLengthEncoding, processBackspaces, processCarriageReturns } from "../misc/extract-text"
-import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@core/constants/default-values"
+import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@shared/constants/default-values"
 
 import type {
 	RooTerminalProvider,

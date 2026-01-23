@@ -1,22 +1,22 @@
 import path from "path"
 import fs from "fs/promises"
 
-import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
+import { DEFAULT_WRITE_DELAY_MS } from "@shared/constants/default-values"
 
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { Task } from "../task/Task"
-import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "./tool-config"
+import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "@shared/types/tool-config"
 import { formatResponse } from "../prompts/responses"
 import { fileExistsAtPath } from "../../utils/fs"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
 import { parseXmlForDiff } from "../../utils/xml"
-import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-utils"
 import { applyDiffTool as applyDiffToolClass } from "./ApplyDiffTool"
 import { computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
-import { isNativeProtocol } from "@core/tools/tool-utils"
+import { isNativeProtocol } from "@shared/utils/tool-utils"
 
 interface DiffOperation {
 	path: string

@@ -4,7 +4,7 @@ import * as vscode from "vscode"
 import fs from "fs/promises"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { fileExistsAtPath, createDirectoriesForFile } from "../../utils/fs"
@@ -12,11 +12,11 @@ import { stripLineNumbers, everyLineHasLineNumbers } from "../../integrations/mi
 import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
-import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
-import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
+import { DEFAULT_WRITE_DELAY_MS } from "@shared/constants/default-values"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-utils"
 import { convertNewFileToUnifiedDiff, computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface WriteToFileParams {
 	path: string

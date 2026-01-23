@@ -6,10 +6,10 @@ import pWaitFor from "p-wait-for"
 import delay from "delay"
 
 import type { ExperimentId } from "@shared/types"
-import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@core/constants/default-values"
+import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@shared/constants/default-values"
 
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
-import { EXPERIMENT_IDS, experiments as Experiments } from "../experiments/experiment-utils"
+import { EXPERIMENT_IDS, experiments as Experiments } from "@shared/config/experiment-config"
 import { formatLanguage } from "../../shared/language"
 import { defaultModeSlug, getFullModeDetails } from "@core/modes/mode-utils"
 import { getApiMetrics } from "../task/managers/monitoring/metrics-utils"

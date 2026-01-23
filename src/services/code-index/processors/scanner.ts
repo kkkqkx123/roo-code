@@ -27,7 +27,7 @@ import {
 } from "../constants"
 import { isPathInIgnoredDirectory } from "../../glob/ignore-utils"
 import { sanitizeErrorMessage } from "../shared/validation-helpers"
-import { Package } from "../../../shared/package"
+import { Package } from "@shared/package"
 
 export class DirectoryScanner implements IDirectoryScanner {
 	private readonly batchSegmentThreshold: number

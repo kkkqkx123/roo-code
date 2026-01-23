@@ -1,9 +1,9 @@
-import { ApiHandlerOptions } from "@api/api-utils"
+import { ApiHandlerOptions } from "@shared/utils/api-utils"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { EmbedderProvider } from "./interfaces/manager"
 import { CodeIndexConfig, PreviousConfigSnapshot, VectorStorageConfig } from "./interfaces/config"
 import { DEFAULT_SEARCH_MIN_SCORE, DEFAULT_MAX_SEARCH_RESULTS } from "./constants"
-import { getDefaultModelId, getModelDimension, getModelScoreThreshold } from "./embedding-models"
+import { getDefaultModelId, getModelDimension, getModelScoreThreshold } from "@shared/config/embedding-models"
 
 /**
  * Manages configuration state and validation for the code indexing feature.

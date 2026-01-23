@@ -1,11 +1,11 @@
 import { Task } from "../task/Task"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "./tool-config"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "@shared/types/tool-config"
 import {
 	BrowserAction,
 	BrowserActionResult,
 	browserActions,
 	ClineSayBrowserAction,
-} from "../../shared/ExtensionMessage"
+} from "@shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { Anthropic } from "@anthropic-ai/sdk"
 import { scaleCoordinate } from "../webview/browser-utils"

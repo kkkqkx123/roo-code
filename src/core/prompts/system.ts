@@ -6,7 +6,7 @@ import type { ModeConfig, PromptComponent, CustomModePrompts, TodoItem } from "@
 import type { SystemPromptSettings } from "./types"
 
 import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelection } from "@core/modes/mode-utils"
-import { DiffStrategy } from "@core/tools/tool-config"
+import { DiffStrategy } from "@shared/types/tool-config"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
 
@@ -16,7 +16,7 @@ import { CodeIndexManager } from "../../services/code-index/manager"
 import { PromptVariables, loadSystemPromptFile } from "./sections/custom-system-prompt"
 
 import { getToolDescriptionsForMode } from "./tools"
-import { getEffectiveProtocol, isNativeProtocol } from "@core/tools/tool-utils"
+import { getEffectiveProtocol, isNativeProtocol } from "@shared/utils/tool-utils"
 import {
 	getRulesSection,
 	getSystemInfoSection,

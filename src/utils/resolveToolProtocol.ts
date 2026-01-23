@@ -1,8 +1,8 @@
 import { ToolProtocol } from "@shared/types"
-import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
+import { TOOL_PROTOCOL } from "@shared/utils/tool-utils"
 import type { ProviderSettings, ModelInfo } from "@shared/types"
 import type { Anthropic } from "@anthropic-ai/sdk"
-import { findLast, findLastIndex } from "../shared/array"
+import { findLast, findLastIndex } from "@shared/array"
 
 /**
  * Represents an API message in the conversation history.

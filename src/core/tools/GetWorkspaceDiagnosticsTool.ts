@@ -2,7 +2,7 @@ import path from "path"
 import * as vscode from "vscode"
 import { Task } from "../task/Task"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface GetWorkspaceDiagnosticsParams {
   targets?: readonly string[]

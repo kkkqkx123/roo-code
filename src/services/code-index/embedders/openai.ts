@@ -1,6 +1,6 @@
 import { OpenAI } from "openai"
 import { OpenAiNativeHandler } from "../../../api/providers/openai-native"
-import { ApiHandlerOptions } from "@api/api-utils"
+import { ApiHandlerOptions } from "@shared/utils/api-utils"
 import { IEmbedder, EmbeddingResponse, EmbedderInfo } from "../interfaces"
 import {
 	MAX_BATCH_TOKENS,
@@ -8,7 +8,7 @@ import {
 	MAX_BATCH_RETRIES as MAX_RETRIES,
 	INITIAL_RETRY_DELAY_MS as INITIAL_DELAY_MS,
 } from "../constants"
-import { getModelQueryPrefix } from "../embedding-models"
+import { getModelQueryPrefix } from "@shared/config/embedding-models"
 import { t } from "../../../i18n"
 import { withValidationErrorHandling, formatEmbeddingError, HttpError } from "../shared/validation-helpers"
 import { handleOpenAIError } from "../../../api/providers/utils/openai-error-handler"

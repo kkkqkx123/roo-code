@@ -5,14 +5,14 @@ import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { fileExistsAtPath } from "../../utils/fs"
-import { DEFAULT_WRITE_DELAY_MS } from "@core/constants/default-values"
-import { EXPERIMENT_IDS, experiments } from "../experiments/experiment-utils"
+import { DEFAULT_WRITE_DELAY_MS } from "@shared/constants/default-values"
+import { EXPERIMENT_IDS, experiments } from "@shared/config/experiment-utils"
 import { sanitizeUnifiedDiff, computeDiffStats } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface SearchReplaceParams {
 	file_path: string

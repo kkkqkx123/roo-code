@@ -24,7 +24,7 @@ import { CacheManager } from "../cache-manager"
 import { generateNormalizedAbsolutePath, generateRelativeFilePath } from "../shared/get-relative-path"
 import { isPathInIgnoredDirectory } from "../../glob/ignore-utils"
 import { sanitizeErrorMessage } from "../shared/validation-helpers"
-import { Package } from "../../../shared/package"
+import { Package } from "@shared/package"
 
 /**
  * Implementation of the file watcher interface

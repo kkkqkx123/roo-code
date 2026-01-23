@@ -11,13 +11,13 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_WRITE_DELAY_MS,
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
-} from "@core/constants/default-values"
+} from "@shared/constants/default-values"
 
 import { ContextProxy } from "../config/ContextProxy"
 import { getWorkspacePath } from "../../utils/path"
 import { getTheme } from "../../integrations/theme/getTheme"
 import { formatLanguage } from "../../shared/language"
-import { experimentDefault } from "../experiments/experiment-utils"
+import { experimentDefault } from "@shared/config/experiment-config"
 import { Mode, defaultModeSlug } from "@core/modes/mode-utils"
 import { EMBEDDING_MODEL_PROFILES } from "../../services/code-index/embedding-models"
 import { Terminal } from "../../integrations/terminal/Terminal"

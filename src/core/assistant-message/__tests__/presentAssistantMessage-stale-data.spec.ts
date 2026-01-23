@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { writeToFileTool } from "../../tools/WriteToFileTool"
-import type { ToolUse } from "@core/tools/tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 // Mock the Task class with minimal implementation for testing
 const mockTask: any = {

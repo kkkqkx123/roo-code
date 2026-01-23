@@ -1,4 +1,4 @@
-import { DiffStrategy } from "@core/tools/tool-config"
+import { DiffStrategy } from "@shared/types/tool-config"
 import { McpHub } from "../../../services/mcp/McpHub"
 
 export type ToolArgs = {

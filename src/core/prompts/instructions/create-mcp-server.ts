@@ -1,5 +1,5 @@
 import { McpHub } from "../../../services/mcp/McpHub"
-import { DiffStrategy } from "@core/tools/tool-config"
+import { DiffStrategy } from "@shared/types/tool-config"
 
 export async function createMCPServerInstructions(
 	mcpHub: McpHub | undefined,

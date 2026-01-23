@@ -1,12 +1,12 @@
 import path from "path"
 import type { FileEntry, LineRange } from "@shared/types"
 import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "@shared/types"
-import { isNativeProtocol } from "@core/tools/tool-utils"
+import { isNativeProtocol } from "@shared/utils/tool-utils"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
-import { getModelMaxOutputTokens } from "@api/api-utils"
+import { getModelMaxOutputTokens } from "@shared/utils/api-utils"
 import { t } from "../../i18n"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
@@ -29,7 +29,7 @@ import {
 import { FILE_READ_BUDGET_PERCENT, readFileWithTokenBudget } from "./helpers/fileTokenBudget"
 import { truncateDefinitionsToLineLimit } from "./helpers/truncateDefinitions"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface FileResult {
 	path: string

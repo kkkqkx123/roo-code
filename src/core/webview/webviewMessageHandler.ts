@@ -22,8 +22,8 @@ import { BrowserSessionPanelManager } from "./BrowserSessionPanelManager"
 import { handleCheckpointRestoreOperation } from "./checkpointRestoreHandler"
 import { generateErrorDiagnostics } from "./diagnosticsHandler"
 import { changeLanguage, t } from "../../i18n"
-import { Package } from "../../shared/package"
-import { type ModelRecord } from "@api/api-utils"
+import { Package } from "@shared/package"
+import { type ModelRecord } from "@shared/utils/api-utils"
 import { MessageEnhancer } from "./messageEnhancer"
 
 import {
@@ -31,9 +31,9 @@ import {
 	type EditQueuedMessagePayload,
 	checkoutDiffPayloadSchema,
 	checkoutRestorePayloadSchema,
-} from "../../shared/WebviewMessage"
+} from "@shared/WebviewMessage"
 import { checkExistKey } from "@shared/utils/config-utils"
-import { experimentDefault } from "@shared/config/experiment-config"
+import { experimentDefault } from "@shared/config/experiment-utils"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile } from "../../integrations/misc/open-file"
 import { openImage, saveImage } from "../../integrations/misc/image-handler"

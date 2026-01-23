@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 import * as vscode from "vscode"
 
 // Mock Package
-vi.mock("../../../shared/package", () => ({
+vi.mock("@shared/package", () => ({
 	Package: {
 		name: "coder",
 		publisher: "RooVeterinaryInc",
@@ -60,7 +60,7 @@ describe("file-search", () => {
 		})
 
 		it("should read maximumIndexedFilesForFileSearch configuration", async () => {
-			const { Package } = await import("../../../shared/package")
+			const { Package } = await import("@shared/package")
 			const mockRooConfig = {
 				get: vi.fn((key: string, defaultValue: number) => {
 					if (key === "maximumIndexedFilesForFileSearch") return 50000
@@ -81,7 +81,7 @@ describe("file-search", () => {
 		})
 
 		it("should use default limit when configuration is not provided", async () => {
-			const { Package } = await import("../../../shared/package")
+			const { Package } = await import("@shared/package")
 			const mockRooConfig = {
 				get: vi.fn((key: string, defaultValue: number) => defaultValue),
 			}

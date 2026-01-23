@@ -1,5 +1,5 @@
 import { EventEmitter } from "events"
-import type { UpgradeProgress } from "../vector-storage-presets"
+import type { UpgradeProgress } from "@shared/config/vector-storage-presets"
 import { VectorStorageConfigManager } from "../vector-storage-config-manager"
 
 export interface SchedulerConfig {

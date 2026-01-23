@@ -7,7 +7,7 @@ import { getWorkspacePath } from "../../utils/path"
 import { formatResponse } from "../prompts/responses"
 import { VectorStoreSearchResult } from "../../services/code-index/interfaces"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
-import type { ToolUse } from "./tool-config"
+import type { ToolUse } from "@shared/types/tool-config"
 
 interface CodebaseSearchParams {
 	query: string

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { CODEBASE_INDEX_DEFAULTS } from "@services/code-index/config"
+import { CODEBASE_INDEX_DEFAULTS } from "@shared/config/codebase-index-config"
 
 export const vectorStorageConfigSchema = z.object({
 	mode: z.enum(["auto", "preset", "custom"]),

@@ -10,7 +10,7 @@ import {
 	anthropicModels,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 } from "@shared/types"
-import { TOOL_PROTOCOL } from "@core/tools/tool-utils"
+import { TOOL_PROTOCOL } from "@shared/utils/tool-utils"
 
 import type { ApiHandlerOptions } from "../api-utils"
 

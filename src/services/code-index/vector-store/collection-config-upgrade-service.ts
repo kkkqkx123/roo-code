@@ -8,9 +8,9 @@ import type {
 	UpgradeProgress,
 	UpgradeStep,
 	UpgradeThresholds,
-} from "../vector-storage-presets"
+} from "@shared/config/vector-storage-presets"
 import { VectorStorageConfigManager } from "../vector-storage-config-manager"
-import { VECTOR_STORAGE_PRESETS } from "../vector-storage-presets"
+import { VECTOR_STORAGE_PRESETS } from "@shared/config/vector-storage-presets"
 import * as vscode from "vscode"
 
 export class CollectionConfigUpgradeService {

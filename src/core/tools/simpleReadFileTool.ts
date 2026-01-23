@@ -1,10 +1,10 @@
 import path from "path"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { ClineSayTool } from "@shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { t } from "../../i18n"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "./tool-config"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "@shared/types/tool-config"
 import { RecordSource } from "../file-tracking/FileContextTrackerTypes"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
 import { getReadablePath } from "../../utils/path"
@@ -13,7 +13,7 @@ import { readLines } from "../../integrations/misc/read-lines"
 import { extractTextFromFile, addLineNumbers, getSupportedBinaryFormats } from "../../integrations/misc/extract-text"
 import { parseSourceCodeDefinitionsForFile } from "../../services/tree-sitter"
 import { ToolProtocol } from "@shared/types"
-import { isNativeProtocol } from "@core/tools/tool-utils"
+import { isNativeProtocol } from "@shared/utils/tool-utils"
 import { isBinaryFileOptimized } from "../../utils/binary-file-detector"
 import {
 	DEFAULT_MAX_IMAGE_FILE_SIZE_MB,

@@ -14,8 +14,8 @@ import "./utils/path" // Necessary to have access to String.prototype.toPosix.
 import { createOutputChannelLogger } from "./utils/outputChannelLogger"
 import { createLogger, LogLevel } from "./utils/logger"
 
-import { Package } from "./shared/package"
-import { formatLanguage } from "./shared/language"
+import { Package } from "@shared/package"
+import { formatLanguage } from "@shared/language"
 import { ContextProxy } from "./core/config/ContextProxy"
 import { ClineProvider } from "./core/webview/ClineProvider"
 import { DIFF_VIEW_URI_SCHEME } from "./integrations/editor/DiffViewProvider"
